@@ -2,17 +2,33 @@
   "name": "Cosplay Forge",
   "short_name": "Cosplay Forge",
   "description": "Track your cosplay builds, budgets, deadlines and more — built by a cosplayer, for the community.",
+  "id": "/cosplay-organizer/",
   "start_url": "/cosplay-organizer/",
+  "scope": "/cosplay-organizer/",
   "display": "standalone",
   "background_color": "#1a2a1e",
   "theme_color": "#2d4a35",
   "orientation": "portrait",
+  "lang": "en",
+  "categories": ["lifestyle", "productivity", "utilities"],
   "icons": [
+    {
+      "src": "Quest-Forge-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "Quest-Forge-logo.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "Quest-Forge-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
