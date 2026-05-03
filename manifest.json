@@ -34,25 +34,25 @@
   "screenshots": [
     {
       "src": "screenshot-1-home.png",
-      "sizes": "390x844",
+      "sizes": "810x1710",
       "type": "image/png",
       "label": "Home — Quest Dashboard"
     },
     {
       "src": "screenshot-2-detail.png",
-      "sizes": "390x844",
+      "sizes": "810x1710",
       "type": "image/png",
       "label": "Build Detail — Checklist & Budget"
     },
     {
       "src": "screenshot-3-calendar.png",
-      "sizes": "390x844",
+      "sizes": "810x1710",
       "type": "image/png",
       "label": "Calendar — Cons & Craft Days"
     },
     {
       "src": "screenshot-4-quests.png",
-      "sizes": "390x844",
+      "sizes": "810x1710",
       "type": "image/png",
       "label": "All Quests — Filter & Track"
     }
