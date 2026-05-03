@@ -375,6 +375,16 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .cat-group-body{padding:8px 12px 10px;}
 .cat-step{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(100,140,100,0.08);}
 .cat-step:last-of-type{border-bottom:none;}
+.supply-item{padding:10px 0;border-bottom:1px solid var(--border);}
+.supply-item:last-child{border-bottom:none;}
+.supply-item.bought{opacity:0.7;}
+.supply-main{display:flex;align-items:flex-start;gap:10px;}
+.supply-status-btn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;cursor:pointer;flex-shrink:0;border:1.5px solid var(--border);background:rgba(255,255,255,0.04);transition:all .15s;}
+.supply-status-btn.bought{background:rgba(143,188,143,0.2);border-color:var(--sage);color:var(--sage);}
+.supply-status-btn.need{color:var(--text-dim);}
+.supply-info{flex:1;}
+.supply-name{font-size:14px;font-weight:700;color:var(--text);}
+.supply-name.bought{text-decoration:line-through;color:var(--text-dim);}
 .check-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;background:rgba(0,0,0,.2);}
 .check-box.checked{background:linear-gradient(135deg,var(--moss),var(--sage));border-color:var(--sage);}
@@ -746,29 +756,22 @@ select option{background:#1a2f1c;}
 </div>
 
 <!-- Add Expense -->
-<div class="modal-overlay" id="expenseModal">
+<div class="modal-overlay" id="supplyModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">💰 Add Expense</div>
-    <div class="form-group"><label>Description</label><input type="text" id="exp-name" placeholder="Fabric, wig, paint…"></div>
-    <div class="form-group"><label>Amount ($)</label><input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"></div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveExpense()">Add Expense ✿</button>
-  </div>
-</div>
-
-<!-- Add Material -->
-<div class="modal-overlay" id="materialModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">🧶 Add Material</div>
-    <div class="form-group"><label>Material Name</label><input type="text" id="mat-name" placeholder="Cotton fabric, foam, zipper…"></div>
+    <div class="modal-title">🧶 Add to Materials & Supplies</div>
+    <div class="form-group"><label>Item Name</label><input type="text" id="sup-name" placeholder="Cotton fabric, foam, zipper…"></div>
     <div class="flex-row">
-      <div class="form-group"><label>Quantity</label><input type="text" id="mat-qty" placeholder="2 yards…"></div>
-      <div class="form-group"><label>Cost ($)</label><input type="number" id="mat-cost" placeholder="0.00" min="0" step="0.01"></div>
+      <div class="form-group"><label>Quantity</label><input type="text" id="sup-qty" placeholder="2 yards…"></div>
+      <div class="form-group"><label>Cost ($)</label><input type="number" id="sup-cost" placeholder="0.00" min="0" step="0.01"></div>
     </div>
-    <div class="form-group"><label>Notes</label><input type="text" id="mat-notes" placeholder="Color, brand…"></div>
-    <div class="form-group"><label>Purchase Link (optional)</label><input type="url" id="mat-url" placeholder="https://…"></div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveMaterial()">Add Material ✿</button>
+    <div class="form-group"><label>Notes</label><input type="text" id="sup-notes" placeholder="Color, brand, size…"></div>
+    <div class="form-group"><label>Purchase Link (optional)</label><input type="url" id="sup-url" placeholder="https://…"></div>
+    <div style="display:flex;gap:8px;margin-bottom:4px;">
+      <button id="supStatusNeed" class="btn primary" style="flex:1;font-size:13px;" onclick="switchSupplyStatus('need')">🛒 Need</button>
+      <button id="supStatusBought" class="btn" style="flex:1;font-size:13px;" onclick="switchSupplyStatus('bought')">✓ Bought</button>
+    </div>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveSupply()">Add Item ✿</button>
   </div>
 </div>
 
@@ -1536,7 +1539,7 @@ function questCard(c) {
   const nextCraft = craftDays.filter(cr=>cr.costumeId===c.id && new Date(cr.date+'T00:00:00')>=now).sort((a,b)=>a.date.localeCompare(b.date))[0];
   const craftHtml = nextCraft ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:700;color:var(--gold);">🪡 Next craft: ${new Date(nextCraft.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>` : '';
   const img=c.imgurl?`<img src="${c.imgurl}" onerror="this.style.display='none'">`:c.emoji||'🧙';
-  const totalSpent=(c.expenses||[]).reduce((a,e)=>a+e.amount,0)+(c.materials||[]).reduce((a,m)=>a+(m.cost||0),0);
+  const totalSpent=(c.supplies||[]).filter(s=>s.status==='bought').reduce((a,s)=>a+(s.cost||0),0);
   return `<div class="quest-card" onclick="openCostumePage('${c.id}')">
     <div class="quest-card-inner">
       <div class="qc-top">
@@ -1601,7 +1604,7 @@ function saveCosplay() {
     emoji:selectedEmoji,status:document.getElementById('f-status').value,deadline:document.getElementById('f-deadline').value,
     notes:document.getElementById('f-notes').value.trim()};
   if(editingId){const i=cosplays.findIndex(c=>c.id===editingId);cosplays[i]={...cosplays[i],...data};}
-  else cosplays.unshift({id:uid(),checklist:[],expenses:[],materials:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
+  else cosplays.unshift({id:uid(),checklist:[],expenses:[],materials:[],supplies:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
   save(); closeAllModals(); renderHome();
   if(viewingId===editingId) renderCostumePage();
   const ap=document.querySelector('.page.active')?.id;
@@ -1628,9 +1631,12 @@ function renderCostumePage() {
   const sLabel=c.status==='done'?'✓ Done':c.status==='wip'?'⚙ Active':'◇ Planned';
   let dlBadge='';
   if(c.deadline){const d=Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000);const cls=d<=14&&d>=0?'b-urgent':'b-planned';dlBadge=`<span class="badge ${cls}">📅 ${d<0?'Past':d===0?'Today!':d+'d left'}</span>`;}
-  const expTotal=(c.expenses||[]).reduce((a,e)=>a+e.amount,0);
-  const matTotal=(c.materials||[]).reduce((a,m)=>a+(m.cost||0),0);
-  const totalSpent=expTotal+matTotal;
+  const supplies=c.supplies||[];
+  const boughtTotal=supplies.filter(s=>s.status==='bought').reduce((a,s)=>a+(s.cost||0),0);
+  const needTotal=supplies.filter(s=>s.status!=='bought').reduce((a,s)=>a+(s.cost||0),0);
+  const totalSpent=boughtTotal;
+  const expTotal=boughtTotal;
+  const matTotal=0;
   const budgetPct=c.budget?Math.min(100,Math.round(totalSpent/c.budget*100)):0;
   const budgetOver=c.budget&&totalSpent>c.budget;
   const remaining=c.budget?c.budget-totalSpent:0;
@@ -1690,20 +1696,15 @@ function renderCostumePage() {
       <div style="padding-top:14px;">
         <div class="budget-summary">
           <div class="budget-tile"><div class="budget-tile-val gold">$${c.budget||0}</div><div class="budget-tile-label">Budget</div></div>
-          <div class="budget-tile"><div class="budget-tile-val peach">$${totalSpent.toFixed(2)}</div><div class="budget-tile-label">Spent</div></div>
+          <div class="budget-tile"><div class="budget-tile-val peach">$${boughtTotal.toFixed(2)}</div><div class="budget-tile-label">Spent</div></div>
           <div class="budget-tile"><div class="budget-tile-val ${remaining<0?'rose':'green'}">$${Math.abs(remaining).toFixed(2)}</div><div class="budget-tile-label">${remaining<0?'Over':'Left'}</div></div>
         </div>
+        ${needTotal>0?`<div style="font-size:12px;font-weight:700;color:var(--text-soft);margin-bottom:8px;padding:6px 10px;background:rgba(255,255,255,0.04);border-radius:8px;">🛒 Est. still needed: <span style="color:var(--gold);">$${needTotal.toFixed(2)}</span></div>`:''}
         ${c.budget?`<div class="budget-bar-wrap"><div class="budget-bar-label"><span>Used</span><span>${budgetPct}%</span></div><div class="budget-bar"><div class="budget-bar-fill ${budgetOver?'over':''}" style="width:${budgetPct}%"></div></div></div>`:''}
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
           <input type="number" id="budgetInput" value="${c.budget||0}" placeholder="Set total budget" min="0" style="flex:1;">
           <button class="btn sky-btn sm" onclick="saveBudget()">Set</button>
         </div>
-        <div class="section-label gold" style="margin-bottom:8px;">Expenses</div>
-        <div id="expenseList">
-          ${(c.expenses||[]).length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;padding:4px 0 10px;">No expenses yet.</div>':''}
-          ${(c.expenses||[]).map((e,i)=>`<div class="expense-item"><span class="exp-name">${e.name}</span><span class="exp-amount">$${e.amount.toFixed(2)}</span><span class="exp-del" onclick="deleteExpense(${i})">×</span></div>`).join('')}
-        </div>
-        <button class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="openModal('expenseModal')">+ Add Expense</button>
       </div>
     </div>
   </div>`;
@@ -1772,22 +1773,7 @@ function renderCostumePage() {
     </div>
   </div>`;
 
-  const materialsSection=`<div class="cs-block">
-    <div class="cs-block-header" onclick="toggleBlock('materials')">
-      <div class="cs-block-header-left"><span class="cs-block-icon">🧶</span>
-      <div><div class="cs-block-title">Materials</div><div class="cs-block-subtitle">${(c.materials||[]).length} items · $${matTotal.toFixed(2)}</div></div></div>
-      <div class="cs-block-toggle open" id="materials-chevron">▾</div>
-    </div>
-    <div class="cs-block-body" id="materials-body">
-      <div style="padding-top:14px;">
-        ${(c.materials||[]).length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:10px;">No materials yet.</div>':''}
-        ${(c.materials||[]).map((m,i)=>`<div class="material-item"><div class="mat-top"><div><div class="mat-name">${m.name}</div>${m.qty?`<div class="mat-meta">${m.qty}${m.cost?` · $${m.cost.toFixed(2)}`:''}</div>`:''}${m.notes?`<div class="mat-meta">${m.notes}</div>`:''}${m.url?`<a href="${m.url}" target="_blank" class="mat-link">🔗 View Source</a>`:''}</div><span class="mat-del" onclick="deleteMaterial(${i})">×</span></div></div>`).join('')}
-        <button class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="openModal('materialModal')">+ Add Material</button>
-      </div>
-    </div>
-  </div>`;
-
-  const hoursSection=`<div class="cs-block">
+  const suppliesSection=`<div class="cs-block">    <div class="cs-block-header" onclick="toggleBlock('supplies')">      <div class="cs-block-header-left"><span class="cs-block-icon">🧶</span>      <div><div class="cs-block-title">Materials & Supplies</div><div class="cs-block-subtitle">${supplies.filter(s=>s.status==='bought').length}/${supplies.length} bought</div></div></div>      <div class="cs-block-toggle open" id="supplies-chevron">▾</div>    </div>    <div class="cs-block-body" id="supplies-body">      <div style="padding-top:14px;">        ${supplies.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:10px;">No items yet.</div>':''}        ${supplies.map((s,i)=>`<div class="supply-item ${s.status==='bought'?'bought':''}" >          <div class="supply-main">            <div class="supply-status-btn ${s.status==='bought'?'bought':'need'}" onclick="toggleSupplyStatus(${i})">${s.status==='bought'?'✓':'🛒'}</div>            <div class="supply-info">              <div class="supply-name ${s.status==='bought'?'bought':''}">${s.name}</div>              ${s.qty||s.cost?`<div class="mat-meta">${s.qty||''} ${s.cost?(s.qty?'· ':'')+'$'+s.cost.toFixed(2):''}</div>`:''}              ${s.notes?`<div class="mat-meta">${s.notes}</div>`:''}              ${s.url?`<a href="${s.url}" target="_blank" class="mat-link">🔗 View Source</a>`:''}            </div>            <span class="mat-del" onclick="deleteSupply(${i})">×</span>          </div>        </div>`).join('')}        <button class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="openSupplyModal()">+ Add Item</button>      </div>    </div>  </div>`;  const hoursSection=`<div class="cs-block">
     <div class="cs-block-header" onclick="toggleBlock('hours')">
       <div class="cs-block-header-left"><span class="cs-block-icon">⏱</span>
       <div><div class="cs-block-title">Time Tracking</div><div class="cs-block-subtitle">${totalHours}h logged</div></div></div>
@@ -1852,7 +1838,7 @@ function renderCostumePage() {
           <div class="prog-track"><div class="prog-fill ${p===100?'full':''}" style="width:${p}%"></div></div>
         </div>
       </div>
-      ${craftSection}${budgetSection}${tasksSection}${materialsSection}${hoursSection}${linksSection}${notesSection}
+      ${craftSection}${budgetSection}${tasksSection}${suppliesSection}${hoursSection}${linksSection}${notesSection}
       <div style="height:8px;"></div>
     </div>`;
 }
@@ -1917,18 +1903,35 @@ function deleteCraftDay(id) {
 }
 
 // ── EXPENSES ──────────────────────────────────────────────────
-function saveExpense(){
-  const name=document.getElementById('exp-name').value.trim();
-  const amount=parseFloat(document.getElementById('exp-amount').value)||0;
-  if(!name){alert('Enter a description.');return;}
-  const c=getCostume(viewingId);if(!c)return;
-  if(!c.expenses)c.expenses=[];
-  c.expenses.push({name,amount});
-  save();closeAllModals();
-  document.getElementById('exp-name').value='';document.getElementById('exp-amount').value='';
-  renderCostumePage();
+// Supply functions
+function switchSupplyStatus(status) {
+  window._supplyStatus = status;
+  document.getElementById('supStatusNeed').className = status==='need' ? 'btn primary' : 'btn';
+  document.getElementById('supStatusBought').className = status==='bought' ? 'btn primary' : 'btn';
 }
-function deleteExpense(i){const c=getCostume(viewingId);if(!c)return;c.expenses.splice(i,1);save();renderCostumePage();}
+window._supplyStatus = 'need';
+function openSupplyModal() {
+  window._supplyStatus = 'need';
+  document.getElementById('supStatusNeed').className = 'btn primary';
+  document.getElementById('supStatusBought').className = 'btn';
+  ['sup-name','sup-qty','sup-cost','sup-notes','sup-url'].forEach(id=>document.getElementById(id).value='');
+  openModal('supplyModal');
+}
+function saveSupply() {
+  const name = document.getElementById('sup-name').value.trim();
+  if (!name) { alert('Enter an item name.'); return; }
+  const c = getCostume(viewingId); if (!c) return;
+  if (!c.supplies) c.supplies = [];
+  c.supplies.push({ name, qty: document.getElementById('sup-qty').value.trim(), cost: parseFloat(document.getElementById('sup-cost').value)||0, notes: document.getElementById('sup-notes').value.trim(), url: document.getElementById('sup-url').value.trim(), status: window._supplyStatus||'need' });
+  save(); closeAllModals(); renderCostumePage();
+}
+function toggleSupplyStatus(i) {
+  const c = getCostume(viewingId); if (!c) return;
+  c.supplies[i].status = c.supplies[i].status==='bought' ? 'need' : 'bought';
+  save(); renderCostumePage();
+}
+function deleteSupply(i) { const c=getCostume(viewingId);if(!c)return;c.supplies.splice(i,1);save();renderCostumePage(); }
+function saveExpense(){} function deleteExpense(){}
 
 // ── TASKS ─────────────────────────────────────────────────────
 function switchTaskType(type) {
@@ -2024,14 +2027,7 @@ function moveCatStep(ci,si,dir){
 }
 
 // ── MATERIALS ─────────────────────────────────────────────────
-function saveMaterial(){
-  const name=document.getElementById('mat-name').value.trim();if(!name){alert('Enter a material name.');return;}
-  const c=getCostume(viewingId);if(!c)return;
-  if(!c.materials)c.materials=[];
-  c.materials.push({name,qty:document.getElementById('mat-qty').value.trim(),cost:parseFloat(document.getElementById('mat-cost').value)||0,notes:document.getElementById('mat-notes').value.trim(),url:document.getElementById('mat-url').value.trim()});
-  save();closeAllModals();['mat-name','mat-qty','mat-cost','mat-notes','mat-url'].forEach(id=>document.getElementById(id).value='');renderCostumePage();
-}
-function deleteMaterial(i){const c=getCostume(viewingId);if(!c)return;c.materials.splice(i,1);save();renderCostumePage();}
+function saveMaterial(){} function deleteMaterial(){}
 
 // ── HOURS ─────────────────────────────────────────────────────
 function saveHours(){
@@ -2138,7 +2134,7 @@ function renderStats(){
   document.getElementById('s-total').textContent=cosplays.length;
   document.getElementById('s-done').textContent=cosplays.filter(c=>c.status==='done').length;
   document.getElementById('s-wip').textContent=cosplays.filter(c=>c.status==='wip').length;
-  const spent=cosplays.reduce((a,c)=>(c.expenses||[]).reduce((x,e)=>x+e.amount,0)+(c.materials||[]).reduce((x,m)=>x+(m.cost||0),0)+a,0);
+  const spent=cosplays.reduce((a,c)=>(c.supplies||[]).filter(s=>s.status==='bought').reduce((x,s)=>x+(s.cost||0),0)+a,0);
   document.getElementById('s-spent').textContent='$'+spent.toFixed(0);
   const hrs=cosplays.reduce((a,c)=>(c.hours||[]).reduce((x,h)=>x+h.hours,a),0);
   document.getElementById('s-hours').textContent=hrs+'h';
@@ -2174,6 +2170,7 @@ Object.assign(window, {
   saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
   moveTask, toggleCatGroup, openCatTaskModal, saveCatTask,
   toggleCatStep, deleteCatStep, moveCatStep, switchTaskType,
+  saveSupply, toggleSupplyStatus, deleteSupply, openSupplyModal, switchSupplyStatus,
   saveMaterial, deleteMaterial, saveHours, deleteHour,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
