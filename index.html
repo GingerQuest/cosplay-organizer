@@ -364,6 +364,17 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .checklist{list-style:none;}
 .checklist li{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
 .checklist li:last-child{border-bottom:none;}
+.reorder-btn{background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:10px;padding:2px 5px;cursor:pointer;line-height:1.4;}
+.reorder-btn:disabled{opacity:0.2;cursor:default;}
+.reorder-btn.sm{font-size:9px;padding:1px 4px;}
+.reorder-btn:not(:disabled):hover{color:var(--sage);border-color:var(--sage);}
+.cat-group{margin-bottom:8px;border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.cat-group-header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(143,188,143,0.07);cursor:pointer;}
+.cat-group-name{font-size:13px;font-weight:800;color:var(--cream);}
+.cat-group-count{font-size:11px;font-weight:700;color:var(--text-soft);background:rgba(255,255,255,0.06);padding:2px 7px;border-radius:999px;}
+.cat-group-body{padding:8px 12px 10px;}
+.cat-step{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid rgba(100,140,100,0.08);}
+.cat-step:last-of-type{border-bottom:none;}
 .check-box{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);flex-shrink:0;
   cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;background:rgba(0,0,0,.2);}
 .check-box.checked{background:linear-gradient(135deg,var(--moss),var(--sage));border-color:var(--sage);}
@@ -783,13 +794,32 @@ select option{background:#1a2f1c;}
   </div>
 </div>
 
-<!-- Add Task -->
+<!-- Add Task / Category -->
 <div class="modal-overlay" id="taskModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">📋 Add Task</div>
-    <div class="form-group"><label>Task</label><input type="text" id="task-text" placeholder="Sew bodice, buy wig…" onkeydown="if(event.key==='Enter')saveTask()"></div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveTask()">Add Task ✿</button>
+    <div class="modal-title">📋 Add to Checklist</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="taskTypeTask" class="btn primary" style="flex:1;font-size:13px;" onclick="switchTaskType('task')">＋ Task</button>
+      <button id="taskTypeCat" class="btn" style="flex:1;font-size:13px;" onclick="switchTaskType('category')">📁 Category</button>
+    </div>
+    <div id="taskFields">
+      <div class="form-group"><label>Task</label><input type="text" id="task-text" placeholder="Sew bodice, buy wig…" onkeydown="if(event.key==='Enter')saveTask()"></div>
+    </div>
+    <div id="categoryFields" style="display:none;">
+      <div class="form-group"><label>Category Name</label><input type="text" id="cat-name" placeholder="Chest Plate, Pants, Wig…"></div>
+    </div>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveTask()">Add ✿</button>
+  </div>
+</div>
+
+<!-- Add Task Inside Category -->
+<div class="modal-overlay" id="catTaskModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="catTaskModalTitle">📋 Add Step</div>
+    <div class="form-group"><label>Step</label><input type="text" id="cat-task-text" placeholder="Cut fabric, sand edges…" onkeydown="if(event.key==='Enter')saveCatTask()"></div>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCatTask()">Add Step ✿</button>
   </div>
 </div>
 
@@ -1678,19 +1708,66 @@ function renderCostumePage() {
     </div>
   </div>`;
 
+  const allTasks = c.checklist||[];
+  const totalItems = allTasks.reduce((acc,t)=> t.type==='category' ? acc+(t.steps||[]).length : acc+1, 0);
+  const doneItems = allTasks.reduce((acc,t)=> t.type==='category' ? acc+(t.steps||[]).filter(s=>s.done).length : acc+(t.done?1:0), 0);
+
+  function renderTaskItem(t, i) {
+    if (t.type === 'category') {
+      const steps = t.steps||[];
+      const catDone = steps.filter(s=>s.done).length;
+      const isOpen = t.open !== false;
+      return `<div class="cat-group" id="catgroup-${i}">
+        <div class="cat-group-header" onclick="toggleCatGroup(${i})">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:14px;">${isOpen?'▾':'▸'}</span>
+            <span class="cat-group-name">📁 ${t.name}</span>
+            <span class="cat-group-count">${catDone}/${steps.length}</span>
+          </div>
+          <div style="display:flex;gap:4px;align-items:center;">
+            <button class="reorder-btn" onclick="event.stopPropagation();moveTask(${i},-1)" ${i===0?'disabled':''}>▲</button>
+            <button class="reorder-btn" onclick="event.stopPropagation();moveTask(${i},1)" ${i===allTasks.length-1?'disabled':''}>▼</button>
+            <span class="check-del" onclick="event.stopPropagation();deleteTask(${i})">×</span>
+          </div>
+        </div>
+        ${isOpen ? `<div class="cat-group-body">
+          ${steps.length===0?'<div style="color:var(--text-dim);font-size:12px;font-weight:600;padding:6px 0 4px;">No steps yet.</div>':''}          ${steps.map((s,si)=>`<div class="cat-step">
+            <div class="check-box ${s.done?'checked':''}" onclick="toggleCatStep(${i},${si})"></div>
+            <span class="check-text ${s.done?'done':''}">${s.text}</span>
+            <div style="display:flex;gap:2px;align-items:center;margin-left:auto;">
+              <button class="reorder-btn sm" onclick="moveCatStep(${i},${si},-1)" ${si===0?'disabled':''}>▲</button>
+              <button class="reorder-btn sm" onclick="moveCatStep(${i},${si},1)" ${si===steps.length-1?'disabled':''}>▼</button>
+              <span class="check-del" onclick="deleteCatStep(${i},${si})">×</span>
+            </div>
+          </div>`).join('')}
+          <button class="btn sky-btn sm" style="width:100%;margin-top:6px;font-size:12px;" onclick="openCatTaskModal(${i})">+ Add Step</button>
+        </div>` : ''}
+      </div>`;
+    } else {
+      return `<li>
+        <div class="check-box ${t.done?'checked':''}" onclick="toggleTask(${i})"></div>
+        <span class="check-text ${t.done?'done':''}">${t.text}</span>
+        <div style="display:flex;gap:2px;align-items:center;margin-left:auto;">
+          <button class="reorder-btn sm" onclick="moveTask(${i},-1)" ${i===0?'disabled':''}>▲</button>
+          <button class="reorder-btn sm" onclick="moveTask(${i},1)" ${i===allTasks.length-1?'disabled':''}>▼</button>
+          <span class="check-del" onclick="deleteTask(${i})">×</span>
+        </div>
+      </li>`;
+    }
+  }
+
   const tasksSection=`<div class="cs-block">
     <div class="cs-block-header" onclick="toggleBlock('tasks')">
       <div class="cs-block-header-left"><span class="cs-block-icon">📋</span>
-      <div><div class="cs-block-title">Tasks</div><div class="cs-block-subtitle">${(c.checklist||[]).filter(t=>t.done).length}/${(c.checklist||[]).length} done</div></div></div>
+      <div><div class="cs-block-title">Tasks</div><div class="cs-block-subtitle">${doneItems}/${totalItems} done</div></div></div>
       <div class="cs-block-toggle open" id="tasks-chevron">▾</div>
     </div>
     <div class="cs-block-body" id="tasks-body">
       <div style="padding-top:14px;">
-        <ul class="checklist">
-          ${(c.checklist||[]).length===0?'<li style="color:var(--text-dim);font-size:13px;font-weight:600;padding:10px 0;">No tasks yet.</li>':''}
-          ${(c.checklist||[]).map((t,i)=>`<li><div class="check-box ${t.done?'checked':''}" onclick="toggleTask(${i})"></div><span class="check-text ${t.done?'done':''}">${t.text}</span><span class="check-del" onclick="deleteTask(${i})">×</span></li>`).join('')}
+        <ul class="checklist" id="task-list">
+          ${allTasks.length===0?'<li style="color:var(--text-dim);font-size:13px;font-weight:600;padding:10px 0;">No tasks yet.</li>':''}          ${allTasks.map((t,i)=>renderTaskItem(t,i)).join('')}
         </ul>
-        <button class="btn sky-btn sm" style="width:100%;margin-top:10px;" onclick="openModal('taskModal')">+ Add Task</button>
+        <button class="btn sky-btn sm" style="width:100%;margin-top:10px;" onclick="openModal('taskModal')">+ Add Task or Category</button>
       </div>
     </div>
   </div>`;
@@ -1854,22 +1931,97 @@ function saveExpense(){
 function deleteExpense(i){const c=getCostume(viewingId);if(!c)return;c.expenses.splice(i,1);save();renderCostumePage();}
 
 // ── TASKS ─────────────────────────────────────────────────────
+function switchTaskType(type) {
+  const isTask = type === 'task';
+  document.getElementById('taskFields').style.display = isTask ? 'block' : 'none';
+  document.getElementById('categoryFields').style.display = isTask ? 'none' : 'block';
+  document.getElementById('taskTypeTask').className = isTask ? 'btn primary' : 'btn';
+  document.getElementById('taskTypeCat').className = isTask ? 'btn' : 'btn primary';
+  window._taskType = type;
+}
+window._taskType = 'task';
+
 function saveTask(){
-  const text=document.getElementById('task-text').value.trim();if(!text)return;
   const c=getCostume(viewingId);if(!c)return;
   if(!c.checklist)c.checklist=[];
-  c.checklist.push({text,done:false});
-  if(c.status==='planned')c.status='wip';
-  save();closeAllModals();document.getElementById('task-text').value='';renderCostumePage();
+  if(window._taskType==='category'){
+    const name=document.getElementById('cat-name').value.trim();if(!name)return;
+    c.checklist.push({type:'category',name,steps:[],open:true});
+    document.getElementById('cat-name').value='';
+  } else {
+    const text=document.getElementById('task-text').value.trim();if(!text)return;
+    c.checklist.push({text,done:false});
+    if(c.status==='planned')c.status='wip';
+    document.getElementById('task-text').value='';
+  }
+  save();closeAllModals();renderCostumePage();
 }
+
 function toggleTask(i){
   const c=getCostume(viewingId);if(!c)return;
   c.checklist[i].done=!c.checklist[i].done;
-  if(c.checklist.every(t=>t.done)&&c.checklist.length)c.status='done';
-  else if(c.checklist.some(t=>t.done))c.status='wip';
+  const allTasks=c.checklist;
+  const totalItems=allTasks.reduce((acc,t)=>t.type==='category'?acc+(t.steps||[]).length:acc+1,0);
+  const doneItems=allTasks.reduce((acc,t)=>t.type==='category'?acc+(t.steps||[]).filter(s=>s.done).length:acc+(t.done?1:0),0);
+  if(totalItems>0&&doneItems===totalItems)c.status='done';
+  else if(doneItems>0)c.status='wip';
   save();renderCostumePage();renderHome();
 }
+
 function deleteTask(i){const c=getCostume(viewingId);if(!c)return;c.checklist.splice(i,1);save();renderCostumePage();}
+
+function moveTask(i,dir){
+  const c=getCostume(viewingId);if(!c)return;
+  const list=c.checklist;
+  const ni=i+dir;
+  if(ni<0||ni>=list.length)return;
+  [list[i],list[ni]]=[list[ni],list[i]];
+  save();renderCostumePage();
+}
+
+function toggleCatGroup(i){
+  const c=getCostume(viewingId);if(!c)return;
+  c.checklist[i].open=!( c.checklist[i].open!==false);
+  save();renderCostumePage();
+}
+
+let _editingCatIndex=null;
+function openCatTaskModal(i){
+  _editingCatIndex=i;
+  const c=getCostume(viewingId);
+  document.getElementById('catTaskModalTitle').textContent='📋 Add Step to: '+(c.checklist[i].name);
+  document.getElementById('cat-task-text').value='';
+  openModal('catTaskModal');
+}
+
+function saveCatTask(){
+  const text=document.getElementById('cat-task-text').value.trim();if(!text)return;
+  const c=getCostume(viewingId);if(!c)return;
+  if(!c.checklist[_editingCatIndex].steps)c.checklist[_editingCatIndex].steps=[];
+  c.checklist[_editingCatIndex].steps.push({text,done:false});
+  save();closeAllModals();renderCostumePage();
+}
+
+function toggleCatStep(ci,si){
+  const c=getCostume(viewingId);if(!c)return;
+  c.checklist[ci].steps[si].done=!c.checklist[ci].steps[si].done;
+  save();renderCostumePage();renderHome();
+}
+
+function deleteCatStep(ci,si){
+  const c=getCostume(viewingId);if(!c)return;
+  c.checklist[ci].steps.splice(si,1);
+  save();renderCostumePage();
+}
+
+function moveCatStep(ci,si,dir){
+  const c=getCostume(viewingId);if(!c)return;
+  const steps=c.checklist[ci].steps;
+  const ni=si+dir;
+  if(ni<0||ni>=steps.length)return;
+  [steps[si],steps[ni]]=[steps[ni],steps[si]];
+  save();renderCostumePage();
+}
 
 // ── MATERIALS ─────────────────────────────────────────────────
 function saveMaterial(){
@@ -2020,6 +2172,8 @@ Object.assign(window, {
   openModal, closeAllModals,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
   saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
+  moveTask, toggleCatGroup, openCatTaskModal, saveCatTask,
+  toggleCatStep, deleteCatStep, moveCatStep, switchTaskType,
   saveMaterial, deleteMaterial, saveHours, deleteHour,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
