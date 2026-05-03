@@ -1406,7 +1406,7 @@ function setup(){
   init(); buildHills(); buildTrees();
 }
 window.addEventListener('resize',setup);
-setup(); draw();
+setTimeout(()=>{ setup(); draw(); }, 50);
 })();
 
 
