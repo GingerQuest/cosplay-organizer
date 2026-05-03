@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Cosplay Forge</title>
 <link rel="icon" type="image/png" href="https://gingerquest.github.io/cosplay-organizer/Quest-Forge-logo.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2d4a35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cosplay Forge">
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Lora:ital,wght@0,600;1,400&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -2022,6 +2026,11 @@ Object.assign(window, {
   renderStats, switchInnerTab, toggleDayNight,
   exportData, confirmClearData, showSignedIn
 });
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/cosplay-organizer/sw.js');
+  }
 </script>
 </body>
 </html>

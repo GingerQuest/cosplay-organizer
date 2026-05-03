@@ -1,0 +1,18 @@
+{
+  "name": "Cosplay Forge",
+  "short_name": "Cosplay Forge",
+  "description": "Track your cosplay builds, budgets, deadlines and more — built by a cosplayer, for the community.",
+  "start_url": "/cosplay-organizer/",
+  "display": "standalone",
+  "background_color": "#1a2a1e",
+  "theme_color": "#2d4a35",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "Quest-Forge-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
