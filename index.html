@@ -578,7 +578,11 @@ select option{background:#1a2f1c;}
             <input class="signin-input" type="email" id="signinEmail" placeholder="your@email.com" autocomplete="email">
             <input class="signin-input" type="password" id="signinPassword" placeholder="Password" autocomplete="current-password">
             <button class="btn primary" style="width:100%;margin-bottom:8px;" onclick="handleSignIn()">✦ Sign In</button>
-            <button class="btn" style="width:100%;font-size:13px;" onclick="handleSignUp()">Create Account</button>
+            <button class="btn" style="width:100%;font-size:13px;margin-bottom:8px;" onclick="handleSignUp()">Create Account</button>
+            <button class="btn" style="width:100%;font-size:13px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;gap:8px;" onclick="handleGoogleSignIn()">
+              <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+              Continue with Google
+            </button>
             <div class="signin-divider">
               <div class="signin-divider-line"></div>
               <div class="signin-divider-text">or continue without account</div>
@@ -591,17 +595,18 @@ select option{background:#1a2f1c;}
               <div class="signed-in-avatar">🧙</div>
               <div>
                 <div class="signed-in-name" id="signedInName">Cosplayer</div>
-                <div class="signed-in-email" id="signedInEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="f68f9983b6939b979f9ad895999b">[email&#160;protected]</a></div>
+                <div class="signed-in-email" id="signedInEmail"></div>
               </div>
             </div>
             <div class="setting-row" style="margin-bottom:8px;">
               <div class="setting-row-info">
                 <div class="setting-row-label">☁️ Cloud Sync</div>
-                <div class="setting-row-sub">Last synced just now</div>
+                <div class="setting-row-sub">Data saved to your account</div>
               </div>
               <span style="font-size:12px;font-weight:800;color:var(--sage);">On</span>
             </div>
             <button class="btn rose-btn" style="width:100%;margin-top:8px;" onclick="handleSignOut()">Sign Out</button>
+            <button class="btn" style="width:100%;margin-top:8px;font-size:12px;color:var(--text-dim);" onclick="handleDeleteAccount()">🗑 Delete My Account & Data</button>
           </div>
         </div>
 
@@ -816,20 +821,162 @@ select option{background:#1a2f1c;}
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script type="module">
+// ── FIREBASE SETUP ────────────────────────────────────────────
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyADg71GKyS3IPTPFFOC3fvNsWlppYfTJw8",
+  authDomain: "cosplay-forge.firebaseapp.com",
+  projectId: "cosplay-forge",
+  storageBucket: "cosplay-forge.firebasestorage.app",
+  messagingSenderId: "689056219925",
+  appId: "1:689056219925:web:662f88a2d5a328a3e0df1c",
+  measurementId: "G-FKCGLSRFYQ"
+};
+
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+let currentUser = null;
+
+// ── CLOUD SAVE / LOAD ─────────────────────────────────────────
+async function saveToCloud() {
+  if (!currentUser) { saveLocal(); return; }
+  try {
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, updatedAt: Date.now() });
+  } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
+}
+async function loadFromCloud() {
+  if (!currentUser) { loadLocal(); return; }
+  try {
+    const snap = await getDoc(doc(db, 'users', currentUser.uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      cosplays    = d.cosplays    || [];
+      conventions = d.conventions || [];
+      craftDays   = d.craftDays   || [];
+    } else {
+      // No cloud data yet — upload whatever is saved locally so nothing is lost
+      loadLocal();
+      if (cosplays.length || conventions.length || craftDays.length) {
+        await saveToCloud();
+      }
+    }
+  } catch(e) { console.error('Cloud load failed, using local', e); loadLocal(); }
+  renderHome(); renderCalendar();
+}
+function saveLocal() {
+  localStorage.setItem('cf_cosplays',    JSON.stringify(cosplays));
+  localStorage.setItem('cf_conventions', JSON.stringify(conventions));
+  localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
+}
+function loadLocal() {
+  cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
+  conventions = JSON.parse(localStorage.getItem('cf_conventions') || '[]');
+  craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
+}
+
+// ── AUTH STATE LISTENER ───────────────────────────────────────
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user) {
+    showSignedIn(user.email);
+    await loadFromCloud();
+  } else {
+    loadLocal();
+    renderHome(); renderCalendar();
+  }
+});
+
+// ── AUTH FUNCTIONS ────────────────────────────────────────────
+window.handleSignUp = async function() {
+  const email = document.getElementById('signinEmail').value.trim();
+  const pass  = document.getElementById('signinPassword').value;
+  if (!email || !pass) { alert('Please enter your email and password.'); return; }
+  if (pass.length < 6) { alert('Password must be at least 6 characters.'); return; }
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    currentUser = cred.user;
+    showSignedIn(email);
+    await saveToCloud();
+  } catch(e) {
+    if (e.code === 'auth/email-already-in-use') alert('That email already has an account. Try signing in instead.');
+    else alert('Sign up failed: ' + e.message);
+  }
+};
+
+window.handleSignIn = async function() {
+  const email = document.getElementById('signinEmail').value.trim();
+  const pass  = document.getElementById('signinPassword').value;
+  if (!email || !pass) { alert('Please enter your email and password.'); return; }
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    currentUser = cred.user;
+    showSignedIn(email);
+    await loadFromCloud();
+  } catch(e) {
+    if (e.code === 'auth/invalid-credential') alert('Incorrect email or password.');
+    else alert('Sign in failed: ' + e.message);
+  }
+};
+
+window.handleGoogleSignIn = async function() {
+  try {
+    const cred = await signInWithPopup(auth, provider);
+    currentUser = cred.user;
+    showSignedIn(cred.user.email);
+    await loadFromCloud();
+  } catch(e) {
+    alert('Google sign in failed: ' + e.message);
+  }
+};
+
+window.handleSignOut = async function() {
+  await signOut(auth);
+  currentUser = null;
+  document.getElementById('signinView').style.display    = 'block';
+  document.getElementById('signedInView').style.display = 'none';
+  document.getElementById('signinEmail').value    = '';
+  document.getElementById('signinPassword').value = '';
+  loadLocal();
+  renderHome(); renderCalendar();
+};
+
+window.handleDeleteAccount = async function() {
+  if (!currentUser) { alert('You are not signed in.'); return; }
+  if (!confirm('⚠️ This will permanently delete your account AND all your cloud data. This cannot be undone. Are you sure?')) return;
+  try {
+    await deleteDoc(doc(db, 'users', currentUser.uid));
+    await deleteUser(currentUser);
+    cosplays = []; conventions = []; craftDays = [];
+    localStorage.clear();
+    currentUser = null;
+    document.getElementById('signinView').style.display    = 'block';
+    document.getElementById('signedInView').style.display = 'none';
+    renderHome(); renderCalendar();
+    alert('Your account and all data have been deleted. 🌿');
+  } catch(e) {
+    alert('Delete failed. Please sign out and sign back in, then try again.');
+  }
+};
+
 // ── DATA ──────────────────────────────────────────────────────
 const DAYS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-let cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
-let conventions = JSON.parse(localStorage.getItem('cf_conventions') || '[]');
-let craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
+let cosplays    = [];
+let conventions = [];
+let craftDays   = [];
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
 
 function save() {
-  localStorage.setItem('cf_cosplays',    JSON.stringify(cosplays));
-  localStorage.setItem('cf_conventions', JSON.stringify(conventions));
-  localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
+  saveLocal();
+  saveToCloud();
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function getCostume(id) { return cosplays.find(c => c.id === id); }
@@ -1216,17 +1363,6 @@ function toggleDayNight() {
   localStorage.setItem('cf_theme', isDay ? 'day' : 'night');
 }
 
-// ── INIT ─────────────────────────────────────────────
-// On first ever load wipe any leftover demo data from the file preview
-if (!localStorage.getItem('cf_v1_init')) {
-  localStorage.removeItem('cf_cosplays');
-  localStorage.removeItem('cf_conventions');
-  localStorage.removeItem('cf_craftdays');
-  localStorage.setItem('cf_v1_init', '1');
-  cosplays = []; conventions = []; craftDays = [];
-}
-renderHome();
-renderCalendar();
 // ── INNER TAB SWITCHER ────────────────────────────────────────
 function switchInnerTab(name) {
   ['stats','settings','about'].forEach(n => {
@@ -1236,35 +1372,12 @@ function switchInnerTab(name) {
 }
 
 // ── SIGN IN / SIGN UP ─────────────────────────────────────────
-function handleSignIn() {
-  const email = document.getElementById('signinEmail').value.trim();
-  const pass  = document.getElementById('signinPassword').value;
-  if (!email || !pass) { alert('Please enter your email and password.'); return; }
-  // Placeholder — wire to your auth backend here
-  showSignedIn(email);
-  localStorage.setItem('cf_user_email', email);
-}
-function handleSignUp() {
-  const email = document.getElementById('signinEmail').value.trim();
-  const pass  = document.getElementById('signinPassword').value;
-  if (!email || !pass) { alert('Please enter an email and password to create an account.'); return; }
-  // Placeholder — wire to your auth backend here
-  showSignedIn(email);
-  localStorage.setItem('cf_user_email', email);
-}
 function showSignedIn(email) {
   document.getElementById('signinView').style.display    = 'none';
   document.getElementById('signedInView').style.display = 'block';
   document.getElementById('signedInEmail').textContent  = email;
   const name = email.split('@')[0];
   document.getElementById('signedInName').textContent   = name.charAt(0).toUpperCase() + name.slice(1);
-}
-function handleSignOut() {
-  document.getElementById('signinView').style.display    = 'block';
-  document.getElementById('signedInView').style.display = 'none';
-  document.getElementById('signinEmail').value    = '';
-  document.getElementById('signinPassword').value = '';
-  localStorage.removeItem('cf_user_email');
 }
 
 // ── DATA EXPORT ───────────────────────────────────────────────
@@ -1300,8 +1413,6 @@ function confirmClearData() {
     document.getElementById('ghibliOverlay')?.classList.add('is-day');
     setTimeout(() => window._setDayBlend && window._setDayBlend(1), 100);
   }
-  const savedEmail = localStorage.getItem('cf_user_email');
-  if (savedEmail) showSignedIn(savedEmail);
 })();
 
 // ── PAGE NAV ──────────────────────────────────────────────────
@@ -1891,16 +2002,24 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 });
 
 // ── INIT ─────────────────────────────────────────────
-// On first ever load, wipe any stale preview data so app opens empty
-if (!localStorage.getItem('cf_v1_init')) {
-  localStorage.removeItem('cf_cosplays');
-  localStorage.removeItem('cf_conventions');
-  localStorage.removeItem('cf_craftdays');
-  localStorage.setItem('cf_v1_init', '1');
-  cosplays = []; conventions = []; craftDays = [];
-}
 renderHome();
 renderCalendar();
+
+// ── EXPOSE FUNCTIONS TO WINDOW (required for ES module onclick handlers) ──
+Object.assign(window, {
+  showPage, openCostumePage, backFromCostume,
+  renderHome, renderAllQuests, setFilter,
+  openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent,
+  renderCostumePage, toggleBlock, toggleBudget, saveBudget,
+  openModal, closeAllModals,
+  openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
+  saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
+  saveMaterial, deleteMaterial, saveHours, deleteHour,
+  saveLink, deleteLink, saveNotes,
+  changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
+  renderStats, switchInnerTab, toggleDayNight,
+  exportData, confirmClearData, showSignedIn
+});
 </script>
 </body>
 </html>
