@@ -830,14 +830,14 @@ select option{background:#1a2f1c;}
 <div class="modal-overlay" id="conModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">🎪 Add Convention</div>
-    <div class="form-group"><label>Convention Name</label><input type="text" id="c-name" placeholder="Anime Expo, C2E2…"></div>
+    <div class="modal-title" id="conModalTitle">🎪 Add Con/Event</div>
+    <div class="form-group"><label>Con/Event Name</label><input type="text" id="c-name" placeholder="Anime Expo, local meetup, photoshoot…"></div>
     <div class="flex-row">
       <div class="form-group"><label>Start Date</label><input type="date" id="c-start"></div>
       <div class="form-group"><label>End Date</label><input type="date" id="c-end"></div>
     </div>
     <div class="form-group"><label>Location</label><input type="text" id="c-location" placeholder="City, Venue…"></div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCon()">Add Convention ✿</button>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCon()">Save ✿</button>
   </div>
 </div>
 
@@ -1520,7 +1520,11 @@ function setFilter(f,el) {
 
 function calcProgress(c) {
   if (!c.checklist||!c.checklist.length) return c.status==='done'?100:0;
-  return Math.round(c.checklist.filter(i=>i.done).length/c.checklist.length*100);
+  const allTasks = c.checklist;
+  const totalItems = allTasks.reduce((acc,t)=> t.type==='category' ? acc+(t.steps||[]).length : acc+1, 0);
+  if (totalItems === 0) return c.status==='done'?100:0;
+  const doneItems = allTasks.reduce((acc,t)=> t.type==='category' ? acc+(t.steps||[]).filter(s=>s.done).length : acc+(t.done?1:0), 0);
+  return Math.round(doneItems/totalItems*100);
 }
 
 function questCard(c) {
@@ -2108,18 +2112,41 @@ function renderEventList(){
         ${item.type==='craft'&&item.hours?`<div class="ev-sub">⏱ ${item.hours}h planned</div>`:''}
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
-      ${item.type==='con'?`<span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
+      ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
       ${item.type==='craft'?`<span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
     </div>`;
   }).join('');
 }
 
 // ── CON ───────────────────────────────────────────────────────
-function openConModal(){openModal('conModal');}
+let _editingConId = null;
+function openConModal(id) {
+  _editingConId = id || null;
+  if (id) {
+    const con = conventions.find(c => c.id === id);
+    if (con) {
+      document.getElementById('conModalTitle').textContent = '✎ Edit Con/Event';
+      document.getElementById('c-name').value = con.name || '';
+      document.getElementById('c-start').value = con.start || '';
+      document.getElementById('c-end').value = con.end || '';
+      document.getElementById('c-location').value = con.location || '';
+    }
+  } else {
+    document.getElementById('conModalTitle').textContent = '🎪 Add Con/Event';
+    ['c-name','c-start','c-end','c-location'].forEach(id=>document.getElementById(id).value='');
+  }
+  openModal('conModal');
+}
 function saveCon(){
   const name=document.getElementById('c-name').value.trim(),start=document.getElementById('c-start').value;
   if(!name||!start){alert('Please enter a name and start date.');return;}
-  conventions.push({id:uid(),name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim()});
+  if (_editingConId) {
+    const idx = conventions.findIndex(c => c.id === _editingConId);
+    if (idx !== -1) conventions[idx] = {...conventions[idx], name, start, end: document.getElementById('c-end').value, location: document.getElementById('c-location').value.trim()};
+  } else {
+    conventions.push({id:uid(),name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim()});
+  }
+  _editingConId = null;
   ['c-name','c-start','c-end','c-location'].forEach(id=>document.getElementById(id).value='');
   save();closeAllModals();renderCalendar();
 }
