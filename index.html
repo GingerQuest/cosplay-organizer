@@ -415,11 +415,16 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .cal-day:hover{background:rgba(143,188,143,.1);color:var(--sage);}
 .cal-day.other{opacity:.25;}
 .cal-day.today{background:rgba(143,188,143,.15);color:var(--sage);font-weight:900;}
+/* dot indicators - stacked */
 .cal-day.day-con{background:rgba(126,184,201,0.2);color:var(--sky);font-weight:800;}
-.cal-day.day-con-mid{background:rgba(126,184,201,0.12);color:var(--sky);}
+.cal-day.day-con-mid{background:rgba(126,184,201,0.1);color:var(--sky);}
 .cal-day.day-craft{background:rgba(212,168,85,0.2);color:var(--gold);font-weight:800;}
 .cal-day.day-photo{background:rgba(160,154,200,0.2);color:var(--lavender);font-weight:800;}
-.cal-day.day-dl{background:rgba(196,120,138,0.2);color:var(--rose);font-weight:800;animation:pulse .8s infinite alternate;}
+.cal-day.day-dl{background:rgba(196,120,138,0.2);color:var(--rose);font-weight:800;}
+.cal-day .dot{width:4px;height:4px;border-radius:50%;}
+.dot-con{background:var(--sky);}
+.dot-craft{background:var(--gold);}
+.dot-dl{background:var(--rose);animation:pulse .8s infinite alternate;}
 
 /* ── EVENT LIST ── */
 .event-item{background:rgba(24,40,26,0.75);border-radius:var(--r-sm);border:1px solid var(--border);
@@ -475,164 +480,9 @@ select option{background:#1a2f1c;}
 .flex-row>*{flex:1;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;}
 .hidden{display:none!important;}
-/* ── HOME COS-PLANS BUTTON ── */
-.home-cosplans-btn{display:flex;align-items:center;justify-content:space-between;
-  padding:13px 14px;background:rgba(28,44,30,0.78);border:1px solid rgba(160,154,200,0.25);
-  border-radius:var(--r);cursor:pointer;backdrop-filter:blur(10px);transition:all .2s;}
-.home-cosplans-btn:hover{border-color:rgba(160,154,200,0.5);}
-
-/* ── COS-PLANS ── */
-.cosplan-card{margin:0 16px 8px;background:rgba(28,44,30,0.78);border-radius:var(--r);
-  border:1px solid var(--border);overflow:hidden;backdrop-filter:blur(10px);transition:all .2s;}
-.cosplan-card.has-slot{border-color:rgba(143,188,143,0.4);}
-.cosplan-card-main{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;}
-.cosplan-thumb{width:52px;height:52px;border-radius:10px;flex-shrink:0;
-  background:rgba(30,50,30,0.8);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden;}
-.cosplan-thumb img{width:100%;height:100%;object-fit:cover;}
-.cosplan-info{flex:1;min-width:0;}
-.cosplan-name{font-family:'Lora',serif;font-size:15px;font-weight:600;color:var(--cream);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cosplan-fandom{font-size:12px;color:var(--text-soft);font-weight:600;margin-top:2px;}
-.cosplan-chevron{font-size:16px;color:var(--text-dim);transition:transform .2s;flex-shrink:0;}
-.cosplan-chevron.open{transform:rotate(180deg);}
-.cosplan-expanded{border-top:1px solid var(--border);padding:12px 14px;background:rgba(0,0,0,0.15);}
-.cosplan-note{font-size:13px;color:var(--text-soft);font-weight:600;line-height:1.6;margin-bottom:12px;}
-.cosplan-start-btn{width:100%;padding:10px;border-radius:10px;font-size:13px;font-weight:800;
-  font-family:'Nunito',sans-serif;cursor:not-allowed;border:1px solid var(--border);
-  background:rgba(255,255,255,0.04);color:var(--text-dim);transition:all .2s;}
-.cosplan-start-btn.active{background:linear-gradient(135deg,var(--moss),var(--sage));
-  color:#0f1e0f;border-color:transparent;cursor:pointer;}
-.cosplan-del{color:var(--text-dim);cursor:pointer;padding:4px;font-size:18px;line-height:1;flex-shrink:0;}
-.cosplan-del:hover{color:var(--rose);}
-.quest-limit-banner{margin:0 16px 12px;background:rgba(143,188,143,0.08);
-  border:1px solid rgba(143,188,143,0.25);border-radius:var(--r);padding:14px;backdrop-filter:blur(8px);}
-.qlb-title{font-size:13px;font-weight:800;color:var(--sage);margin-bottom:4px;}
-.qlb-sub{font-size:12px;color:var(--text-soft);font-weight:600;margin-bottom:12px;line-height:1.5;}
-.qlb-btns{display:flex;gap:8px;}
-.qlb-btns button{flex:1;padding:9px;border-radius:9px;font-size:12px;font-weight:800;
-  font-family:'Nunito',sans-serif;cursor:pointer;border:1px solid var(--border);}
-.qlb-cos{background:rgba(143,188,143,0.12);color:var(--sage);border-color:rgba(143,188,143,0.3)!important;}
-.qlb-pro{background:rgba(160,154,200,0.12);color:var(--lavender);border-color:rgba(160,154,200,0.3)!important;}
-
-/* ── ONBOARDING ── */
-.onboarding-overlay{position:fixed;inset:0;z-index:1000;background:rgba(8,18,10,0.97);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  overflow-y:auto;-webkit-overflow-scrolling:touch;}
-.onboarding-overlay.hidden{display:none!important;}
-.ob-screen{width:100%;max-width:430px;padding:24px 24px 44px;display:none;flex-direction:column;min-height:100vh;justify-content:center;}
-.ob-screen.active{display:flex;}
-.ob-screen.active{display:flex;}
-.ob-topbar{display:flex;justify-content:flex-end;padding-bottom:12px;}
-.ob-skip{background:none;border:none;color:var(--text-dim);font-size:13px;font-weight:700;
-  font-family:'Nunito',sans-serif;cursor:pointer;padding:8px 0;}
-.ob-icon-circle{width:72px;height:72px;border-radius:50%;background:rgba(143,188,143,0.12);
-  border:1px solid rgba(143,188,143,0.25);display:flex;align-items:center;justify-content:center;
-  font-size:32px;margin:0 auto 24px;}
-.ob-title{font-family:'Lora',serif;font-size:24px;font-weight:600;color:var(--cream);
-  text-align:center;margin-bottom:12px;line-height:1.25;}
-.ob-body{font-size:14px;color:var(--text-soft);font-weight:600;text-align:center;line-height:1.7;margin-bottom:20px;}
-.ob-feature-row{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px;text-align:left;}
-.ob-feature-icon{width:36px;height:36px;border-radius:10px;background:rgba(143,188,143,0.1);
-  border:1px solid rgba(143,188,143,0.2);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-.ob-feature-title{font-size:13px;font-weight:800;color:var(--text);}
-.ob-feature-sub{font-size:12px;color:var(--text-dim);font-weight:600;margin-top:1px;}
-.ob-dots{display:flex;justify-content:center;gap:7px;margin-bottom:24px;}
-.ob-dot{width:7px;height:7px;border-radius:50%;background:var(--border);transition:all .3s;}
-.ob-dot.active{width:20px;border-radius:4px;background:var(--sage);}
-.ob-btn-primary{width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--moss),var(--sage));
-  color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-bottom:10px;}
-.ob-btn-ghost{width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);
-  background:transparent;color:var(--text-soft);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;}
-.ob-account-card{background:rgba(28,44,30,0.6);border:1px solid var(--border);border-radius:20px;padding:22px;backdrop-filter:blur(12px);margin-bottom:16px;}
-.ob-input{width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--border);
-  background:rgba(0,0,0,0.35);color:var(--text);font-family:'Nunito',sans-serif;
-  font-size:14px;font-weight:600;margin-bottom:10px;outline:none;transition:border-color .2s;}
-.ob-input:focus{border-color:var(--sage);}
-.ob-input::placeholder{color:var(--text-dim);}
-.ob-divider{display:flex;align-items:center;gap:10px;margin:12px 0;}
-.ob-divider-line{flex:1;height:1px;background:var(--border);}
-.ob-divider-text{font-size:11px;font-weight:700;color:var(--text-dim);}
-.ob-google-btn{width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);
-  background:rgba(255,255,255,0.06);color:var(--text);font-family:'Nunito',sans-serif;
-  font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;}
-.ob-switch-link{text-align:center;font-size:13px;color:var(--text-dim);font-weight:600;}
-.ob-switch-link span{color:var(--sage);font-weight:800;cursor:pointer;}
-.ob-skip-link{text-align:center;font-size:12px;color:var(--text-dim);font-weight:600;margin-top:10px;cursor:pointer;padding:6px;}
-
 </style>
 </head>
 <body>
-
-<!-- ══ ONBOARDING OVERLAY ══ -->
-<div class="onboarding-overlay hidden" id="onboardingOverlay">
-
-  <!-- Account screen -->
-  <div class="ob-screen active" id="ob-account">
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:44px;margin-bottom:10px;">⚒️</div>
-      <div class="ob-title" style="margin-bottom:6px;">Welcome to Cosplay Forge</div>
-      <div class="ob-body" style="margin-bottom:0;">Your builds. Your craft. All in one place.</div>
-    </div>
-    <div class="ob-account-card">
-      <input class="ob-input" type="email" id="ob-email" placeholder="Email address" autocomplete="email">
-      <input class="ob-input" type="password" id="ob-password" placeholder="Password (min 6 characters)">
-      <input class="ob-input" type="text" id="ob-nickname" placeholder="Preferred name (optional)">
-      <button class="ob-btn-primary" onclick="obCreateAccount()">Create Account ✿</button>
-      <div class="ob-divider"><div class="ob-divider-line"></div><div class="ob-divider-text">or</div><div class="ob-divider-line"></div></div>
-      <button class="ob-google-btn" onclick="obGoogleSignIn()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google</button>
-      <div class="ob-switch-link">Already have an account? <span onclick="obShowSignIn()">Sign in</span></div>
-    </div>
-    <button class="ob-btn-ghost" style="margin-top:10px;" onclick="obSkipAccount()">Continue without an account →</button>
-  </div>
-
-  <!-- Sign in screen -->
-  <div class="ob-screen" id="ob-signin">
-    <div style="text-align:center;margin-bottom:28px;">
-      <div style="font-size:44px;margin-bottom:10px;">⚒️</div>
-      <div class="ob-title" style="margin-bottom:6px;">Welcome back</div>
-      <div class="ob-body" style="margin-bottom:0;">Sign in to access your quests.</div>
-    </div>
-    <div class="ob-account-card">
-      <input class="ob-input" type="email" id="ob-signin-email" placeholder="Email address" autocomplete="email">
-      <input class="ob-input" type="password" id="ob-signin-password" placeholder="Password">
-      <button class="ob-btn-primary" onclick="obSignIn()">Sign In ✿</button>
-      <div class="ob-divider"><div class="ob-divider-line"></div><div class="ob-divider-text">or</div><div class="ob-divider-line"></div></div>
-      <button class="ob-google-btn" onclick="obGoogleSignIn()"><svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>Continue with Google</button>
-      <div class="ob-switch-link">New here? <span onclick="obShowCreate()">Create an account</span></div>
-    </div>
-    <button class="ob-btn-ghost" style="margin-top:10px;" onclick="obSkipAccount()">Continue without an account →</button>
-  </div>
-
-  <!-- Slides screen -->
-  <div class="ob-screen" id="ob-slides" style="justify-content:space-between;">
-    <div class="ob-topbar"><button class="ob-skip" onclick="obSkipSlides()">Skip ✕</button></div>
-    <div id="ob-slide-content" style="flex:1;display:flex;flex-direction:column;justify-content:center;"></div>
-    <div>
-      <div class="ob-dots">
-        <div class="ob-dot active" id="ob-dot-1"></div>
-        <div class="ob-dot" id="ob-dot-2"></div>
-        <div class="ob-dot" id="ob-dot-3"></div>
-        <div class="ob-dot" id="ob-dot-4"></div>
-      </div>
-      <button class="ob-btn-primary" id="ob-next-btn" onclick="obNextSlide()">Next →</button>
-    </div>
-  </div>
-
-  <!-- Final screen -->
-  <div class="ob-screen" id="ob-final" style="justify-content:space-between;">
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center;">
-      <div style="font-size:52px;margin-bottom:20px;">🌿</div>
-      <div class="ob-title">You're all set!</div>
-      <div class="ob-body">Want a little help adding your first quest? We can walk you through it real quick.</div>
-    </div>
-    <div>
-      <button class="ob-btn-primary" onclick="obFinishWithQuest()">Yes, let's add my first quest</button>
-      <button class="ob-btn-ghost" onclick="obFinish()">Skip for now — take me to the app</button>
-    </div>
-  </div>
-
-</div>
 
 <!-- ══ CANVAS BACKGROUND ══ -->
 <canvas id="ghibliCanvas"></canvas>
@@ -647,15 +497,12 @@ select option{background:#1a2f1c;}
         <div class="hero-greeting">✿ Welcome back</div>
         <div class="hero-title">Cosplay Forge</div>
         <div class="hero-stats">
-          <div class="hero-stat"><div class="hero-stat-num s" id="h-total">0</div><div class="hero-stat-label">Active</div></div>
-          <div class="hero-stat"><div class="hero-stat-num p" id="h-cosplans">0</div><div class="hero-stat-label">Cos-Plans</div></div>
+          <div class="hero-stat"><div class="hero-stat-num s" id="h-total">0</div><div class="hero-stat-label">Quests</div></div>
+          <div class="hero-stat"><div class="hero-stat-num p" id="h-active">0</div><div class="hero-stat-label">Active</div></div>
           <div class="hero-stat"><div class="hero-stat-num sk" id="h-cons">0</div><div class="hero-stat-label">Cons</div></div>
         </div>
       </div>
       <div id="urgentBannerHome"></div>
-      <div id="questLimitBanner" class="hidden"></div>
-
-      <!-- Active Quests preview -->
       <div class="section-header-row">
         <div class="section-label sage" style="margin-bottom:0">Active Quests</div>
         <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="showPage('quests')">See all →</div>
@@ -664,82 +511,27 @@ select option{background:#1a2f1c;}
       <div id="homeEmpty" class="empty-state hidden">
         <span class="e-emoji">🧵</span>
         <div class="e-title">No quests yet!</div>
-        <div class="e-sub">Tap <strong>✿</strong> below to begin your first quest.</div>
+        <div class="e-sub">Tap <strong>✿</strong> below to begin.</div>
       </div>
-
-      <!-- Cos-Plans button -->
-      <div style="margin:4px 16px 14px;">
-        <div class="home-cosplans-btn" onclick="showPage('quests');switchQuestTab('cosplans')">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:20px;">✨</span>
-            <div>
-              <div style="font-size:14px;font-weight:800;color:var(--lavender);">Cos-Plans</div>
-              <div style="font-size:12px;color:var(--text-dim);font-weight:600;margin-top:1px;" id="home-cosplans-sub">Your costume wishlist</div>
-            </div>
-          </div>
-          <span style="color:var(--text-dim);font-size:18px;">›</span>
-        </div>
-      </div>
-
-      <!-- Upcoming events preview -->
-      <div class="section-header-row">
-        <div class="section-label sky" style="margin-bottom:0;">Upcoming</div>
-        <div style="font-size:12px;font-weight:700;color:var(--sky);cursor:pointer;" onclick="showPage('calendar')">See all →</div>
-      </div>
-      <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
     </div>
 
     <!-- QUESTS -->
     <div class="page" id="page-quests">
       <div class="p-header" style="justify-content:space-between;">
-        <div><div class="p-title">⚔️ Quests</div><div class="p-subtitle">All your cosplay projects</div></div>
-        <button class="btn sky-btn sm" id="questsAddBtn" onclick="openAddModal()">+ New</button>
+        <div><div class="p-title">🗡️ Quests</div><div class="p-subtitle">All your cosplay projects</div></div>
+        <button class="btn sky-btn sm" onclick="openAddModal()">+ New</button>
       </div>
-      <!-- Quest inner tabs -->
-      <div class="inner-tabs" style="margin:0 16px 14px;">
-        <button class="inner-tab active" id="qtab-active" onclick="switchQuestTab('active')">Active</button>
-        <button class="inner-tab" id="qtab-cosplans" onclick="switchQuestTab('cosplans')">Cos-Plans</button>
-        <button class="inner-tab" id="qtab-closet" onclick="switchQuestTab('closet')">Closet 🔒</button>
+      <div class="filter-row">
+        <div class="filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</div>
+        <div class="filter-pill" data-filter="wip" onclick="setFilter('wip',this)">Active</div>
+        <div class="filter-pill" data-filter="planned" onclick="setFilter('planned',this)">Planned</div>
+        <div class="filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</div>
       </div>
-
-      <!-- Active pane -->
-      <div id="qpane-active">
-        <div class="filter-row">
-          <div class="filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</div>
-          <div class="filter-pill" data-filter="wip" onclick="setFilter('wip',this)">Active</div>
-          <div class="filter-pill" data-filter="planned" onclick="setFilter('planned',this)">Planned</div>
-          <div class="filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</div>
-          <div class="filter-pill" data-filter="worn" onclick="setFilter('worn',this)">Worn</div>
-        </div>
-        <div id="allQuestList"></div>
-        <div id="allEmpty" class="empty-state hidden">
-          <span class="e-emoji">🌿</span>
-          <div class="e-title">Nothing here yet</div>
-          <div class="e-sub">Tap ✿ below to add your first quest!</div>
-        </div>
-      </div>
-
-      <!-- Cos-Plans pane -->
-      <div id="qpane-cosplans" style="display:none;">
-        <div style="padding:0 16px 14px;">
-          <div id="cosPlansEmpty" class="empty-state hidden" style="padding:24px 0;">
-            <span class="e-emoji" style="font-size:36px;">✨</span>
-            <div class="e-title" style="font-size:16px;">Your wishlist is empty</div>
-            <div class="e-sub">Save costume ideas here — no build slot needed.</div>
-          </div>
-          <div id="cosPlansList"></div>
-          <button class="btn" style="width:100%;margin-top:8px;border-color:rgba(160,154,200,0.4);color:var(--lavender);background:rgba(160,154,200,0.08);" onclick="openAddCosPlanModal()">✨ Add a Cos-Plan</button>
-        </div>
-      </div>
-
-      <!-- Closet pane -->
-      <div id="qpane-closet" style="display:none;">
-        <div class="empty-state" style="padding:44px 24px;">
-          <span class="e-emoji">🗄</span>
-          <div class="e-title">Closet — Coming Soon</div>
-          <div class="e-sub" style="margin-bottom:16px;">Your master wardrobe of completed costumes. Packing lists, day assignments, and more — coming with Forge Pro. 🌿</div>
-          <span style="font-size:12px;font-weight:800;padding:6px 16px;border-radius:20px;background:rgba(160,154,200,0.15);color:var(--lavender);border:1px solid rgba(160,154,200,0.3);">Coming Soon ✨</span>
-        </div>
+      <div id="allQuestList"></div>
+      <div id="allEmpty" class="empty-state hidden">
+        <span class="e-emoji">🌿</span>
+        <div class="e-title">Nothing here yet</div>
+        <div class="e-sub">Add your first cosplay quest!</div>
       </div>
     </div>
 
@@ -754,7 +546,7 @@ select option{background:#1a2f1c;}
         <div><div class="p-title">🗓 Calendar</div><div class="p-subtitle">Events & crafting days</div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn craft-btn sm" onclick="openCraftModal()">🪡 Craft Day</button>
-          <button class="btn sm" style="background:rgba(160,154,200,0.12);border-color:rgba(160,154,200,0.4);color:var(--lavender);" onclick="openPhotoModal()">📸 Photoshoot</button>
+          <button class="btn sm" style="background:rgba(160,154,200,0.15);border-color:rgba(160,154,200,0.5);color:var(--lavender);" onclick="openPhotoModal()">📸 Photoshoot</button>
           <button class="btn sky-btn sm" onclick="openConModal()">🎪 Con/Event</button>
         </div>
       </div>
@@ -766,11 +558,13 @@ select option{background:#1a2f1c;}
             <button class="cal-nav" onclick="changeMonth(1)">›</button>
           </div>
           <!-- Legend -->
-          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-dim);">
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(126,184,201,0.25);"></div><span style="color:var(--sky);">Convention</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(212,168,85,0.25);"></div><span style="color:var(--gold);">Craft Day</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(160,154,200,0.25);"></div><span style="color:var(--lavender);">Photoshoot</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(196,120,138,0.25);"></div><span style="color:var(--rose);">Deadline</span></div>
+          <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-dim);">
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(126,184,201,0.3);"></div><span style="color:var(--sky);">Convention</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(212,168,85,0.3);"></div><span style="color:var(--gold);">Craft Day</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(160,154,200,0.3);"></div><span style="color:var(--lavender);">Photoshoot</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(196,120,138,0.3);"></div><span style="color:var(--rose);">Deadline</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-craft" style="width:7px;height:7px;border-radius:50%;"></div>Craft Day</div>
+            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-dl" style="width:7px;height:7px;border-radius:50%;"></div>Deadline</div>
           </div>
           <div class="cal-grid" id="calLabels"></div>
           <div class="cal-grid" id="calDays"></div>
@@ -784,17 +578,17 @@ select option{background:#1a2f1c;}
 
     <!-- STATS -->
     <div class="page" id="page-stats">
-      <div class="p-header"><div class="p-title">✦ Account</div></div>
+      <div class="p-header"><div class="p-title">✦ Profile</div></div>
 
       <!-- Inner tab bar -->
       <div class="inner-tabs">
-        <button class="inner-tab" id="itab-stats"     onclick="switchInnerTab('stats')">Stats</button>
-        <button class="inner-tab active" id="itab-settings"  onclick="switchInnerTab('settings')">Settings</button>
+        <button class="inner-tab active" id="itab-stats"     onclick="switchInnerTab('stats')">Stats</button>
+        <button class="inner-tab"        id="itab-settings"  onclick="switchInnerTab('settings')">Settings</button>
         <button class="inner-tab"        id="itab-about"     onclick="switchInnerTab('about')">About</button>
       </div>
 
       <!-- ── STATS PANE ── -->
-      <div class="inner-pane" id="ipane-stats">
+      <div class="inner-pane active" id="ipane-stats">
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-card-label">Total Quests</div><div class="stat-card-val sage" id="s-total">0</div></div>
           <div class="stat-card"><div class="stat-card-label">Completed</div><div class="stat-card-val peach" id="s-done">0</div></div>
@@ -809,7 +603,7 @@ select option{background:#1a2f1c;}
       </div>
 
       <!-- ── SETTINGS PANE ── -->
-      <div class="inner-pane active" id="ipane-settings">
+      <div class="inner-pane" id="ipane-settings">
 
         <!-- Account -->
         <div class="signin-card">
@@ -863,18 +657,6 @@ select option{background:#1a2f1c;}
             <div class="sw-track night-on" id="themeSwitch" onclick="toggleDayNight()">
               <div class="sw-thumb" id="themeSwitchThumb">🌙</div>
             </div>
-          </div>
-        </div>
-
-        <!-- Help -->
-        <div class="setting-section">
-          <div class="setting-section-title">📖 Help</div>
-          <div class="setting-row">
-            <div class="setting-row-info">
-              <div class="setting-row-label">View Tutorial</div>
-              <div class="setting-row-sub">Replay the onboarding walkthrough</div>
-            </div>
-            <button class="btn sm" onclick="replayOnboarding()">View</button>
           </div>
         </div>
 
@@ -940,10 +722,10 @@ select option{background:#1a2f1c;}
 
   <nav class="tab-bar">
     <button class="tab-btn active" data-page="home" onclick="showPage('home')"><span class="t-icon">🏡</span><span class="t-label">Home</span></button>
-    <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">⚔️</span><span class="t-label">Quests</span></button>
-    <button class="tab-btn fab-tab" onclick="openNewChoiceSheet()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
+    <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">🗡️</span><span class="t-label">Quests</span></button>
+    <button class="tab-btn fab-tab" onclick="openAddModal()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
     <button class="tab-btn" data-page="calendar" onclick="showPage('calendar')"><span class="t-icon">🗓</span><span class="t-label">Calendar</span></button>
-    <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Account</span></button>
+    <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Profile</span></button>
   </nav>
 </div>
 
@@ -1057,7 +839,7 @@ select option{background:#1a2f1c;}
 <div class="modal-overlay" id="conModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title" id="conModalTitle">🎪 Add Con/Event</div>
+    <div class="modal-title">🎪 Add Convention</div>
     <div class="form-group"><label>Convention Name</label><input type="text" id="c-name" placeholder="Anime Expo, C2E2…"></div>
     <div class="flex-row">
       <div class="form-group"><label>Start Date</label><input type="date" id="c-start"></div>
@@ -1068,37 +850,12 @@ select option{background:#1a2f1c;}
   </div>
 </div>
 
-<!-- ══ NEW CHOICE SHEET ══ -->
-<div class="modal-overlay" id="choiceModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">What would you like to add?</div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
-      <button class="btn primary" style="width:100%;padding:14px;font-size:15px;" onclick="closeAllModals();openAddModal()">⚔️ Start a new Quest</button>
-      <button class="btn" style="width:100%;padding:14px;font-size:15px;border-color:rgba(160,154,200,0.4);color:var(--lavender);background:rgba(160,154,200,0.08);" onclick="closeAllModals();openAddCosPlanModal()">✨ Add a Cos-Plan</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ ADD COS-PLAN MODAL ══ -->
-<div class="modal-overlay" id="cosPlanModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title" id="cosPlanModalTitle">✨ Add a Cos-Plan</div>
-    <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
-    <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
-    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
-    <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
-  </div>
-</div>
-
 <!-- ══ PHOTOSHOOT MODAL ══ -->
 <div class="modal-overlay" id="photoModal">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="photoModalTitle">📸 Add Photoshoot</div>
-    <div class="form-group"><label>Photographer / Event Name</label><input type="text" id="ph-name" placeholder="Studio shoot, outdoor, convention…"></div>
+    <div class="form-group"><label>Name / Event</label><input type="text" id="ph-name" placeholder="Studio shoot, outdoor, convention…"></div>
     <div class="form-group"><label>Date</label><input type="date" id="ph-date"></div>
     <div class="form-group"><label>Location</label><input type="text" id="ph-location" placeholder="City, Studio, Park…"></div>
     <div class="form-group"><label>Notes</label><input type="text" id="ph-notes" placeholder="Outfits, call time, details…"></div>
@@ -1152,7 +909,7 @@ let currentUser = null;
 async function saveToCloud() {
   if (!currentUser) { saveLocal(); return; }
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, cosPlans, photoshoots, updatedAt: Date.now() });
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, updatedAt: Date.now() });
   } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
 }
 async function loadFromCloud() {
@@ -1164,8 +921,6 @@ async function loadFromCloud() {
       cosplays    = d.cosplays    || [];
       conventions = d.conventions || [];
       craftDays   = d.craftDays   || [];
-      cosPlans    = d.cosPlans    || [];
-      photoshoots = d.photoshoots || [];
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -1180,15 +935,11 @@ function saveLocal() {
   localStorage.setItem('cf_cosplays',    JSON.stringify(cosplays));
   localStorage.setItem('cf_conventions', JSON.stringify(conventions));
   localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
-  localStorage.setItem('cf_cosplans',    JSON.stringify(cosPlans));
-  localStorage.setItem('cf_photoshoots', JSON.stringify(photoshoots));
 }
 function loadLocal() {
   cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
   conventions = JSON.parse(localStorage.getItem('cf_conventions') || '[]');
   craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
-  cosPlans    = JSON.parse(localStorage.getItem('cf_cosplans')    || '[]');
-  photoshoots = JSON.parse(localStorage.getItem('cf_photoshoots') || '[]');
 }
 
 // ── AUTH STATE LISTENER ───────────────────────────────────────
@@ -1197,8 +948,6 @@ onAuthStateChanged(auth, async (user) => {
   if (user) {
     showSignedIn(user.email);
     await loadFromCloud();
-    localStorage.setItem('cf_onboarded', '1');
-    document.getElementById('onboardingOverlay').classList.add('hidden');
   } else {
     loadLocal();
     renderHome(); renderCalendar();
@@ -1265,7 +1014,7 @@ window.handleDeleteAccount = async function() {
   try {
     await deleteDoc(doc(db, 'users', currentUser.uid));
     await deleteUser(currentUser);
-    cosplays = []; conventions = []; craftDays = []; cosPlans = []; photoshoots = [];
+    cosplays = []; conventions = []; craftDays = [];
     localStorage.clear();
     currentUser = null;
     document.getElementById('signinView').style.display    = 'block';
@@ -1283,9 +1032,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 let cosplays    = [];
 let conventions = [];
 let craftDays   = [];
-let cosPlans    = [];
 let photoshoots = [];
-const FREE_QUEST_LIMIT = 3;
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
 
@@ -1709,8 +1456,7 @@ function confirmClearData() {
     localStorage.removeItem('cf_cosplays');
     localStorage.removeItem('cf_conventions');
     localStorage.removeItem('cf_craftdays');
-    localStorage.removeItem('cf_cosplans');
-    cosplays = []; conventions = []; craftDays = []; cosPlans = []; photoshoots = [];
+    cosplays = []; conventions = []; craftDays = [];
     renderHome(); renderCalendar(); renderStats();
     alert('All data cleared. Fresh start! 🌿');
   }
@@ -1763,19 +1509,9 @@ function backFromCostume() {
 // ── HOME ──────────────────────────────────────────────────────
 function renderHome() {
   const now = new Date();
-  const activeCount = cosplays.filter(c=>c.status==='wip').length;
-  document.getElementById('h-total').textContent    = activeCount;
-  document.getElementById('h-cosplans').textContent = cosPlans.length;
-  document.getElementById('h-cons').textContent     = conventions.filter(c=>new Date(c.start+'T00:00:00')>=now).length;
-  // Update cos-plans subtitle
-  const cpSub = document.getElementById('home-cosplans-sub');
-  if (cpSub) cpSub.textContent = cosPlans.length ? cosPlans.length + ' idea' + (cosPlans.length !== 1 ? 's' : '') + ' waiting' : 'Your costume wishlist';
-  // Render event preview
-  const evEl = document.getElementById('homeEventPreview');
-  if (evEl) {
-    const upcoming = [...conventions, ...craftDays.map(c=>({...c,start:c.date,name:'🪡 '+c.costumeName+' craft day',type:'craft'}))].filter(e=>new Date((e.start||e.date)+'T00:00:00')>=now).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,2);
-    evEl.innerHTML = upcoming.length ? upcoming.map(e=>{const d=new Date(e.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});return`<div class="event-item" style="margin-bottom:8px;"><div class="ev-dot" style="background:var(--sky);"></div><div class="ev-info"><div class="ev-name">${e.name}</div><div class="ev-date">${d}${e.location?' · '+e.location:''}</div></div></div>`;}).join('') : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
-  }
+  document.getElementById('h-total').textContent  = cosplays.length;
+  document.getElementById('h-active').textContent = cosplays.filter(c=>c.status!=='done').length;
+  document.getElementById('h-cons').textContent   = conventions.filter(c=>new Date(c.start+'T00:00:00')>=now).length;
   const urgent = cosplays.filter(c=>{
     if(!c.deadline) return false;
     return Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000) <= 14 &&
@@ -1785,9 +1521,9 @@ function renderHome() {
     ? `<div class="urgent-banner"><div class="u-icon">⏰</div><div><div class="u-text">${urgent.length} deadline${urgent.length>1?'s':''} soon!</div><div class="u-sub">${urgent.map(c=>c.name).join(', ')}</div></div></div>` : '';
   const recent = cosplays.filter(c=>c.status!=='done').slice(0,4);
   const list=document.getElementById('homeQuestList'), empty=document.getElementById('homeEmpty');
-  if (!recent.length) { list.innerHTML=''; empty.classList.remove('hidden'); }
-  else { empty.classList.add('hidden'); list.innerHTML = recent.map(c=>questCard(c)).join(''); }
-  renderCosPlansList();
+  if (!recent.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  list.innerHTML = recent.map(c=>questCard(c)).join('');
 }
 
 // ── QUESTS ────────────────────────────────────────────────────
@@ -1806,12 +1542,8 @@ function setFilter(f,el) {
 }
 
 function calcProgress(c) {
-  if (!c.checklist || !c.checklist.length) return c.status === 'done' ? 100 : 0;
-  const allTasks = c.checklist;
-  const totalItems = allTasks.reduce((acc, t) => t.type === 'category' ? acc + (t.steps || []).length : acc + 1, 0);
-  if (totalItems === 0) return c.status === 'done' ? 100 : 0;
-  const doneItems = allTasks.reduce((acc, t) => t.type === 'category' ? acc + (t.steps || []).filter(s => s.done).length : acc + (t.done ? 1 : 0), 0);
-  return Math.round(doneItems / totalItems * 100);
+  if (!c.checklist||!c.checklist.length) return c.status==='done'?100:0;
+  return Math.round(c.checklist.filter(i=>i.done).length/c.checklist.length*100);
 }
 
 function questCard(c) {
@@ -1855,8 +1587,6 @@ function questCard(c) {
 
 // ── ADD/EDIT COSPLAY ──────────────────────────────────────────
 function openAddModal() {
-  const activeQuests = cosplays.filter(c => c.status !== 'done').length;
-  if (activeQuests >= FREE_QUEST_LIMIT) { showQuestLimitBanner(); return; }
   editingId=null;
   document.getElementById('modalTitle').textContent='🌿 New Quest';
   document.getElementById('deleteBtn').classList.add('hidden');
@@ -2173,12 +1903,14 @@ function saveCraftDay() {
   const costumeId=document.getElementById('cr-costume').value;
   const notes=document.getElementById('cr-notes').value.trim();
   if(!date){alert('Please pick a date.');return;}
-  const costume=costumeId?getCostume(costumeId):null;
+  if(!costumeId){alert('Please select a costume.');return;}
+  const costume=getCostume(costumeId);
   craftDays.push({
-    id:uid(), date, costumeId:costumeId||'', costumeName:costume?.name||'General craft day',
+    id:uid(), date, costumeId, costumeName:costume?.name||'',
     notes, hours:parseFloat(document.getElementById('cr-hours').value)||0
   });
   save(); closeAllModals();
+  // refresh current page
   const ap=document.querySelector('.page.active')?.id;
   if(ap==='page-calendar') renderCalendar();
   if(ap==='page-costume') renderCostumePage();
@@ -2355,10 +2087,8 @@ function renderCalendar(){
   document.getElementById('calLabels').innerHTML=DAYS.map(d=>`<div class="cal-dl">${d}</div>`).join('');
   const first=new Date(y,m,1).getDay(),last=new Date(y,m+1,0).getDate(),now=new Date();
 
-  // Build event map: date -> {con,craft,dl}
   const evMap={};
   const addEv=(date,type)=>{if(!evMap[date])evMap[date]={};evMap[date][type]=true;};
-  // Mark full convention date ranges
   conventions.forEach(c=>{
     if(!c.start) return;
     const start=new Date(c.start+'T00:00:00');
@@ -2367,7 +2097,6 @@ function renderCalendar(){
       const ds=d.toISOString().slice(0,10);
       if(!evMap[ds])evMap[ds]={};
       evMap[ds].con=true;
-      // Mark start/end days differently from middle days
       if(ds===c.start||ds===(c.end||c.start)) evMap[ds].conEdge=true;
       else evMap[ds].conMid=true;
     }
@@ -2384,6 +2113,7 @@ function renderCalendar(){
     const ev=evMap[ds]||{};
     let dayClass=isToday?'today':'';
     if(!isToday){
+      const ev=evMap[ds]||{};
       if(ev.con&&ev.conMid) dayClass='day-con-mid';
       else if(ev.con) dayClass='day-con';
       else if(ev.craft) dayClass='day-craft';
@@ -2423,29 +2153,13 @@ function renderEventList(){
       <div class="ev-chip ${chipCls}">${lbl}</div>
       ${item.type==='con'?`<span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
       ${item.type==='craft'?`<span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
-      ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
+      ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;cursor:pointer;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
 }
 
 // ── CON ───────────────────────────────────────────────────────
-window.openConModal = function openConModal(id) {
-  window._editingConId = id || null;
-  if (id) {
-    const con = conventions.find(c => c.id === id);
-    if (con) {
-      document.getElementById('conModalTitle').textContent = '✎ Edit Con/Event';
-      document.getElementById('c-name').value = con.name || '';
-      document.getElementById('c-start').value = con.start || '';
-      document.getElementById('c-end').value = con.end || '';
-      document.getElementById('c-location').value = con.location || '';
-    }
-  } else {
-    document.getElementById('conModalTitle').textContent = '🎪 Add Con/Event';
-    ['c-name','c-start','c-end','c-location'].forEach(id=>document.getElementById(id).value='');
-  }
-  openModal('conModal');
-};
+function openConModal(){openModal('conModal');}
 function saveCon(){
   const name=document.getElementById('c-name').value.trim(),start=document.getElementById('c-start').value;
   if(!name||!start){alert('Please enter a name and start date.');return;}
@@ -2556,10 +2270,9 @@ window.startTaskDrag = startTaskDrag;
 window.startStepDrag = startStepDrag;
 
 
-
 // ── PHOTOSHOOTS ───────────────────────────────────────────────
 let _editingPhotoId = null;
-window.openPhotoModal = function openPhotoModal(id) {
+function openPhotoModal(id) {
   _editingPhotoId = id || null;
   if (id) {
     const ph = photoshoots.find(p => p.id === id);
@@ -2575,8 +2288,8 @@ window.openPhotoModal = function openPhotoModal(id) {
     ['ph-name','ph-date','ph-location','ph-notes'].forEach(id => document.getElementById(id).value = '');
   }
   openModal('photoModal');
-};
-window.savePhoto = function savePhoto() {
+}
+function savePhoto() {
   const name = document.getElementById('ph-name').value.trim();
   const date = document.getElementById('ph-date').value;
   if (!name || !date) { alert('Please enter a name and date.'); return; }
@@ -2589,275 +2302,11 @@ window.savePhoto = function savePhoto() {
   } else { photoshoots.push(item); }
   _editingPhotoId = null;
   save(); closeAllModals(); renderCalendar();
-};
-window.deletePhoto = function deletePhoto(id) {
+}
+function deletePhoto(id) {
   photoshoots = photoshoots.filter(p => p.id !== id);
   save(); renderCalendar();
-};
-
-// ── COS-PLANS ─────────────────────────────────────────────────
-let _editingCosPlanId = null;
-let _expandedCosPlanIds = new Set();
-let _pendingQuestName = null;
-
-window.switchQuestTab = function switchQuestTab(tab) {
-  // Update tab buttons
-  ['active','cosplans','closet'].forEach(t => {
-    document.getElementById('qtab-' + t).classList.toggle('active', t === tab);
-    document.getElementById('qpane-' + t).style.display = t === tab ? 'block' : 'none';
-  });
-  // Update add button
-  const addBtn = document.getElementById('questsAddBtn');
-  if (addBtn) {
-    if (tab === 'active') { addBtn.textContent = '+ New'; addBtn.onclick = () => openAddModal(); addBtn.style.display = ''; }
-    else if (tab === 'cosplans') { addBtn.textContent = '+ Add'; addBtn.onclick = () => openAddCosPlanModal(); addBtn.style.display = ''; }
-    else { addBtn.style.display = 'none'; }
-  }
-  // Render if needed
-  if (tab === 'cosplans') renderCosPlansList();
-  if (tab === 'active') renderAllQuests();
-};
-
-window.openNewChoiceSheet = function openNewChoiceSheet() {
-  const activeQuests = cosplays.filter(c => c.status !== 'done').length;
-  if (activeQuests >= FREE_QUEST_LIMIT) { showQuestLimitBanner(); return; }
-  openModal('choiceModal');
 }
-
-window.showQuestLimitBanner = function showQuestLimitBanner(pendingName) {
-  if (pendingName) _pendingQuestName = pendingName;
-  const banner = document.getElementById('questLimitBanner');
-  banner.classList.remove('hidden');
-  banner.innerHTML = `<div class="quest-limit-banner">
-    <div class="qlb-title">🌿 You've got ${FREE_QUEST_LIMIT} active builds going!</div>
-    <div class="qlb-sub">Save this idea to Cos-Plans and activate it when a slot opens up.</div>
-    <div class="qlb-btns">
-      <button class="qlb-cos" onclick="moveToCosPlanFromBanner()">✨ Move to Cos-Plans</button>
-      <button class="qlb-pro" onclick="closeQuestLimitBanner()">Got it</button>
-    </div>
-  </div>`;
-}
-
-window.closeQuestLimitBanner = function closeQuestLimitBanner() {
-  document.getElementById('questLimitBanner').classList.add('hidden');
-  _pendingQuestName = null;
-}
-
-window.moveToCosPlanFromBanner = function moveToCosPlanFromBanner() {
-  closeQuestLimitBanner();
-  openAddCosPlanModal(_pendingQuestName);
-}
-
-window.openAddCosPlanModal = function openAddCosPlanModal(prefillName) {
-  _editingCosPlanId = null;
-  document.getElementById('cosPlanModalTitle').textContent = '✨ Add a Cos-Plan';
-  document.getElementById('cp-name').value = prefillName || '';
-  document.getElementById('cp-series').value = '';
-  document.getElementById('cp-imgurl').value = '';
-  document.getElementById('cp-notes').value = '';
-  openModal('cosPlanModal');
-}
-
-window.openEditCosPlanModal = function openEditCosPlanModal(id) {
-  const cp = cosPlans.find(p => p.id === id);
-  if (!cp) return;
-  _editingCosPlanId = id;
-  document.getElementById('cosPlanModalTitle').textContent = '✎ Edit Cos-Plan';
-  document.getElementById('cp-name').value = cp.name || '';
-  document.getElementById('cp-series').value = cp.series || '';
-  document.getElementById('cp-imgurl').value = cp.imgurl || '';
-  document.getElementById('cp-notes').value = cp.notes || '';
-  openModal('cosPlanModal');
-}
-
-window.saveCosPlan = function saveCosPlan() {
-  const name = document.getElementById('cp-name').value.trim();
-  if (!name) { alert('Please enter a character name!'); return; }
-  const item = { id: _editingCosPlanId || uid(), name,
-    series: document.getElementById('cp-series').value.trim(),
-    imgurl: document.getElementById('cp-imgurl').value.trim(),
-    notes: document.getElementById('cp-notes').value.trim() };
-  if (_editingCosPlanId) {
-    const idx = cosPlans.findIndex(p => p.id === _editingCosPlanId);
-    if (idx !== -1) cosPlans[idx] = item;
-  } else { cosPlans.unshift(item); }
-  _editingCosPlanId = null;
-  save(); closeAllModals(); renderHome();
-}
-
-window.deleteCosPlan = function deleteCosPlan(id) {
-  if (!confirm('Remove this Cos-Plan?')) return;
-  cosPlans = cosPlans.filter(p => p.id !== id);
-  _expandedCosPlanIds.delete(id);
-  save(); renderHome();
-}
-
-window.toggleCosPlanExpand = function toggleCosPlanExpand(id) {
-  if (_expandedCosPlanIds.has(id)) _expandedCosPlanIds.delete(id);
-  else _expandedCosPlanIds.add(id);
-  renderCosPlansList();
-}
-
-window.activateCosPlan = function activateCosPlan(id) {
-  const cp = cosPlans.find(p => p.id === id);
-  if (!cp) return;
-  const activeQuests = cosplays.filter(c => c.status !== 'done').length;
-  if (activeQuests >= FREE_QUEST_LIMIT) { showQuestLimitBanner(cp.name); return; }
-  cosplays.unshift({ id: uid(), checklist: [], expenses: [], materials: [], supplies: [],
-    hours: [], links: [], budget: 0, budgetEnabled: false,
-    name: cp.name, series: cp.series, imgurl: cp.imgurl, emoji: '🧙', status: 'wip', notes: cp.notes || '' });
-  cosPlans = cosPlans.filter(p => p.id !== id);
-  _expandedCosPlanIds.delete(id);
-  save(); renderHome();
-}
-
-window.renderCosPlansList = function renderCosPlansList() {
-  const list = document.getElementById('cosPlansList');
-  const empty = document.getElementById('cosPlansEmpty');
-  if (!list) return;
-  if (!cosPlans.length) { list.innerHTML = ''; empty.classList.remove('hidden'); return; }
-  empty.classList.add('hidden');
-  const activeQuests = cosplays.filter(c => c.status !== 'done').length;
-  const hasSlot = activeQuests < FREE_QUEST_LIMIT;
-  list.innerHTML = cosPlans.map(cp => {
-    const expanded = _expandedCosPlanIds.has(cp.id);
-    const thumb = cp.imgurl ? `<img src="${cp.imgurl}" onerror="this.style.display='none'">` : '✨';
-    return `<div class="cosplan-card ${hasSlot ? 'has-slot' : ''}">
-      <div class="cosplan-card-main" onclick="toggleCosPlanExpand('${cp.id}')">
-        <div class="cosplan-thumb">${thumb}</div>
-        <div class="cosplan-info">
-          <div class="cosplan-name">${cp.name}</div>
-          <div class="cosplan-fandom">${cp.series || '—'}</div>
-        </div>
-        <span class="cosplan-del" onclick="event.stopPropagation();deleteCosPlan('${cp.id}')">×</span>
-        <span class="cosplan-chevron ${expanded ? 'open' : ''}">▾</span>
-      </div>
-      ${expanded ? `<div class="cosplan-expanded">
-        ${cp.notes ? `<div class="cosplan-note">${cp.notes}</div>` : ''}
-        <button class="cosplan-start-btn ${hasSlot ? 'active' : ''}" onclick="${hasSlot ? `activateCosPlan('${cp.id}')` : 'showQuestLimitBanner()'}">
-          ${hasSlot ? '⚔️ Start this build' : '⚔️ No quest slots available'}
-        </button>
-      </div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-// ── ONBOARDING ─────────────────────────────────────────────────
-let _obSlide = 1;
-const _obSlides = [
-  { icon: '⚒️', title: 'Your forge is ready', body: 'Cosplay Forge helps you track every build from the first sketch to the finished costume. No more lost notes, forgotten materials, or missed deadlines.' },
-  { icon: '⚔️', title: 'Track your active quests', body: 'Each build is a quest. Add tasks, track materials, log your time, and watch your progress bar fill up as you go.', features: [['📋','Tasks and categories','Break your build into steps'],['💰','Budget and materials','Track what you\'ve bought and spent'],['⏱️','Time tracking','Log your craft hours']] },
-  { icon: '🗓️', title: 'Never miss a deadline', body: 'Add your upcoming cons, craft days, and photoshoots. Your calendar keeps everything in one place.', features: [['🎪','Cons and events','Plan your convention schedule'],['🪡','Craft days','Block time to work on your builds'],['📸','Photoshoots','Schedule and track your shoots']] },
-  { icon: '✨', title: 'Save your dream builds', body: 'Got more costume ideas than time? Add them to Cos-Plans — your personal wishlist. No build slot needed. Just save the idea and it\'ll be waiting when you\'re ready.' }
-];
-
-window.obShowScreen = function obShowScreen(id) {
-  document.querySelectorAll('.ob-screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-}
-
-window.obShowSignIn = function obShowSignIn() { obShowScreen('ob-signin'); }
-window.obShowCreate = function obShowCreate() { obShowScreen('ob-account'); }
-
-window.initOnboarding = function initOnboarding() {
-  const done = localStorage.getItem('cf_onboarded');
-  if (!done && !currentUser) {
-    document.getElementById('onboardingOverlay').classList.remove('hidden');
-    obShowScreen('ob-account');
-  }
-}
-
-window.obCreateAccount = async function obCreateAccount() {
-  const email = document.getElementById('ob-email').value.trim();
-  const pass = document.getElementById('ob-password').value;
-  const nick = document.getElementById('ob-nickname').value.trim();
-  if (!email || !pass) { alert('Please enter your email and password.'); return; }
-  if (pass.length < 6) { alert('Password must be at least 6 characters.'); return; }
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    currentUser = cred.user;
-    if (nick) localStorage.setItem('cf_nickname', nick);
-    showSignedIn(nick || email);
-    await saveToCloud();
-    obShowScreen('ob-slides');
-    obGoToSlide(1);
-  } catch(e) {
-    if (e.code === 'auth/email-already-in-use') alert('That email already has an account. Try signing in.');
-    else alert('Sign up failed: ' + e.message);
-  }
-}
-
-window.obSignIn = async function obSignIn() {
-  const email = document.getElementById('ob-signin-email').value.trim();
-  const pass = document.getElementById('ob-signin-password').value;
-  if (!email || !pass) { alert('Please enter your email and password.'); return; }
-  try {
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
-    currentUser = cred.user;
-    showSignedIn(cred.user.email);
-    await loadFromCloud();
-    obCompleteOnboarding();
-  } catch(e) {
-    if (e.code === 'auth/invalid-credential') alert('Incorrect email or password.');
-    else alert('Sign in failed: ' + e.message);
-  }
-}
-
-window.obGoogleSignIn = async function obGoogleSignIn() {
-  try {
-    const cred = await signInWithPopup(auth, provider);
-    currentUser = cred.user;
-    showSignedIn(cred.user.email);
-    await loadFromCloud();
-    obShowScreen('ob-slides');
-    obGoToSlide(1);
-  } catch(e) { alert('Google sign in failed: ' + e.message); }
-}
-
-window.obSkipAccount = function obSkipAccount() {
-  loadLocal();
-  obShowScreen('ob-slides');
-  obGoToSlide(1);
-}
-
-window.obSkipSlides = function obSkipSlides() { obShowScreen('ob-final'); }
-
-window.obGoToSlide = function obGoToSlide(n) {
-  _obSlide = n;
-  const s = _obSlides[n - 1];
-  const featuresHtml = (s.features || []).map(([icon, title, sub]) =>
-    `<div class="ob-feature-row"><div class="ob-feature-icon">${icon}</div><div><div class="ob-feature-title">${title}</div><div class="ob-feature-sub">${sub}</div></div></div>`
-  ).join('');
-  document.getElementById('ob-slide-content').innerHTML = `
-    <div class="ob-icon-circle">${s.icon}</div>
-    <div class="ob-title">${s.title}</div>
-    <div class="ob-body">${s.body}</div>
-    ${featuresHtml}`;
-  for (let i = 1; i <= 4; i++) document.getElementById('ob-dot-' + i).classList.toggle('active', i === n);
-  document.getElementById('ob-next-btn').textContent = n === 4 ? "Let's go 🌿" : 'Next →';
-}
-
-window.obNextSlide = function obNextSlide() {
-  if (_obSlide < 4) obGoToSlide(_obSlide + 1);
-  else obShowScreen('ob-final');
-}
-
-window.obFinishWithQuest = function obFinishWithQuest() { obCompleteOnboarding(); setTimeout(() => openAddModal(), 300); }
-window.obFinish = function obFinish() { obCompleteOnboarding(); }
-
-window.obCompleteOnboarding = function obCompleteOnboarding() {
-  localStorage.setItem('cf_onboarded', '1');
-  document.getElementById('onboardingOverlay').classList.add('hidden');
-  renderHome();
-  renderCalendar();
-}
-
-window.replayOnboarding = function replayOnboarding() {
-  document.getElementById('onboardingOverlay').classList.remove('hidden');
-  obShowScreen('ob-slides'); obGoToSlide(1);
-}
-
-setTimeout(initOnboarding, 800);
 
 renderHome();
 renderCalendar();
@@ -2877,16 +2326,9 @@ Object.assign(window, {
   saveMaterial, deleteMaterial, saveHours, deleteHour,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
+  openPhotoModal, savePhoto, deletePhoto,
   renderStats, switchInnerTab, toggleDayNight,
-  exportData, confirmClearData, showSignedIn,
-  openNewChoiceSheet, openAddCosPlanModal, openEditCosPlanModal,
-  saveCosPlan, deleteCosPlan, toggleCosPlanExpand, activateCosPlan,
-  showQuestLimitBanner, closeQuestLimitBanner, moveToCosPlanFromBanner,
-  renderCosPlansList, replayOnboarding,
-  obCreateAccount, obSignIn, obGoogleSignIn, obSkipAccount,
-  obSkipSlides, obNextSlide, obFinishWithQuest, obFinish,
-  obShowSignIn, obShowCreate, initOnboarding,
-  startTaskDrag, startStepDrag
+  exportData, confirmClearData, showSignedIn
 });
 </script>
 <script>
