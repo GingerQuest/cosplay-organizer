@@ -506,14 +506,14 @@ select option{background:#1a2f1c;}
       <div id="urgentBannerHome"></div>
 
       <!-- Active Quests -->
-      <div class="section-header-row" style="cursor:pointer;" onclick="toggleHomeSection('quests')">
+      <div class="home-sec-header section-header-row" id="hheader-quests" onclick="toggleHomeSection('quests')">
         <div class="section-label sage" id="hlabel-quests" style="margin-bottom:0;transition:font-size .2s;">Active Quests</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="event.stopPropagation();showPage('quests')">See all →</div>
-          <span id="hchev-quests" style="color:var(--sage);font-size:16px;transition:transform .2s;">▾</span>
+          <div style="font-size:12px;font-weight:700;color:var(--sage);" onclick="event.stopPropagation();showPage('quests')">See all →</div>
+          <span class="home-sec-chev" id="hchev-quests" style="color:var(--sage);transition:transform .2s;">▾</span>
         </div>
       </div>
-      <div id="hsec-quests">
+      <div id="hsec-quests" style="display:block;">
         <div id="homeQuestList"></div>
         <div id="homeEmpty" class="empty-state hidden">
           <span class="e-emoji">🧵</span>
@@ -524,27 +524,27 @@ select option{background:#1a2f1c;}
 
       <!-- Cos-Plans -->
       <div id="homeCosPlanSection">
-        <div class="section-header-row" style="margin-top:8px;cursor:pointer;" onclick="toggleHomeSection('cosplans')">
+        <div class="home-sec-header section-header-row" id="hheader-cosplans" style="margin-top:8px;" onclick="toggleHomeSection('cosplans')">
           <div class="section-label lavender" id="hlabel-cosplans" style="margin-bottom:0;color:var(--lavender);transition:font-size .2s;">✨ Cos-Plans</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="font-size:12px;font-weight:700;color:var(--lavender);" onclick="event.stopPropagation();openAddCosPlanModal()">+ Add</div>
-            <span id="hchev-cosplans" style="color:var(--lavender);font-size:16px;transition:transform .2s;">▾</span>
+            <span class="home-sec-chev" id="hchev-cosplans" style="color:var(--lavender);transition:transform .2s;">▾</span>
           </div>
         </div>
-        <div id="hsec-cosplans">
+        <div id="hsec-cosplans" style="display:block;">
           <div id="homeCosPlanList"></div>
         </div>
       </div>
 
       <!-- Upcoming Events -->
-      <div class="section-header-row" style="margin-top:8px;cursor:pointer;" onclick="toggleHomeSection('events')">
+      <div class="home-sec-header section-header-row" id="hheader-events" style="margin-top:8px;" onclick="toggleHomeSection('events')">
         <div class="section-label sky" id="hlabel-events" style="margin-bottom:0;color:var(--sky);transition:font-size .2s;">📅 Coming Up</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;font-weight:700;color:var(--sky);" onclick="event.stopPropagation();showPage('calendar')">See all →</div>
-          <span id="hchev-events" style="color:var(--sky);font-size:16px;transition:transform .2s;">▾</span>
+          <span class="home-sec-chev" id="hchev-events" style="color:var(--sky);transition:transform .2s;">▾</span>
         </div>
       </div>
-      <div id="hsec-events">
+      <div id="hsec-events" style="display:block;">
         <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
       </div>
     </div>
@@ -2527,12 +2527,13 @@ function openFabChoice() {
 const _homeSectionState = { quests: true, cosplans: true, events: true };
 function toggleHomeSection(section) {
   _homeSectionState[section] = !_homeSectionState[section];
+  const expanded = _homeSectionState[section];
   const el = document.getElementById('hsec-' + section);
   const chev = document.getElementById('hchev-' + section);
-  const label = document.getElementById('hlabel-' + section);
-  if (el) el.style.display = _homeSectionState[section] ? 'block' : 'none';
-  if (chev) chev.style.transform = _homeSectionState[section] ? 'rotate(0deg)' : 'rotate(-90deg)';
-  if (label) label.style.fontSize = _homeSectionState[section] ? '11px' : '15px';
+  const header = document.getElementById('hheader-' + section);
+  if (el) el.style.display = expanded ? 'block' : 'none';
+  if (chev) chev.style.transform = expanded ? 'rotate(0deg)' : 'rotate(-90deg)';
+  if (header) header.classList.toggle('collapsed', !expanded);
 }
 
 // ── COS-PLANS ─────────────────────────────────────────────────
