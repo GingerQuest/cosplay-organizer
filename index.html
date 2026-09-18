@@ -415,12 +415,11 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .cal-day:hover{background:rgba(143,188,143,.1);color:var(--sage);}
 .cal-day.other{opacity:.25;}
 .cal-day.today{background:rgba(143,188,143,.15);color:var(--sage);font-weight:900;}
-/* dot indicators - stacked */
-.cal-day .dot-row{position:absolute;bottom:2px;display:flex;gap:2px;justify-content:center;}
-.cal-day .dot{width:4px;height:4px;border-radius:50%;}
-.dot-con{background:var(--sky);}
-.dot-craft{background:var(--gold);}
-.dot-dl{background:var(--rose);animation:pulse .8s infinite alternate;}
+.cal-day.day-con{background:rgba(126,184,201,0.2);color:var(--sky);font-weight:800;}
+.cal-day.day-con-mid{background:rgba(126,184,201,0.12);color:var(--sky);}
+.cal-day.day-craft{background:rgba(212,168,85,0.2);color:var(--gold);font-weight:800;}
+.cal-day.day-photo{background:rgba(160,154,200,0.2);color:var(--lavender);font-weight:800;}
+.cal-day.day-dl{background:rgba(196,120,138,0.2);color:var(--rose);font-weight:800;animation:pulse .8s infinite alternate;}
 
 /* ── EVENT LIST ── */
 .event-item{background:rgba(24,40,26,0.75);border-radius:var(--r-sm);border:1px solid var(--border);
@@ -767,11 +766,11 @@ select option{background:#1a2f1c;}
             <button class="cal-nav" onclick="changeMonth(1)">›</button>
           </div>
           <!-- Legend -->
-          <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-dim);">
-            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-con" style="width:7px;height:7px;border-radius:50%;"></div>Convention</div>
-            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-craft" style="width:7px;height:7px;border-radius:50%;"></div>Craft Day</div>
-            <div style="display:flex;align-items:center;gap:4px;"><div class="dot" style="width:7px;height:7px;border-radius:50%;background:var(--lavender);"></div>Photoshoot</div>
-            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-dl" style="width:7px;height:7px;border-radius:50%;"></div>Deadline</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-dim);">
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(126,184,201,0.25);"></div><span style="color:var(--sky);">Convention</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(212,168,85,0.25);"></div><span style="color:var(--gold);">Craft Day</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(160,154,200,0.25);"></div><span style="color:var(--lavender);">Photoshoot</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(196,120,138,0.25);"></div><span style="color:var(--rose);">Deadline</span></div>
           </div>
           <div class="cal-grid" id="calLabels"></div>
           <div class="cal-grid" id="calDays"></div>
@@ -2361,7 +2360,20 @@ function renderCalendar(){
   // Build event map: date -> {con,craft,dl}
   const evMap={};
   const addEv=(date,type)=>{if(!evMap[date])evMap[date]={};evMap[date][type]=true;};
-  conventions.forEach(c=>{if(c.start)addEv(c.start,'con');});
+  // Mark full convention date ranges
+  conventions.forEach(c=>{
+    if(!c.start) return;
+    const start=new Date(c.start+'T00:00:00');
+    const end=c.end?new Date(c.end+'T00:00:00'):start;
+    for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+      const ds=d.toISOString().slice(0,10);
+      if(!evMap[ds])evMap[ds]={};
+      evMap[ds].con=true;
+      // Mark start/end days differently from middle days
+      if(ds===c.start||ds===(c.end||c.start)) evMap[ds].conEdge=true;
+      else evMap[ds].conMid=true;
+    }
+  });
   craftDays.forEach(cr=>{if(cr.date)addEv(cr.date,'craft');});
   photoshoots.forEach(p=>{if(p.date)addEv(p.date,'photo');});
   cosplays.forEach(c=>{if(c.deadline)addEv(c.deadline,'dl');});
