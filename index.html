@@ -435,6 +435,7 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .ev-chip.soon{background:rgba(196,120,138,.15);color:var(--rose);}
 .ev-chip.past{background:rgba(90,106,136,.18);color:var(--text-dim);}
 .ev-chip.craft-chip{background:rgba(212,168,85,.15);color:var(--gold);}
+.ev-chip.photo-chip{background:rgba(160,154,200,0.15);color:var(--lavender);}
 
 /* ── STATS ── */
 .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 14px;}
@@ -754,6 +755,7 @@ select option{background:#1a2f1c;}
         <div><div class="p-title">🗓 Calendar</div><div class="p-subtitle">Events & crafting days</div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn craft-btn sm" onclick="openCraftModal()">🪡 Craft Day</button>
+          <button class="btn sky-btn sm" onclick="openPhotoModal()">📸 Photoshoot</button>
           <button class="btn sky-btn sm" onclick="openConModal()">🎪 Con/Event</button>
         </div>
       </div>
@@ -768,6 +770,7 @@ select option{background:#1a2f1c;}
           <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-dim);">
             <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-con" style="width:7px;height:7px;border-radius:50%;"></div>Convention</div>
             <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-craft" style="width:7px;height:7px;border-radius:50%;"></div>Craft Day</div>
+            <div style="display:flex;align-items:center;gap:4px;"><div class="dot" style="width:7px;height:7px;border-radius:50%;background:var(--lavender);"></div>Photoshoot</div>
             <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-dl" style="width:7px;height:7px;border-radius:50%;"></div>Deadline</div>
           </div>
           <div class="cal-grid" id="calLabels"></div>
@@ -1091,6 +1094,19 @@ select option{background:#1a2f1c;}
   </div>
 </div>
 
+<!-- ══ PHOTOSHOOT MODAL ══ -->
+<div class="modal-overlay" id="photoModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="photoModalTitle">📸 Add Photoshoot</div>
+    <div class="form-group"><label>Photographer / Event Name</label><input type="text" id="ph-name" placeholder="Studio shoot, outdoor, convention…"></div>
+    <div class="form-group"><label>Date</label><input type="date" id="ph-date"></div>
+    <div class="form-group"><label>Location</label><input type="text" id="ph-location" placeholder="City, Studio, Park…"></div>
+    <div class="form-group"><label>Notes</label><input type="text" id="ph-notes" placeholder="Outfits, call time, details…"></div>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="savePhoto()">Save ✿</button>
+  </div>
+</div>
+
 <!-- ══ CRAFTING DAY MODAL ══ -->
 <div class="modal-overlay" id="craftModal">
   <div class="modal">
@@ -1137,7 +1153,7 @@ let currentUser = null;
 async function saveToCloud() {
   if (!currentUser) { saveLocal(); return; }
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, cosPlans, updatedAt: Date.now() });
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, cosPlans, photoshoots, updatedAt: Date.now() });
   } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
 }
 async function loadFromCloud() {
@@ -1150,6 +1166,7 @@ async function loadFromCloud() {
       conventions = d.conventions || [];
       craftDays   = d.craftDays   || [];
       cosPlans    = d.cosPlans    || [];
+      photoshoots = d.photoshoots || [];
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -1165,12 +1182,14 @@ function saveLocal() {
   localStorage.setItem('cf_conventions', JSON.stringify(conventions));
   localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
   localStorage.setItem('cf_cosplans',    JSON.stringify(cosPlans));
+  localStorage.setItem('cf_photoshoots', JSON.stringify(photoshoots));
 }
 function loadLocal() {
   cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
   conventions = JSON.parse(localStorage.getItem('cf_conventions') || '[]');
   craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
   cosPlans    = JSON.parse(localStorage.getItem('cf_cosplans')    || '[]');
+  photoshoots = JSON.parse(localStorage.getItem('cf_photoshoots') || '[]');
 }
 
 // ── AUTH STATE LISTENER ───────────────────────────────────────
@@ -1247,7 +1266,7 @@ window.handleDeleteAccount = async function() {
   try {
     await deleteDoc(doc(db, 'users', currentUser.uid));
     await deleteUser(currentUser);
-    cosplays = []; conventions = []; craftDays = []; cosPlans = [];
+    cosplays = []; conventions = []; craftDays = []; cosPlans = []; photoshoots = [];
     localStorage.clear();
     currentUser = null;
     document.getElementById('signinView').style.display    = 'block';
@@ -1266,6 +1285,7 @@ let cosplays    = [];
 let conventions = [];
 let craftDays   = [];
 let cosPlans    = [];
+let photoshoots = [];
 const FREE_QUEST_LIMIT = 3;
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
@@ -1691,7 +1711,7 @@ function confirmClearData() {
     localStorage.removeItem('cf_conventions');
     localStorage.removeItem('cf_craftdays');
     localStorage.removeItem('cf_cosplans');
-    cosplays = []; conventions = []; craftDays = []; cosPlans = [];
+    cosplays = []; conventions = []; craftDays = []; cosPlans = []; photoshoots = [];
     renderHome(); renderCalendar(); renderStats();
     alert('All data cleared. Fresh start! 🌿');
   }
@@ -1787,8 +1807,12 @@ function setFilter(f,el) {
 }
 
 function calcProgress(c) {
-  if (!c.checklist||!c.checklist.length) return c.status==='done'?100:0;
-  return Math.round(c.checklist.filter(i=>i.done).length/c.checklist.length*100);
+  if (!c.checklist || !c.checklist.length) return c.status === 'done' ? 100 : 0;
+  const allTasks = c.checklist;
+  const totalItems = allTasks.reduce((acc, t) => t.type === 'category' ? acc + (t.steps || []).length : acc + 1, 0);
+  if (totalItems === 0) return c.status === 'done' ? 100 : 0;
+  const doneItems = allTasks.reduce((acc, t) => t.type === 'category' ? acc + (t.steps || []).filter(s => s.done).length : acc + (t.done ? 1 : 0), 0);
+  return Math.round(doneItems / totalItems * 100);
 }
 
 function questCard(c) {
@@ -2339,6 +2363,7 @@ function renderCalendar(){
   const addEv=(date,type)=>{if(!evMap[date])evMap[date]={};evMap[date][type]=true;};
   conventions.forEach(c=>{if(c.start)addEv(c.start,'con');});
   craftDays.forEach(cr=>{if(cr.date)addEv(cr.date,'craft');});
+  photoshoots.forEach(p=>{if(p.date)addEv(p.date,'photo');});
   cosplays.forEach(c=>{if(c.deadline)addEv(c.deadline,'dl');});
 
   let html='';
@@ -2347,7 +2372,7 @@ function renderCalendar(){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=now.getFullYear()===y&&now.getMonth()===m&&now.getDate()===d;
     const ev=evMap[ds]||{};
-    const dots=`<div class="dot-row">${ev.con?'<div class="dot dot-con"></div>':''}${ev.craft?'<div class="dot dot-craft"></div>':''}${ev.dl?'<div class="dot dot-dl"></div>':''}</div>`;
+    const dots=`<div class="dot-row">${ev.con?'<div class="dot dot-con"></div>':''}${ev.craft?'<div class="dot dot-craft"></div>':''}${ev.photo?'<div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--lavender);"></div>':''}${ev.dl?'<div class="dot dot-dl"></div>':''}</div>`;
     html+=`<div class="cal-day ${isToday?'today':''} ${Object.keys(ev).length?'has-ev':''}">${d}${Object.keys(ev).length?dots:''}</div>`;
   }
   document.getElementById('calDays').innerHTML=html;
@@ -2358,6 +2383,7 @@ function renderEventList(){
   const now=new Date(),all=[];
   conventions.forEach(c=>{const d=Math.ceil((new Date(c.start+'T00:00:00')-now)/86400000);all.push({...c,days:d,type:'con'});});
   craftDays.forEach(cr=>{const d=Math.ceil((new Date(cr.date+'T00:00:00')-now)/86400000);all.push({...cr,days:d,type:'craft',start:cr.date,name:'🪡 '+cr.costumeName+' craft day'});});
+  photoshoots.forEach(p=>{const d=Math.ceil((new Date(p.date+'T00:00:00')-now)/86400000);all.push({...p,days:d,type:'photo',start:p.date,name:'📸 '+(p.name||'Photoshoot')});});
   cosplays.filter(c=>c.deadline).forEach(c=>{const d=Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000);all.push({id:c.id,name:c.name+' deadline',start:c.deadline,days:d,type:'dl'});});
   all.sort((a,b)=>a.days-b.days);
   const upcoming=all.filter(x=>x.days>=-1);
@@ -2366,8 +2392,8 @@ function renderEventList(){
   el.innerHTML=upcoming.map(item=>{
     const lbl=item.days<0?'Past':item.days===0?'Today!':item.days===1?'Tomorrow!':'In '+item.days+'d';
     const isSoon=item.days<=14&&item.days>=0;
-    const dot=item.type==='con'?'#7eb8c9':item.type==='craft'?'#d4a855':'#c47a8a';
-    const chipCls=item.type==='craft'?'craft-chip':isSoon?'soon':'ok';
+    const dot=item.type==='con'?'#7eb8c9':item.type==='craft'?'#d4a855':item.type==='photo'?'var(--lavender)':'#c47a8a';
+    const chipCls=item.type==='craft'?'craft-chip':item.type==='photo'?'photo-chip':isSoon?'soon':'ok';
     const dl=item.start?new Date(item.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
     return `<div class="event-item">
       <div class="ev-dot" style="background:${dot}"></div>
@@ -2380,12 +2406,29 @@ function renderEventList(){
       <div class="ev-chip ${chipCls}">${lbl}</div>
       ${item.type==='con'?`<span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
       ${item.type==='craft'?`<span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
+      ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
 }
 
 // ── CON ───────────────────────────────────────────────────────
-function openConModal(){openModal('conModal');}
+window.openConModal = function openConModal(id) {
+  window._editingConId = id || null;
+  if (id) {
+    const con = conventions.find(c => c.id === id);
+    if (con) {
+      document.getElementById('conModalTitle').textContent = '✎ Edit Con/Event';
+      document.getElementById('c-name').value = con.name || '';
+      document.getElementById('c-start').value = con.start || '';
+      document.getElementById('c-end').value = con.end || '';
+      document.getElementById('c-location').value = con.location || '';
+    }
+  } else {
+    document.getElementById('conModalTitle').textContent = '🎪 Add Con/Event';
+    ['c-name','c-start','c-end','c-location'].forEach(id=>document.getElementById(id).value='');
+  }
+  openModal('conModal');
+};
 function saveCon(){
   const name=document.getElementById('c-name').value.trim(),start=document.getElementById('c-start').value;
   if(!name||!start){alert('Please enter a name and start date.');return;}
@@ -2495,6 +2538,45 @@ function onStepDragEnd() {
 window.startTaskDrag = startTaskDrag;
 window.startStepDrag = startStepDrag;
 
+
+
+// ── PHOTOSHOOTS ───────────────────────────────────────────────
+let _editingPhotoId = null;
+window.openPhotoModal = function openPhotoModal(id) {
+  _editingPhotoId = id || null;
+  if (id) {
+    const ph = photoshoots.find(p => p.id === id);
+    if (ph) {
+      document.getElementById('photoModalTitle').textContent = '✎ Edit Photoshoot';
+      document.getElementById('ph-name').value = ph.name || '';
+      document.getElementById('ph-date').value = ph.date || '';
+      document.getElementById('ph-location').value = ph.location || '';
+      document.getElementById('ph-notes').value = ph.notes || '';
+    }
+  } else {
+    document.getElementById('photoModalTitle').textContent = '📸 Add Photoshoot';
+    ['ph-name','ph-date','ph-location','ph-notes'].forEach(id => document.getElementById(id).value = '');
+  }
+  openModal('photoModal');
+};
+window.savePhoto = function savePhoto() {
+  const name = document.getElementById('ph-name').value.trim();
+  const date = document.getElementById('ph-date').value;
+  if (!name || !date) { alert('Please enter a name and date.'); return; }
+  const item = { id: _editingPhotoId || uid(), name, date,
+    location: document.getElementById('ph-location').value.trim(),
+    notes: document.getElementById('ph-notes').value.trim() };
+  if (_editingPhotoId) {
+    const idx = photoshoots.findIndex(p => p.id === _editingPhotoId);
+    if (idx !== -1) photoshoots[idx] = item;
+  } else { photoshoots.push(item); }
+  _editingPhotoId = null;
+  save(); closeAllModals(); renderCalendar();
+};
+window.deletePhoto = function deletePhoto(id) {
+  photoshoots = photoshoots.filter(p => p.id !== id);
+  save(); renderCalendar();
+};
 
 // ── COS-PLANS ─────────────────────────────────────────────────
 let _editingCosPlanId = null;
