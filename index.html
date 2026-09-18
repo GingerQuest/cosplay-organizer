@@ -506,32 +506,47 @@ select option{background:#1a2f1c;}
       <div id="urgentBannerHome"></div>
 
       <!-- Active Quests -->
-      <div class="section-header-row">
+      <div class="section-header-row" style="cursor:pointer;" onclick="toggleHomeSection('quests')">
         <div class="section-label sage" style="margin-bottom:0">Active Quests</div>
-        <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="showPage('quests')">See all →</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="event.stopPropagation();showPage('quests')">See all →</div>
+          <span id="hchev-quests" style="color:var(--sage);font-size:16px;transition:transform .2s;">▾</span>
+        </div>
       </div>
-      <div id="homeQuestList"></div>
-      <div id="homeEmpty" class="empty-state hidden">
-        <span class="e-emoji">🧵</span>
-        <div class="e-title">No active quests!</div>
-        <div class="e-sub">Tap <strong>✿</strong> below to begin your first build.</div>
+      <div id="hsec-quests">
+        <div id="homeQuestList"></div>
+        <div id="homeEmpty" class="empty-state hidden">
+          <span class="e-emoji">🧵</span>
+          <div class="e-title">No active quests!</div>
+          <div class="e-sub">Tap <strong>✿</strong> below to begin your first build.</div>
+        </div>
       </div>
 
       <!-- Cos-Plans -->
-      <div id="homeCosPlanSection" class="hidden">
-        <div class="section-header-row" style="margin-top:8px;">
+      <div id="homeCosPlanSection">
+        <div class="section-header-row" style="margin-top:8px;cursor:pointer;" onclick="toggleHomeSection('cosplans')">
           <div class="section-label lavender" style="margin-bottom:0;color:var(--lavender);">✨ Cos-Plans</div>
-          <div style="font-size:12px;font-weight:700;color:var(--lavender);cursor:pointer;" onclick="openAddCosPlanModal()">+ Add</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:12px;font-weight:700;color:var(--lavender);" onclick="event.stopPropagation();openAddCosPlanModal()">+ Add</div>
+            <span id="hchev-cosplans" style="color:var(--lavender);font-size:16px;transition:transform .2s;">▾</span>
+          </div>
         </div>
-        <div id="homeCosPlanList"></div>
+        <div id="hsec-cosplans">
+          <div id="homeCosPlanList"></div>
+        </div>
       </div>
 
       <!-- Upcoming Events -->
-      <div class="section-header-row" style="margin-top:8px;">
+      <div class="section-header-row" style="margin-top:8px;cursor:pointer;" onclick="toggleHomeSection('events')">
         <div class="section-label sky" style="margin-bottom:0;color:var(--sky);">📅 Coming Up</div>
-        <div style="font-size:12px;font-weight:700;color:var(--sky);cursor:pointer;" onclick="showPage('calendar')">See all →</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:12px;font-weight:700;color:var(--sky);" onclick="event.stopPropagation();showPage('calendar')">See all →</div>
+          <span id="hchev-events" style="color:var(--sky);font-size:16px;transition:transform .2s;">▾</span>
+        </div>
       </div>
-      <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
+      <div id="hsec-events">
+        <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
+      </div>
     </div>
 
     <!-- QUESTS -->
@@ -2462,6 +2477,17 @@ function renderQuestCosPlanList() {
     </div>`).join('');
 }
 
+
+// ── HOME SECTION TOGGLE ───────────────────────────────────────
+const _homeSectionState = { quests: true, cosplans: true, events: true };
+function toggleHomeSection(section) {
+  _homeSectionState[section] = !_homeSectionState[section];
+  const el = document.getElementById('hsec-' + section);
+  const chev = document.getElementById('hchev-' + section);
+  if (el) el.style.display = _homeSectionState[section] ? 'block' : 'none';
+  if (chev) chev.style.transform = _homeSectionState[section] ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
 // ── COS-PLANS ─────────────────────────────────────────────────
 let _editingCosPlanId = null;
 
@@ -2555,7 +2581,7 @@ Object.assign(window, {
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
   openAddCosPlanModal, saveCosPlan, deleteCosPlan,
-  switchQuestTab, renderQuestCosPlanList,
+  switchQuestTab, renderQuestCosPlanList, toggleHomeSection,
   renderStats, switchInnerTab, toggleDayNight,
   exportData, confirmClearData, showSignedIn
 });
