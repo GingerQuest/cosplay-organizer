@@ -477,6 +477,35 @@ select option{background:#1a2f1c;}
 .flex-row>*{flex:1;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;}
 .hidden{display:none!important;}
+
+/* ── FORGE PRO BANNER ── */
+.pro-teaser{margin:0 16px 14px;background:linear-gradient(135deg,rgba(90,58,138,0.2),rgba(160,154,200,0.1));
+  border:1px solid rgba(160,154,200,0.3);border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(8px);cursor:pointer;}
+.pro-teaser-text{flex:1;}
+.pro-teaser-title{font-size:13px;font-weight:800;color:var(--lavender);margin-bottom:2px;}
+.pro-teaser-sub{font-size:12px;color:var(--text-soft);font-weight:600;line-height:1.4;}
+.pro-teaser-arrow{font-size:18px;color:var(--lavender);flex-shrink:0;}
+
+/* Pro full screen */
+.pro-screen{padding:0 16px 24px;}
+.pro-header{background:linear-gradient(135deg,rgba(90,58,138,0.25),rgba(160,154,200,0.1));
+  border:1px solid rgba(160,154,200,0.3);border-radius:var(--r);padding:22px 20px;margin-bottom:16px;backdrop-filter:blur(8px);}
+.pro-header-title{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--cream);margin-bottom:8px;}
+.pro-header-body{font-size:13px;color:var(--text-soft);font-weight:600;line-height:1.7;margin-bottom:16px;}
+.pro-feature-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.pro-feature-icon{font-size:16px;width:28px;text-align:center;flex-shrink:0;}
+.pro-feature-text{font-size:13px;font-weight:700;color:var(--text);}
+.pro-pricing{background:rgba(90,58,138,0.15);border:1px solid rgba(160,154,200,0.25);
+  border-radius:var(--r-sm);padding:14px;margin:16px 0 0;text-align:center;}
+.pro-price-main{font-size:16px;font-weight:800;color:var(--lavender);margin-bottom:4px;}
+.pro-price-sub{font-size:12px;color:var(--text-soft);font-weight:600;}
+.pro-notify-btn{width:100%;padding:13px;border-radius:12px;
+  background:linear-gradient(135deg,#5a3a8a,#a09ac8);color:white;
+  font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-top:12px;}
+.pro-notify-success{text-align:center;font-size:13px;font-weight:700;color:var(--lavender);
+  padding:12px;background:rgba(160,154,200,0.1);border-radius:10px;margin-top:12px;}
+
 /* ── HOME COS-PLANS BUTTON ── */
 .home-cosplans-btn{display:flex;align-items:center;justify-content:space-between;
   padding:13px 14px;background:rgba(28,44,30,0.78);border:1px solid rgba(160,154,200,0.25);
@@ -745,6 +774,34 @@ select option{background:#1a2f1c;}
       </div>
     </div>
 
+
+    <!-- FORGE PRO -->
+    <div class="page slide-in" id="page-pro">
+      <div class="p-header">
+        <div class="p-header-back" onclick="backFromPro()">←</div>
+        <div><div class="p-title">⭐ Forge Pro</div></div>
+      </div>
+      <div class="pro-screen">
+        <div class="pro-header">
+          <div class="pro-header-title">Forge Pro is on its way.</div>
+          <div class="pro-header-body">You asked for more. We listened.<br><br>Forge Pro is built for the cosplayer who has too many ideas, too many builds, and never enough time to keep it all together. It's everything you love about Cosplay Forge — with the doors wide open.</div>
+          <div class="pro-feature-row"><div class="pro-feature-icon">🔓</div><div class="pro-feature-text">Unlimited active builds — no more choosing</div></div>
+          <div class="pro-feature-row"><div class="pro-feature-icon">📸</div><div class="pro-feature-text">Unlimited photos across every section</div></div>
+          <div class="pro-feature-row"><div class="pro-feature-icon">🗄</div><div class="pro-feature-text">Closet Pro — pack smarter, plan by day, never forget a piece</div></div>
+          <div class="pro-feature-row"><div class="pro-feature-icon">👥</div><div class="pro-feature-text">Group Builds — create collaborative projects with your crew</div></div>
+          <div class="pro-feature-row"><div class="pro-feature-icon">💾</div><div class="pro-feature-text">Export & backup your full build history</div></div>
+          <div class="pro-feature-row"><div class="pro-feature-icon">⚡</div><div class="pro-feature-text">Early access to every new feature</div></div>
+          <div class="pro-pricing">
+            <div class="pro-price-main">$2.99/month &nbsp;·&nbsp; $24.99/year</div>
+            <div class="pro-price-sub">One subscription. Every tool. The whole forge. 🌿</div>
+          </div>
+          <div id="proNotifyArea">
+            <button class="pro-notify-btn" onclick="handleProNotify()">Notify Me When It's Ready ✿</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- COSTUME DETAIL -->
     <div class="page slide-in" id="page-costume">
       <div id="costumePageContent"></div>
@@ -866,6 +923,15 @@ select option{background:#1a2f1c;}
               <div class="sw-thumb" id="themeSwitchThumb">🌙</div>
             </div>
           </div>
+        </div>
+
+        <!-- Forge Pro Teaser -->
+        <div class="pro-teaser" onclick="showProScreen()">
+          <div class="pro-teaser-text">
+            <div class="pro-teaser-title">⭐ Forge Pro is coming</div>
+            <div class="pro-teaser-sub">More builds. More photos. More tools for the makers who love this craft.</div>
+          </div>
+          <div class="pro-teaser-arrow">›</div>
         </div>
 
         <!-- Help -->
