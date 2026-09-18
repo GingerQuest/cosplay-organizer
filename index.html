@@ -330,8 +330,6 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .expense-item:last-child{border-bottom:none;}
 .exp-name{flex:1;font-size:14px;font-weight:600;}
 .exp-amount{font-size:14px;font-weight:800;color:var(--gold);}
-.mat-edit{color:var(--text-dim);cursor:pointer;padding:4px;transition:color .15s;font-size:15px;line-height:1;}
-.mat-edit:hover{color:var(--sage);}
 .exp-del,.mat-del,.hour-del,.link-del,.ev-del{color:var(--text-dim);cursor:pointer;padding:4px;transition:color .15s;font-size:18px;line-height:1;}
 .exp-del:hover,.mat-del:hover,.hour-del:hover,.link-del:hover,.ev-del:hover{color:var(--rose);}
 
@@ -477,44 +475,6 @@ select option{background:#1a2f1c;}
 .flex-row>*{flex:1;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;}
 .hidden{display:none!important;}
-
-/* ── HOME PRO STRIP ── */
-.home-pro-strip{margin:8px 16px 4px;padding:10px 14px;
-  background:rgba(90,58,138,0.1);border:1px solid rgba(160,154,200,0.2);
-  border-radius:var(--r-sm);display:flex;align-items:center;justify-content:space-between;
-  cursor:pointer;transition:all .2s;}
-.home-pro-strip:hover{border-color:rgba(160,154,200,0.4);background:rgba(90,58,138,0.15);}
-.home-pro-strip-text{font-size:12px;font-weight:700;color:var(--lavender);}
-.home-pro-strip-link{font-size:12px;font-weight:800;color:var(--lavender);white-space:nowrap;}
-
-/* ── FORGE PRO BANNER ── */
-.pro-teaser{margin:0 16px 14px;background:linear-gradient(135deg,rgba(90,58,138,0.2),rgba(160,154,200,0.1));
-  border:1px solid rgba(160,154,200,0.3);border-radius:var(--r);padding:14px 16px;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;backdrop-filter:blur(8px);cursor:pointer;}
-.pro-teaser-text{flex:1;}
-.pro-teaser-title{font-size:13px;font-weight:800;color:var(--lavender);margin-bottom:2px;}
-.pro-teaser-sub{font-size:12px;color:var(--text-soft);font-weight:600;line-height:1.4;}
-.pro-teaser-arrow{font-size:18px;color:var(--lavender);flex-shrink:0;}
-
-/* Pro full screen */
-.pro-screen{padding:0 16px 24px;}
-.pro-header{background:linear-gradient(135deg,rgba(90,58,138,0.25),rgba(160,154,200,0.1));
-  border:1px solid rgba(160,154,200,0.3);border-radius:var(--r);padding:22px 20px;margin-bottom:16px;backdrop-filter:blur(8px);}
-.pro-header-title{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--cream);margin-bottom:8px;}
-.pro-header-body{font-size:13px;color:var(--text-soft);font-weight:600;line-height:1.7;margin-bottom:16px;}
-.pro-feature-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.pro-feature-icon{font-size:16px;width:28px;text-align:center;flex-shrink:0;}
-.pro-feature-text{font-size:13px;font-weight:700;color:var(--text);}
-.pro-pricing{background:rgba(90,58,138,0.15);border:1px solid rgba(160,154,200,0.25);
-  border-radius:var(--r-sm);padding:14px;margin:16px 0 0;text-align:center;}
-.pro-price-main{font-size:16px;font-weight:800;color:var(--lavender);margin-bottom:4px;}
-.pro-price-sub{font-size:12px;color:var(--text-soft);font-weight:600;}
-.pro-notify-btn{width:100%;padding:13px;border-radius:12px;
-  background:linear-gradient(135deg,#5a3a8a,#a09ac8);color:white;
-  font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-top:12px;}
-.pro-notify-success{text-align:center;font-size:13px;font-weight:700;color:var(--lavender);
-  padding:12px;background:rgba(160,154,200,0.1);border-radius:10px;margin-top:12px;}
-
 /* ── HOME COS-PLANS BUTTON ── */
 .home-cosplans-btn{display:flex;align-items:center;justify-content:space-between;
   padding:13px 14px;background:rgba(28,44,30,0.78);border:1px solid rgba(160,154,200,0.25);
@@ -727,12 +687,6 @@ select option{background:#1a2f1c;}
         <div style="font-size:12px;font-weight:700;color:var(--sky);cursor:pointer;" onclick="showPage('calendar')">See all →</div>
       </div>
       <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
-
-      <!-- Forge Pro subtle strip -->
-      <div class="home-pro-strip" onclick="showProScreen()">
-        <div class="home-pro-strip-text">⭐ Forge Pro is coming — unlimited builds, photos & more</div>
-        <div class="home-pro-strip-link">Notify Me →</div>
-      </div>
     </div>
 
     <!-- QUESTS -->
@@ -789,34 +743,6 @@ select option{background:#1a2f1c;}
       </div>
     </div>
 
-
-    <!-- FORGE PRO -->
-    <div class="page slide-in" id="page-pro">
-      <div class="p-header">
-        <div class="p-header-back" onclick="backFromPro()">←</div>
-        <div><div class="p-title">⭐ Forge Pro</div></div>
-      </div>
-      <div class="pro-screen">
-        <div class="pro-header">
-          <div class="pro-header-title">Forge Pro is on its way.</div>
-          <div class="pro-header-body">You asked for more. We listened.<br><br>Forge Pro is built for the cosplayer who has too many ideas, too many builds, and never enough time to keep it all together. It's everything you love about Cosplay Forge — with the doors wide open.</div>
-          <div class="pro-feature-row"><div class="pro-feature-icon">🔓</div><div class="pro-feature-text">Unlimited active builds — no more choosing</div></div>
-          <div class="pro-feature-row"><div class="pro-feature-icon">📸</div><div class="pro-feature-text">Unlimited photos across every section</div></div>
-          <div class="pro-feature-row"><div class="pro-feature-icon">🗄</div><div class="pro-feature-text">Closet Pro — pack smarter, plan by day, never forget a piece</div></div>
-          <div class="pro-feature-row"><div class="pro-feature-icon">👥</div><div class="pro-feature-text">Group Builds — create collaborative projects with your crew</div></div>
-          <div class="pro-feature-row"><div class="pro-feature-icon">💾</div><div class="pro-feature-text">Export & backup your full build history</div></div>
-          <div class="pro-feature-row"><div class="pro-feature-icon">⚡</div><div class="pro-feature-text">Early access to every new feature</div></div>
-          <div class="pro-pricing">
-            <div class="pro-price-main">$2.99/month &nbsp;·&nbsp; $24.99/year</div>
-            <div class="pro-price-sub">One subscription. Every tool. The whole forge. 🌿</div>
-          </div>
-          <div id="proNotifyArea">
-            <button class="pro-notify-btn" onclick="handleProNotify()">Notify Me When It's Ready ✿</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- COSTUME DETAIL -->
     <div class="page slide-in" id="page-costume">
       <div id="costumePageContent"></div>
@@ -828,7 +754,7 @@ select option{background:#1a2f1c;}
         <div><div class="p-title">🗓 Calendar</div><div class="p-subtitle">Events & crafting days</div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn craft-btn sm" onclick="openCraftModal()">🪡 Craft Day</button>
-          <button class="btn sm" style="background:#1a0f2e;border-color:rgba(160,154,200,0.6);color:var(--lavender);" onclick="openPhotoModal()">📸 Photoshoot</button>
+          <button class="btn sm" style="background:rgba(160,154,200,0.12);border-color:rgba(160,154,200,0.4);color:var(--lavender);" onclick="openPhotoModal()">📸 Photoshoot</button>
           <button class="btn sky-btn sm" onclick="openConModal()">🎪 Con/Event</button>
         </div>
       </div>
@@ -938,15 +864,6 @@ select option{background:#1a2f1c;}
               <div class="sw-thumb" id="themeSwitchThumb">🌙</div>
             </div>
           </div>
-        </div>
-
-        <!-- Forge Pro Teaser -->
-        <div class="pro-teaser" onclick="showProScreen()">
-          <div class="pro-teaser-text">
-            <div class="pro-teaser-title">⭐ Forge Pro is coming</div>
-            <div class="pro-teaser-sub">More builds. More photos. More tools for the makers who love this craft.</div>
-          </div>
-          <div class="pro-teaser-arrow">›</div>
         </div>
 
         <!-- Help -->
@@ -1173,26 +1090,6 @@ select option{background:#1a2f1c;}
     <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
     <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
-  </div>
-</div>
-
-
-<!-- ══ EDIT CRAFT DAY MODAL ══ -->
-<div class="modal-overlay" id="craftEditModal">
-  <div class="modal">
-    <div class="modal-handle"></div>
-    <div class="modal-title">✎ Edit Craft Day</div>
-    <div class="form-group"><label>Date</label><input type="date" id="cr-edit-date"></div>
-    <div class="form-group"><label>Which Costume?</label>
-      <select id="cr-edit-costume"><option value="">— Select a costume —</option></select>
-    </div>
-    <div class="form-group"><label>What do you plan to work on?</label>
-      <textarea id="cr-edit-notes" style="min-height:80px;"></textarea>
-    </div>
-    <div class="form-group"><label>Planned Hours (optional)</label>
-      <input type="number" id="cr-edit-hours" placeholder="e.g. 3" min="0.5" step="0.5">
-    </div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCraftEdit()">Save Changes ✿</button>
   </div>
 </div>
 
@@ -2524,8 +2421,8 @@ function renderEventList(){
         ${item.type==='craft'&&item.hours?`<div class="ev-sub">⏱ ${item.hours}h planned</div>`:''}
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
-      ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
-      ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
+      ${item.type==='con'?`<span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
+      ${item.type==='craft'?`<span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
       ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
@@ -2966,26 +2863,31 @@ renderHome();
 renderCalendar();
 
 // ── EXPOSE FUNCTIONS TO WINDOW (required for ES module onclick handlers) ──
-// ── EXPOSE ALL TO WINDOW ─────────────────────────────────────
-[showPage, openCostumePage, backFromCostume, renderHome, renderAllQuests,
- setFilter, openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent,
- renderCostumePage, toggleBlock, toggleBudget, saveBudget, openModal, closeAllModals,
- openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
- saveTask, toggleTask, deleteTask, moveTask, toggleCatGroup,
- openCatTaskModal, saveCatTask, toggleCatStep, deleteCatStep, moveCatStep,
- switchTaskType, saveSupply, toggleSupplyStatus, deleteSupply, openSupplyModal,
- switchSupplyStatus, saveHours, deleteHour, saveLink, deleteLink, saveNotes,
- changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
- renderStats, switchInnerTab, toggleDayNight, exportData, confirmClearData,
- showSignedIn, openNewChoiceSheet, openAddCosPlanModal, openEditCosPlanModal,
- saveCosPlan, deleteCosPlan, toggleCosPlanExpand, activateCosPlan,
- showQuestLimitBanner, closeQuestLimitBanner, moveToCosPlanFromBanner,
- renderCosPlansList, replayOnboarding, obCreateAccount, obSignIn, obGoogleSignIn,
- obSkipAccount, obSkipSlides, obNextSlide, obFinishWithQuest, obFinish,
- obShowSignIn, obShowCreate, initOnboarding, startTaskDrag, startStepDrag,
- showProScreen, backFromPro, handleProNotify, openCraftEditModal,
- saveCraftEdit, switchQuestTab
-].forEach(fn => { try { if (fn?.name) window[fn.name] = fn; } catch(e){} });
+Object.assign(window, {
+  showPage, openCostumePage, backFromCostume,
+  renderHome, renderAllQuests, setFilter,
+  openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent,
+  renderCostumePage, toggleBlock, toggleBudget, saveBudget,
+  openModal, closeAllModals,
+  openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
+  saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
+  moveTask, toggleCatGroup, openCatTaskModal, saveCatTask,
+  toggleCatStep, deleteCatStep, moveCatStep, switchTaskType,
+  saveSupply, toggleSupplyStatus, deleteSupply, openSupplyModal, switchSupplyStatus,
+  saveMaterial, deleteMaterial, saveHours, deleteHour,
+  saveLink, deleteLink, saveNotes,
+  changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
+  renderStats, switchInnerTab, toggleDayNight,
+  exportData, confirmClearData, showSignedIn,
+  openNewChoiceSheet, openAddCosPlanModal, openEditCosPlanModal,
+  saveCosPlan, deleteCosPlan, toggleCosPlanExpand, activateCosPlan,
+  showQuestLimitBanner, closeQuestLimitBanner, moveToCosPlanFromBanner,
+  renderCosPlansList, replayOnboarding,
+  obCreateAccount, obSignIn, obGoogleSignIn, obSkipAccount,
+  obSkipSlides, obNextSlide, obFinishWithQuest, obFinish,
+  obShowSignIn, obShowCreate, initOnboarding,
+  startTaskDrag, startStepDrag
+});
 </script>
 <script>
   if ('serviceWorker' in navigator) {
