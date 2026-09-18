@@ -1572,11 +1572,11 @@ function renderHome() {
   if (!recent.length) { list.innerHTML=''; empty.classList.remove('hidden'); }
   else { empty.classList.add('hidden'); list.innerHTML = recent.map(c=>questCard(c)).join(''); }
 
-  // Cos-Plans section
+  // Cos-Plans section - always visible
   const cpSection = document.getElementById('homeCosPlanSection');
   const cpList = document.getElementById('homeCosPlanList');
+  cpSection.classList.remove('hidden');
   if ((cosPlans||[]).length > 0) {
-    cpSection.classList.remove('hidden');
     cpList.innerHTML = (cosPlans||[]).slice(0,3).map(cp=>`
       <div style="margin:0 16px 8px;padding:10px 14px;background:rgba(160,154,200,0.08);border:1px solid rgba(160,154,200,0.2);border-radius:var(--r);display:flex;align-items:center;gap:10px;">
         <div style="font-size:22px;width:36px;height:36px;border-radius:8px;background:rgba(160,154,200,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✨</div>
@@ -1589,7 +1589,9 @@ function renderHome() {
       cpList.innerHTML += `<div style="margin:0 16px 8px;font-size:12px;font-weight:700;color:var(--lavender);text-align:center;">+${cosPlans.length-3} more ideas</div>`;
     }
   } else {
-    cpSection.classList.add('hidden');
+    cpList.innerHTML = `<div style="margin:0 16px 8px;padding:12px 14px;background:rgba(160,154,200,0.05);border:1px dashed rgba(160,154,200,0.2);border-radius:var(--r);text-align:center;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-dim);">No ideas saved yet — tap + Add to start your wishlist ✨</div>
+    </div>`;
   }
 
   // Upcoming events preview
@@ -2427,6 +2429,39 @@ window.startStepDrag = startStepDrag;
 
 
 
+
+function switchQuestTab(tab) {
+  ['active','cosplans','closet'].forEach(t => {
+    document.getElementById('qtab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('qpane-'+t).style.display = t===tab ? 'block' : 'none';
+  });
+  const addBtn = document.getElementById('questAddBtn');
+  if (addBtn) {
+    if (tab==='active')   { addBtn.textContent='+ New'; addBtn.onclick=()=>openAddModal(); addBtn.style.display=''; }
+    else if (tab==='cosplans') { addBtn.style.display='none'; }
+    else { addBtn.style.display='none'; }
+  }
+  if (tab==='cosplans') renderQuestCosPlanList();
+}
+
+function renderQuestCosPlanList() {
+  const list = document.getElementById('questCosPlanList');
+  const empty = document.getElementById('questCosPlanEmpty');
+  if (!list) return;
+  if (!(cosPlans||[]).length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  list.innerHTML = (cosPlans||[]).map(cp=>`
+    <div style="margin:0 16px 8px;padding:12px 14px;background:rgba(28,44,30,0.78);border:1px solid rgba(160,154,200,0.2);border-radius:var(--r);display:flex;align-items:center;gap:12px;">
+      <div style="font-size:24px;width:44px;height:44px;border-radius:10px;background:rgba(160,154,200,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✨</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:15px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cp.name}</div>
+        <div style="font-size:12px;color:var(--text-soft);font-weight:600;margin-top:2px;">${cp.series||'—'}</div>
+        ${cp.notes?`<div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:600;">${cp.notes}</div>`:''}
+      </div>
+      <span style="color:var(--text-dim);cursor:pointer;font-size:18px;padding:4px;" onclick="deleteCosPlan('${cp.id}')">×</span>
+    </div>`).join('');
+}
+
 // ── COS-PLANS ─────────────────────────────────────────────────
 let _editingCosPlanId = null;
 
@@ -2520,6 +2555,7 @@ Object.assign(window, {
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
   openAddCosPlanModal, saveCosPlan, deleteCosPlan,
+  switchQuestTab, renderQuestCosPlanList,
   renderStats, switchInnerTab, toggleDayNight,
   exportData, confirmClearData, showSignedIn
 });
