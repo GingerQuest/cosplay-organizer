@@ -507,7 +507,7 @@ select option{background:#1a2f1c;}
 
       <!-- Active Quests -->
       <div class="section-header-row" style="cursor:pointer;" onclick="toggleHomeSection('quests')">
-        <div class="section-label sage" style="margin-bottom:0">Active Quests</div>
+        <div class="section-label sage" id="hlabel-quests" style="margin-bottom:0;transition:font-size .2s;">Active Quests</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="event.stopPropagation();showPage('quests')">See all →</div>
           <span id="hchev-quests" style="color:var(--sage);font-size:16px;transition:transform .2s;">▾</span>
@@ -525,7 +525,7 @@ select option{background:#1a2f1c;}
       <!-- Cos-Plans -->
       <div id="homeCosPlanSection">
         <div class="section-header-row" style="margin-top:8px;cursor:pointer;" onclick="toggleHomeSection('cosplans')">
-          <div class="section-label lavender" style="margin-bottom:0;color:var(--lavender);">✨ Cos-Plans</div>
+          <div class="section-label lavender" id="hlabel-cosplans" style="margin-bottom:0;color:var(--lavender);transition:font-size .2s;">✨ Cos-Plans</div>
           <div style="display:flex;align-items:center;gap:8px;">
             <div style="font-size:12px;font-weight:700;color:var(--lavender);" onclick="event.stopPropagation();openAddCosPlanModal()">+ Add</div>
             <span id="hchev-cosplans" style="color:var(--lavender);font-size:16px;transition:transform .2s;">▾</span>
@@ -538,7 +538,7 @@ select option{background:#1a2f1c;}
 
       <!-- Upcoming Events -->
       <div class="section-header-row" style="margin-top:8px;cursor:pointer;" onclick="toggleHomeSection('events')">
-        <div class="section-label sky" style="margin-bottom:0;color:var(--sky);">📅 Coming Up</div>
+        <div class="section-label sky" id="hlabel-events" style="margin-bottom:0;color:var(--sky);transition:font-size .2s;">📅 Coming Up</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;font-weight:700;color:var(--sky);" onclick="event.stopPropagation();showPage('calendar')">See all →</div>
           <span id="hchev-events" style="color:var(--sky);font-size:16px;transition:transform .2s;">▾</span>
@@ -551,21 +551,49 @@ select option{background:#1a2f1c;}
 
     <!-- QUESTS -->
     <div class="page" id="page-quests">
-      <div class="p-header" style="justify-content:space-between;">
-        <div><div class="p-title">🗡️ Quests</div><div class="p-subtitle">All your cosplay projects</div></div>
-        <button class="btn sky-btn sm" onclick="openAddModal()">+ New</button>
+      <div class="p-header">
+        <div><div class="p-title">⚔️ Quests</div><div class="p-subtitle">Your cosplay journey</div></div>
       </div>
-      <div class="filter-row">
-        <div class="filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</div>
-        <div class="filter-pill" data-filter="wip" onclick="setFilter('wip',this)">Active</div>
-        <div class="filter-pill" data-filter="planned" onclick="setFilter('planned',this)">Planned</div>
-        <div class="filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</div>
+      <!-- Inner tabs -->
+      <div class="inner-tabs">
+        <button class="inner-tab active" id="qtab-active"   onclick="switchQuestTab('active')">Active</button>
+        <button class="inner-tab"        id="qtab-cosplans" onclick="switchQuestTab('cosplans')">Cos-Plans</button>
+        <button class="inner-tab"        id="qtab-closet"   onclick="switchQuestTab('closet')">Closet 🔒</button>
       </div>
-      <div id="allQuestList"></div>
-      <div id="allEmpty" class="empty-state hidden">
-        <span class="e-emoji">🌿</span>
-        <div class="e-title">Nothing here yet</div>
-        <div class="e-sub">Add your first cosplay quest!</div>
+
+      <!-- Active pane -->
+      <div id="qpane-active">
+        <div style="padding:0 16px 12px;display:flex;justify-content:flex-end;">
+          <button class="btn sky-btn sm" onclick="openAddModal()">+ New Quest</button>
+        </div>
+        <div id="allQuestList"></div>
+        <div id="allEmpty" class="empty-state hidden">
+          <span class="e-emoji">🌿</span>
+          <div class="e-title">Nothing here yet</div>
+          <div class="e-sub">Tap + New Quest above to start your first build!</div>
+        </div>
+      </div>
+
+      <!-- Cos-Plans pane -->
+      <div id="qpane-cosplans" style="display:none;">
+        <div style="padding:0 16px 12px;display:flex;justify-content:flex-end;">
+          <button class="btn sm" style="border-color:rgba(160,154,200,0.4);color:var(--lavender);background:rgba(160,154,200,0.08);" onclick="openAddCosPlanModal()">✨ Add Cos-Plan</button>
+        </div>
+        <div id="questCosPlanList"></div>
+        <div id="questCosPlanEmpty" class="empty-state hidden">
+          <span class="e-emoji">✨</span>
+          <div class="e-title">No Cos-Plans yet</div>
+          <div class="e-sub">Save costume ideas for when you're ready to build!</div>
+        </div>
+      </div>
+
+      <!-- Closet pane -->
+      <div id="qpane-closet" style="display:none;">
+        <div class="empty-state" style="padding:44px 24px;">
+          <span class="e-emoji">🗄</span>
+          <div class="e-title">Closet — Coming Soon</div>
+          <div class="e-sub">Your master wardrobe of completed costumes. Coming with Forge Pro. 🌿</div>
+        </div>
       </div>
     </div>
 
@@ -755,7 +783,7 @@ select option{background:#1a2f1c;}
   <nav class="tab-bar">
     <button class="tab-btn active" data-page="home" onclick="showPage('home')"><span class="t-icon">🏡</span><span class="t-label">Home</span></button>
     <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">🗡️</span><span class="t-label">Quests</span></button>
-    <button class="tab-btn fab-tab" onclick="openAddModal()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
+    <button class="tab-btn fab-tab" onclick="openFabChoice()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
     <button class="tab-btn" data-page="calendar" onclick="showPage('calendar')"><span class="t-icon">🗓</span><span class="t-label">Calendar</span></button>
     <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Profile</span></button>
   </nav>
@@ -2478,14 +2506,33 @@ function renderQuestCosPlanList() {
 }
 
 
+
+function openFabChoice() {
+  // Show choice sheet: New Quest or Add Cos-Plan
+  const overlay = document.createElement('div');
+  overlay.id = 'fabChoiceOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;';
+  overlay.innerHTML = `<div style="width:100%;max-width:430px;background:var(--panel-solid,#1c2a20);border-radius:20px 20px 0 0;padding:20px 20px 44px;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;"></div>
+    <div style="font-size:15px;font-weight:800;color:var(--cream);margin-bottom:16px;text-align:center;">What would you like to add?</div>
+    <button onclick="document.getElementById('fabChoiceOverlay').remove();openAddModal();" style="width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;border:none;cursor:pointer;margin-bottom:10px;">⚔️ Start a new Quest</button>
+    <button onclick="document.getElementById('fabChoiceOverlay').remove();openAddCosPlanModal();" style="width:100%;padding:14px;border-radius:12px;background:rgba(160,154,200,0.12);border:1px solid rgba(160,154,200,0.4);color:var(--lavender);font-family:'Nunito',sans-serif;font-size:15px;font-weight:800;cursor:pointer;">✨ Add a Cos-Plan</button>
+    <button onclick="document.getElementById('fabChoiceOverlay').remove();" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:8px;">Cancel</button>
+  </div>`;
+  overlay.addEventListener('click', e => { if(e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+
 // ── HOME SECTION TOGGLE ───────────────────────────────────────
 const _homeSectionState = { quests: true, cosplans: true, events: true };
 function toggleHomeSection(section) {
   _homeSectionState[section] = !_homeSectionState[section];
   const el = document.getElementById('hsec-' + section);
   const chev = document.getElementById('hchev-' + section);
+  const label = document.getElementById('hlabel-' + section);
   if (el) el.style.display = _homeSectionState[section] ? 'block' : 'none';
   if (chev) chev.style.transform = _homeSectionState[section] ? 'rotate(0deg)' : 'rotate(-90deg)';
+  if (label) label.style.fontSize = _homeSectionState[section] ? '11px' : '15px';
 }
 
 // ── COS-PLANS ─────────────────────────────────────────────────
@@ -2581,7 +2628,7 @@ Object.assign(window, {
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
   openAddCosPlanModal, saveCosPlan, deleteCosPlan,
-  switchQuestTab, renderQuestCosPlanList, toggleHomeSection,
+  switchQuestTab, renderQuestCosPlanList, toggleHomeSection, openFabChoice,
   renderStats, switchInnerTab, toggleDayNight,
   exportData, confirmClearData, showSignedIn
 });
