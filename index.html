@@ -838,14 +838,18 @@ select option{background:#1a2f1c;}
 <div class="modal-overlay" id="conModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">🎪 Add Convention</div>
+    <div class="modal-title" id="conModalTitle">🎪 Add Con/Event</div>
     <div class="form-group"><label>Convention Name</label><input type="text" id="c-name" placeholder="Anime Expo, C2E2…"></div>
     <div class="flex-row">
       <div class="form-group"><label>Start Date</label><input type="date" id="c-start"></div>
       <div class="form-group"><label>End Date</label><input type="date" id="c-end"></div>
     </div>
+    <div class="flex-row">
+      <div class="form-group"><label>Start Time <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="time" id="c-start-time"></div>
+      <div class="form-group"><label>End Time <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="time" id="c-end-time"></div>
+    </div>
     <div class="form-group"><label>Location</label><input type="text" id="c-location" placeholder="City, Venue…"></div>
-    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCon()">Add Convention ✿</button>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCon()">Save Con/Event ✿</button>
   </div>
 </div>
 
@@ -866,7 +870,7 @@ select option{background:#1a2f1c;}
 <div class="modal-overlay" id="craftModal">
   <div class="modal">
     <div class="modal-handle"></div>
-    <div class="modal-title">🪡 Plan a Craft Day</div>
+    <div class="modal-title" id="craftModalTitle">🪡 Plan a Craft Day</div>
     <div class="form-group"><label>Date</label><input type="date" id="cr-date"></div>
     <div class="form-group"><label>Which Costume?</label>
       <select id="cr-costume"><option value="">— Select a costume —</option></select>
@@ -1884,7 +1888,24 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); editingId=null;}
 
 // ── CRAFT DAYS ────────────────────────────────────────────────
+let _editingCraftId = null;
+function openCraftEditModal(id) {
+  const cr = craftDays.find(c => c.id === id);
+  if (!cr) return;
+  _editingCraftId = id;
+  const sel = document.getElementById('cr-costume');
+  sel.innerHTML = '<option value="">— Select a costume —</option>';
+  cosplays.forEach(c => { const o=document.createElement('option');o.value=c.id;o.textContent=c.emoji+' '+c.name;sel.appendChild(o); });
+  sel.value = cr.costumeId || '';
+  document.getElementById('cr-date').value = cr.date || '';
+  document.getElementById('cr-notes').value = cr.notes || '';
+  document.getElementById('cr-hours').value = cr.hours || '';
+  document.getElementById('craftModalTitle').textContent = '✎ Edit Craft Day';
+  openModal('craftModal');
+}
 function openCraftModal() {
+  _editingCraftId = null;
+  document.getElementById('craftModalTitle').textContent = '🪡 Plan a Craft Day';
   // Populate costume dropdown
   const sel=document.getElementById('cr-costume');
   sel.innerHTML='<option value="">— Select a costume —</option>';
@@ -1905,8 +1926,19 @@ function saveCraftDay() {
   const costumeId=document.getElementById('cr-costume').value;
   const notes=document.getElementById('cr-notes').value.trim();
   if(!date){alert('Please pick a date.');return;}
-  if(!costumeId){alert('Please select a costume.');return;}
-  const costume=getCostume(costumeId);
+  const costume=costumeId?getCostume(costumeId):null;
+  const item={id:_editingCraftId||uid(),date,costumeId:costumeId||'',costumeName:costume?.name||'General craft day',
+    notes,hours:parseFloat(document.getElementById('cr-hours').value)||0};
+  if(_editingCraftId){
+    const idx=craftDays.findIndex(c=>c.id===_editingCraftId);
+    if(idx!==-1) craftDays[idx]=item;
+    _editingCraftId=null;
+    save(); closeAllModals();
+    const ap=document.querySelector('.page.active')?.id;
+    if(ap==='page-calendar') renderCalendar();
+    if(ap==='page-home') renderHome();
+    return;
+  }
   craftDays.push({
     id:uid(), date, costumeId, costumeName:costume?.name||'',
     notes, hours:parseFloat(document.getElementById('cr-hours').value)||0
@@ -2162,25 +2194,50 @@ function renderEventList(){
       <div class="ev-dot" style="background:${dot}"></div>
       <div class="ev-info">
         <div class="ev-name">${item.name}</div>
-        <div class="ev-date">${dl}${item.location?' · '+item.location:''}</div>
+        <div class="ev-date">${dl}${item.startTime?' · '+item.startTime:''}${item.endTime?'–'+item.endTime:''}${item.location?' · '+item.location:''}</div>
         ${item.type==='craft'&&item.notes?`<div class="ev-sub">${item.notes}</div>`:''}
         ${item.type==='craft'&&item.hours?`<div class="ev-sub">⏱ ${item.hours}h planned</div>`:''}
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
-      ${item.type==='con'?`<span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
-      ${item.type==='craft'?`<span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
+      ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
+      ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
       ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;cursor:pointer;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
 }
 
 // ── CON ───────────────────────────────────────────────────────
-function openConModal(){openModal('conModal');}
+function openConModal(id) {
+  window._editingConId = id || null;
+  if (id) {
+    const con = conventions.find(c => c.id === id);
+    if (con) {
+      document.getElementById('conModalTitle').textContent = '✎ Edit Con/Event';
+      document.getElementById('c-name').value = con.name || '';
+      document.getElementById('c-start').value = con.start || '';
+      document.getElementById('c-end').value = con.end || '';
+      document.getElementById('c-location').value = con.location || '';
+      document.getElementById('c-start-time').value = con.startTime || '';
+      document.getElementById('c-end-time').value = con.endTime || '';
+    }
+  } else {
+    document.getElementById('conModalTitle').textContent = '🎪 Add Con/Event';
+    ['c-name','c-start','c-end','c-location','c-start-time','c-end-time'].forEach(id => document.getElementById(id).value = '');
+  }
+  openModal('conModal');
+}
 function saveCon(){
   const name=document.getElementById('c-name').value.trim(),start=document.getElementById('c-start').value;
   if(!name||!start){alert('Please enter a name and start date.');return;}
-  conventions.push({id:uid(),name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim()});
-  ['c-name','c-start','c-end','c-location'].forEach(id=>document.getElementById(id).value='');
+  const item={name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim(),startTime:document.getElementById('c-start-time').value,endTime:document.getElementById('c-end-time').value};
+  if(window._editingConId){
+    const idx=conventions.findIndex(c=>c.id===window._editingConId);
+    if(idx!==-1) conventions[idx]={...conventions[idx],...item};
+    window._editingConId=null;
+  } else {
+    conventions.push({id:uid(),...item});
+  }
+  ['c-name','c-start','c-end','c-location','c-start-time','c-end-time'].forEach(id=>document.getElementById(id).value='');
   save();closeAllModals();renderCalendar();
 }
 function deleteCon(id){conventions=conventions.filter(c=>c.id!==id);save();renderCalendar();}
@@ -2343,6 +2400,7 @@ Object.assign(window, {
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
+  openCraftEditModal,
   renderStats, switchInnerTab, toggleDayNight,
   exportData, confirmClearData, showSignedIn
 });
