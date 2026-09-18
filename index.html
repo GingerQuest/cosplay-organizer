@@ -478,6 +478,15 @@ select option{background:#1a2f1c;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;}
 .hidden{display:none!important;}
 
+/* ── HOME PRO STRIP ── */
+.home-pro-strip{margin:8px 16px 4px;padding:10px 14px;
+  background:rgba(90,58,138,0.1);border:1px solid rgba(160,154,200,0.2);
+  border-radius:var(--r-sm);display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;transition:all .2s;}
+.home-pro-strip:hover{border-color:rgba(160,154,200,0.4);background:rgba(90,58,138,0.15);}
+.home-pro-strip-text{font-size:12px;font-weight:700;color:var(--lavender);}
+.home-pro-strip-link{font-size:12px;font-weight:800;color:var(--lavender);white-space:nowrap;}
+
 /* ── FORGE PRO BANNER ── */
 .pro-teaser{margin:0 16px 14px;background:linear-gradient(135deg,rgba(90,58,138,0.2),rgba(160,154,200,0.1));
   border:1px solid rgba(160,154,200,0.3);border-radius:var(--r);padding:14px 16px;
@@ -718,6 +727,12 @@ select option{background:#1a2f1c;}
         <div style="font-size:12px;font-weight:700;color:var(--sky);cursor:pointer;" onclick="showPage('calendar')">See all →</div>
       </div>
       <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
+
+      <!-- Forge Pro subtle strip -->
+      <div class="home-pro-strip" onclick="showProScreen()">
+        <div class="home-pro-strip-text">⭐ Forge Pro is coming — unlimited builds, photos & more</div>
+        <div class="home-pro-strip-link">Notify Me →</div>
+      </div>
     </div>
 
     <!-- QUESTS -->
@@ -2534,7 +2549,7 @@ window.openConModal = function openConModal(id) {
   }
   openModal('conModal');
 };
-function saveCon(){
+window.saveCon = function saveCon(){
   const name=document.getElementById('c-name').value.trim(),start=document.getElementById('c-start').value;
   if(!name||!start){alert('Please enter a name and start date.');return;}
   conventions.push({id:uid(),name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim()});
@@ -2975,7 +2990,8 @@ Object.assign(window, {
   obSkipSlides, obNextSlide, obFinishWithQuest, obFinish,
   obShowSignIn, obShowCreate, initOnboarding,
   startTaskDrag, startStepDrag,
-  showProScreen, backFromPro, handleProNotify
+  showProScreen, backFromPro, handleProNotify,
+  openCraftEditModal, saveCraftEdit, switchQuestTab
 });
 </script>
 <script>
