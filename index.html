@@ -2441,13 +2441,13 @@ let _editingCosPlanId = null;
 let _expandedCosPlanIds = new Set();
 let _pendingQuestName = null;
 
-function openNewChoiceSheet() {
+window.openNewChoiceSheet = function openNewChoiceSheet() {
   const activeQuests = cosplays.filter(c => c.status !== 'done').length;
   if (activeQuests >= FREE_QUEST_LIMIT) { showQuestLimitBanner(); return; }
   openModal('choiceModal');
 }
 
-function showQuestLimitBanner(pendingName) {
+window.showQuestLimitBanner = function showQuestLimitBanner(pendingName) {
   if (pendingName) _pendingQuestName = pendingName;
   const banner = document.getElementById('questLimitBanner');
   banner.classList.remove('hidden');
@@ -2461,17 +2461,17 @@ function showQuestLimitBanner(pendingName) {
   </div>`;
 }
 
-function closeQuestLimitBanner() {
+window.closeQuestLimitBanner = function closeQuestLimitBanner() {
   document.getElementById('questLimitBanner').classList.add('hidden');
   _pendingQuestName = null;
 }
 
-function moveToCosPlanFromBanner() {
+window.moveToCosPlanFromBanner = function moveToCosPlanFromBanner() {
   closeQuestLimitBanner();
   openAddCosPlanModal(_pendingQuestName);
 }
 
-function openAddCosPlanModal(prefillName) {
+window.openAddCosPlanModal = function openAddCosPlanModal(prefillName) {
   _editingCosPlanId = null;
   document.getElementById('cosPlanModalTitle').textContent = '✨ Add a Cos-Plan';
   document.getElementById('cp-name').value = prefillName || '';
@@ -2481,7 +2481,7 @@ function openAddCosPlanModal(prefillName) {
   openModal('cosPlanModal');
 }
 
-function openEditCosPlanModal(id) {
+window.openEditCosPlanModal = function openEditCosPlanModal(id) {
   const cp = cosPlans.find(p => p.id === id);
   if (!cp) return;
   _editingCosPlanId = id;
@@ -2493,7 +2493,7 @@ function openEditCosPlanModal(id) {
   openModal('cosPlanModal');
 }
 
-function saveCosPlan() {
+window.saveCosPlan = function saveCosPlan() {
   const name = document.getElementById('cp-name').value.trim();
   if (!name) { alert('Please enter a character name!'); return; }
   const item = { id: _editingCosPlanId || uid(), name,
@@ -2508,20 +2508,20 @@ function saveCosPlan() {
   save(); closeAllModals(); renderHome();
 }
 
-function deleteCosPlan(id) {
+window.deleteCosPlan = function deleteCosPlan(id) {
   if (!confirm('Remove this Cos-Plan?')) return;
   cosPlans = cosPlans.filter(p => p.id !== id);
   _expandedCosPlanIds.delete(id);
   save(); renderHome();
 }
 
-function toggleCosPlanExpand(id) {
+window.toggleCosPlanExpand = function toggleCosPlanExpand(id) {
   if (_expandedCosPlanIds.has(id)) _expandedCosPlanIds.delete(id);
   else _expandedCosPlanIds.add(id);
   renderCosPlansList();
 }
 
-function activateCosPlan(id) {
+window.activateCosPlan = function activateCosPlan(id) {
   const cp = cosPlans.find(p => p.id === id);
   if (!cp) return;
   const activeQuests = cosplays.filter(c => c.status !== 'done').length;
@@ -2534,7 +2534,7 @@ function activateCosPlan(id) {
   save(); renderHome();
 }
 
-function renderCosPlansList() {
+window.renderCosPlansList = function renderCosPlansList() {
   const list = document.getElementById('cosPlansList');
   const empty = document.getElementById('cosPlansEmpty');
   if (!list) return;
@@ -2574,15 +2574,15 @@ const _obSlides = [
   { icon: '✨', title: 'Save your dream builds', body: 'Got more costume ideas than time? Add them to Cos-Plans — your personal wishlist. No build slot needed. Just save the idea and it\'ll be waiting when you\'re ready.' }
 ];
 
-function obShowScreen(id) {
+window.obShowScreen = function obShowScreen(id) {
   document.querySelectorAll('.ob-screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 }
 
-function obShowSignIn() { obShowScreen('ob-signin'); }
-function obShowCreate() { obShowScreen('ob-account'); }
+window.obShowSignIn = function obShowSignIn() { obShowScreen('ob-signin'); }
+window.obShowCreate = function obShowCreate() { obShowScreen('ob-account'); }
 
-function initOnboarding() {
+window.initOnboarding = function initOnboarding() {
   const done = localStorage.getItem('cf_onboarded');
   if (!done && !currentUser) {
     document.getElementById('onboardingOverlay').classList.remove('hidden');
@@ -2590,7 +2590,7 @@ function initOnboarding() {
   }
 }
 
-async function obCreateAccount() {
+window.obCreateAccount = async function obCreateAccount() {
   const email = document.getElementById('ob-email').value.trim();
   const pass = document.getElementById('ob-password').value;
   const nick = document.getElementById('ob-nickname').value.trim();
@@ -2610,7 +2610,7 @@ async function obCreateAccount() {
   }
 }
 
-async function obSignIn() {
+window.obSignIn = async function obSignIn() {
   const email = document.getElementById('ob-signin-email').value.trim();
   const pass = document.getElementById('ob-signin-password').value;
   if (!email || !pass) { alert('Please enter your email and password.'); return; }
@@ -2626,7 +2626,7 @@ async function obSignIn() {
   }
 }
 
-async function obGoogleSignIn() {
+window.obGoogleSignIn = async function obGoogleSignIn() {
   try {
     const cred = await signInWithPopup(auth, provider);
     currentUser = cred.user;
@@ -2637,15 +2637,15 @@ async function obGoogleSignIn() {
   } catch(e) { alert('Google sign in failed: ' + e.message); }
 }
 
-function obSkipAccount() {
+window.obSkipAccount = function obSkipAccount() {
   loadLocal();
   obShowScreen('ob-slides');
   obGoToSlide(1);
 }
 
-function obSkipSlides() { obShowScreen('ob-final'); }
+window.obSkipSlides = function obSkipSlides() { obShowScreen('ob-final'); }
 
-function obGoToSlide(n) {
+window.obGoToSlide = function obGoToSlide(n) {
   _obSlide = n;
   const s = _obSlides[n - 1];
   const featuresHtml = (s.features || []).map(([icon, title, sub]) =>
@@ -2660,22 +2660,22 @@ function obGoToSlide(n) {
   document.getElementById('ob-next-btn').textContent = n === 4 ? "Let's go 🌿" : 'Next →';
 }
 
-function obNextSlide() {
+window.obNextSlide = function obNextSlide() {
   if (_obSlide < 4) obGoToSlide(_obSlide + 1);
   else obShowScreen('ob-final');
 }
 
-function obFinishWithQuest() { obCompleteOnboarding(); setTimeout(() => openAddModal(), 300); }
-function obFinish() { obCompleteOnboarding(); }
+window.obFinishWithQuest = function obFinishWithQuest() { obCompleteOnboarding(); setTimeout(() => openAddModal(), 300); }
+window.obFinish = function obFinish() { obCompleteOnboarding(); }
 
-function obCompleteOnboarding() {
+window.obCompleteOnboarding = function obCompleteOnboarding() {
   localStorage.setItem('cf_onboarded', '1');
   document.getElementById('onboardingOverlay').classList.add('hidden');
   renderHome();
   renderCalendar();
 }
 
-function replayOnboarding() {
+window.replayOnboarding = function replayOnboarding() {
   document.getElementById('onboardingOverlay').classList.remove('hidden');
   obShowScreen('ob-slides'); obGoToSlide(1);
 }
