@@ -784,17 +784,17 @@ select option{background:#1a2f1c;}
 
     <!-- STATS -->
     <div class="page" id="page-stats">
-      <div class="p-header"><div class="p-title">✦ Profile</div></div>
+      <div class="p-header"><div class="p-title">✦ Account</div></div>
 
       <!-- Inner tab bar -->
       <div class="inner-tabs">
-        <button class="inner-tab active" id="itab-stats"     onclick="switchInnerTab('stats')">Stats</button>
-        <button class="inner-tab"        id="itab-settings"  onclick="switchInnerTab('settings')">Settings</button>
+        <button class="inner-tab" id="itab-stats"     onclick="switchInnerTab('stats')">Stats</button>
+        <button class="inner-tab active" id="itab-settings"  onclick="switchInnerTab('settings')">Settings</button>
         <button class="inner-tab"        id="itab-about"     onclick="switchInnerTab('about')">About</button>
       </div>
 
       <!-- ── STATS PANE ── -->
-      <div class="inner-pane active" id="ipane-stats">
+      <div class="inner-pane" id="ipane-stats">
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-card-label">Total Quests</div><div class="stat-card-val sage" id="s-total">0</div></div>
           <div class="stat-card"><div class="stat-card-label">Completed</div><div class="stat-card-val peach" id="s-done">0</div></div>
@@ -809,7 +809,7 @@ select option{background:#1a2f1c;}
       </div>
 
       <!-- ── SETTINGS PANE ── -->
-      <div class="inner-pane" id="ipane-settings">
+      <div class="inner-pane active" id="ipane-settings">
 
         <!-- Account -->
         <div class="signin-card">
@@ -943,7 +943,7 @@ select option{background:#1a2f1c;}
     <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">⚔️</span><span class="t-label">Quests</span></button>
     <button class="tab-btn fab-tab" onclick="openNewChoiceSheet()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
     <button class="tab-btn" data-page="calendar" onclick="showPage('calendar')"><span class="t-icon">🗓</span><span class="t-label">Calendar</span></button>
-    <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Profile</span></button>
+    <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Account</span></button>
   </nav>
 </div>
 
@@ -2384,8 +2384,15 @@ function renderCalendar(){
     const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const isToday=now.getFullYear()===y&&now.getMonth()===m&&now.getDate()===d;
     const ev=evMap[ds]||{};
-    const dots=`<div class="dot-row">${ev.con?'<div class="dot dot-con"></div>':''}${ev.craft?'<div class="dot dot-craft"></div>':''}${ev.photo?'<div class="dot" style="width:6px;height:6px;border-radius:50%;background:var(--lavender);"></div>':''}${ev.dl?'<div class="dot dot-dl"></div>':''}</div>`;
-    html+=`<div class="cal-day ${isToday?'today':''} ${Object.keys(ev).length?'has-ev':''}">${d}${Object.keys(ev).length?dots:''}</div>`;
+    let dayClass=isToday?'today':'';
+    if(!isToday){
+      if(ev.con&&ev.conMid) dayClass='day-con-mid';
+      else if(ev.con) dayClass='day-con';
+      else if(ev.craft) dayClass='day-craft';
+      else if(ev.photo) dayClass='day-photo';
+      else if(ev.dl) dayClass='day-dl';
+    }
+    html+=`<div class="cal-day ${dayClass}">${d}</div>`;
   }
   document.getElementById('calDays').innerHTML=html;
   renderEventList();
