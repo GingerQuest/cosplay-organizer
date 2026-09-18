@@ -1392,12 +1392,12 @@ const FREE_QUEST_LIMIT = 3;
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
 
-function save() {
+window.save = function save() {
   saveLocal();
   saveToCloud();
 }
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
-function getCostume(id) { return cosplays.find(c => c.id === id); }
+window.uid = function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+window.getCostume = function getCostume(id) { return cosplays.find(c => c.id === id); }
 
 // ── RISO CANVAS BACKGROUND ───────────────────────────────────
 (function(){
@@ -1767,7 +1767,7 @@ setup(); draw();
 
 
 // ── DAY/NIGHT TOGGLE ─────────────────────────────────────────
-function toggleDayNight() {
+window.toggleDayNight = function toggleDayNight() {
   const sw      = document.getElementById('themeSwitch');
   const thumb   = document.getElementById('themeSwitchThumb');
   const sub     = document.getElementById('themeSubLabel');
@@ -1782,7 +1782,7 @@ function toggleDayNight() {
 }
 
 // ── INNER TAB SWITCHER ────────────────────────────────────────
-function switchInnerTab(name) {
+window.switchInnerTab = function switchInnerTab(name) {
   ['stats','settings','about'].forEach(n => {
     document.getElementById('itab-' + n).classList.toggle('active', n === name);
     document.getElementById('ipane-' + n).classList.toggle('active', n === name);
@@ -1790,7 +1790,7 @@ function switchInnerTab(name) {
 }
 
 // ── SIGN IN / SIGN UP ─────────────────────────────────────────
-function showSignedIn(email) {
+window.showSignedIn = function showSignedIn(email) {
   document.getElementById('signinView').style.display    = 'none';
   document.getElementById('signedInView').style.display = 'block';
   document.getElementById('signedInEmail').textContent  = email;
@@ -1799,7 +1799,7 @@ function showSignedIn(email) {
 }
 
 // ── DATA EXPORT ───────────────────────────────────────────────
-function exportData() {
+window.exportData = function exportData() {
   const data = { cosplays, conventions, craftDays };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -1807,7 +1807,7 @@ function exportData() {
   a.download = 'cosplay-forge-backup.json';
   a.click();
 }
-function confirmClearData() {
+window.confirmClearData = function confirmClearData() {
   if (confirm('⚠️ This will permanently delete ALL your quests, conventions, and craft days. Are you sure?')) {
     localStorage.removeItem('cf_cosplays');
     localStorage.removeItem('cf_conventions');
@@ -1835,7 +1835,7 @@ function confirmClearData() {
 })();
 
 // ── PAGE NAV ──────────────────────────────────────────────────
-function showPage(name) {
+window.showPage = function showPage(name) {
   const cur = document.querySelector('.page.active');
   if (cur) prevPage = cur.id.replace('page-','');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -1848,7 +1848,7 @@ function showPage(name) {
   if (name==='stats')    renderStats();
 }
 
-function openCostumePage(id) {
+window.openCostumePage = function openCostumePage(id) {
   viewingId = id;
   prevPage = document.querySelector('.page.active')?.id.replace('page-','') || 'home';
   renderCostumePage();
@@ -1857,14 +1857,14 @@ function openCostumePage(id) {
   document.getElementById('page-costume').classList.add('active');
 }
 
-function backFromCostume() {
+window.backFromCostume = function backFromCostume() {
   const ta = document.getElementById('costumeNotes');
   if (ta && viewingId) { const c=getCostume(viewingId); if(c){c.notes=ta.value;save();} }
   showPage(prevPage);
 }
 
 // ── HOME ──────────────────────────────────────────────────────
-function renderHome() {
+window.renderHome = function renderHome() {
   const now = new Date();
   const activeCount = cosplays.filter(c=>c.status==='wip').length;
   document.getElementById('h-total').textContent    = activeCount;
@@ -1894,7 +1894,7 @@ function renderHome() {
 }
 
 // ── QUESTS ────────────────────────────────────────────────────
-function renderAllQuests() {
+window.renderAllQuests = function renderAllQuests() {
   const filtered = currentFilter==='all' ? cosplays : cosplays.filter(c=>c.status===currentFilter);
   const list=document.getElementById('allQuestList'), empty=document.getElementById('allEmpty');
   if (!filtered.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
@@ -1902,13 +1902,13 @@ function renderAllQuests() {
   list.innerHTML = filtered.map(c=>questCard(c)).join('');
 }
 
-function setFilter(f,el) {
+window.setFilter = function setFilter(f,el) {
   currentFilter=f;
   document.querySelectorAll('.filter-pill').forEach(p=>p.classList.remove('active'));
   el.classList.add('active'); renderAllQuests();
 }
 
-function calcProgress(c) {
+window.calcProgress = function calcProgress(c) {
   if (!c.checklist || !c.checklist.length) return c.status === 'done' ? 100 : 0;
   const allTasks = c.checklist;
   const totalItems = allTasks.reduce((acc, t) => t.type === 'category' ? acc + (t.steps || []).length : acc + 1, 0);
@@ -1917,7 +1917,7 @@ function calcProgress(c) {
   return Math.round(doneItems / totalItems * 100);
 }
 
-function questCard(c) {
+window.questCard = function questCard(c) {
   const p=calcProgress(c);
   const sClass=c.status==='done'?'b-done':c.status==='wip'?'b-wip':'b-planned';
   const sLabel=c.status==='done'?'✓ Done':c.status==='wip'?'⚙ Active':'◇ Planned';
@@ -1957,7 +1957,7 @@ function questCard(c) {
 }
 
 // ── ADD/EDIT COSPLAY ──────────────────────────────────────────
-function openAddModal() {
+window.openAddModal = function openAddModal() {
   const activeQuests = cosplays.filter(c => c.status !== 'done').length;
   if (activeQuests >= FREE_QUEST_LIMIT) { showQuestLimitBanner(); return; }
   editingId=null;
@@ -1965,7 +1965,7 @@ function openAddModal() {
   document.getElementById('deleteBtn').classList.add('hidden');
   clearForm(); openModal('cosplayModal');
 }
-function openEdit(id) {
+window.openEdit = function openEdit(id) {
   const c=getCostume(id); if(!c) return;
   editingId=id;
   document.getElementById('modalTitle').textContent='✏️ Edit Quest';
@@ -1980,7 +1980,7 @@ function openEdit(id) {
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e===selectedEmoji));
   openModal('cosplayModal');
 }
-function clearForm() {
+window.clearForm = function clearForm() {
   ['f-name','f-series','f-imgurl','f-deadline','f-notes'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-status').value='wip';
   selectedEmoji='🧙';
@@ -1993,7 +1993,7 @@ document.querySelectorAll('.emoji-opt').forEach(opt=>{
     opt.classList.add('sel');
   });
 });
-function saveCosplay() {
+window.saveCosplay = function saveCosplay() {
   const name=document.getElementById('f-name').value.trim();
   if(!name){alert('Please enter a character name!');return;}
   const data={name,series:document.getElementById('f-series').value.trim(),imgurl:document.getElementById('f-imgurl').value.trim(),
@@ -2007,7 +2007,7 @@ function saveCosplay() {
   if(ap==='page-quests') renderAllQuests();
   if(ap==='page-stats') renderStats();
 }
-function deleteCurrent() {
+window.deleteCurrent = function deleteCurrent() {
   if(!confirm('Delete this cosplay?')) return;
   const targetId = editingId || viewingId;
   cosplays=cosplays.filter(c=>c.id!==targetId);
@@ -2018,7 +2018,7 @@ function deleteCurrent() {
 }
 
 // ── COSTUME DETAIL PAGE ───────────────────────────────────────
-function renderCostumePage() {
+window.renderCostumePage = function renderCostumePage() {
   const c=getCostume(viewingId); if(!c) return;
   const p=calcProgress(c);
   const now=new Date();
@@ -2237,7 +2237,7 @@ function renderCostumePage() {
 }
 
 // ── BLOCK TOGGLE ──────────────────────────────────────────────
-function toggleBlock(name) {
+window.toggleBlock = function toggleBlock(name) {
   const body=document.getElementById(name+'-body');
   const chev=document.getElementById(name+'-chevron');
   if(!body) return;
@@ -2247,15 +2247,15 @@ function toggleBlock(name) {
 }
 
 // ── BUDGET ────────────────────────────────────────────────────
-function toggleBudget(){const c=getCostume(viewingId);if(!c)return;c.budgetEnabled=!c.budgetEnabled;save();renderCostumePage();}
-function saveBudget(){const c=getCostume(viewingId);if(!c)return;c.budget=parseFloat(document.getElementById('budgetInput').value)||0;save();renderCostumePage();}
+window.toggleBudget = function toggleBudget(){const c=getCostume(viewingId);if(!c)return;c.budgetEnabled=!c.budgetEnabled;save();renderCostumePage();}
+window.saveBudget = function saveBudget(){const c=getCostume(viewingId);if(!c)return;c.budget=parseFloat(document.getElementById('budgetInput').value)||0;save();renderCostumePage();}
 
 // ── MODAL HELPERS ─────────────────────────────────────────────
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); editingId=null;}
+window.openModal = function openModal(id){document.getElementById(id).classList.add('open');}
+window.closeAllModals = function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); editingId=null;}
 
 // ── CRAFT DAYS ────────────────────────────────────────────────
-function openCraftModal() {
+window.openCraftModal = function openCraftModal() {
   // Populate costume dropdown
   const sel=document.getElementById('cr-costume');
   sel.innerHTML='<option value="">— Select a costume —</option>';
@@ -2267,11 +2267,11 @@ function openCraftModal() {
   document.getElementById('cr-hours').value='';
   openModal('craftModal');
 }
-function openCraftModalForCostume(id) {
+window.openCraftModalForCostume = function openCraftModalForCostume(id) {
   openCraftModal();
   document.getElementById('cr-costume').value=id;
 }
-function saveCraftDay() {
+window.saveCraftDay = function saveCraftDay() {
   const date=document.getElementById('cr-date').value;
   const costumeId=document.getElementById('cr-costume').value;
   const notes=document.getElementById('cr-notes').value.trim();
@@ -2287,7 +2287,7 @@ function saveCraftDay() {
   if(ap==='page-costume') renderCostumePage();
   if(ap==='page-home') renderHome();
 }
-function deleteCraftDay(id) {
+window.deleteCraftDay = function deleteCraftDay(id) {
   craftDays=craftDays.filter(c=>c.id!==id);
   save(); renderCostumePage();
   if(document.getElementById('page-calendar').classList.contains('active')) renderCalendar();
@@ -2295,13 +2295,13 @@ function deleteCraftDay(id) {
 
 // ── EXPENSES ──────────────────────────────────────────────────
 // Supply functions
-function switchSupplyStatus(status) {
+window.switchSupplyStatus = function switchSupplyStatus(status) {
   window._supplyStatus = status;
   document.getElementById('supStatusNeed').className = status==='need' ? 'btn primary' : 'btn';
   document.getElementById('supStatusBought').className = status==='bought' ? 'btn primary' : 'btn';
 }
 window._supplyStatus = 'need';
-function openSupplyModal() {
+window.openSupplyModal = function openSupplyModal() {
   window._supplyStatus = 'need';
   document.getElementById('supStatusNeed').className = 'btn primary';
   document.getElementById('supStatusBought').className = 'btn';
@@ -2316,16 +2316,16 @@ function saveSupply() {
   c.supplies.push({ name, qty: document.getElementById('sup-qty').value.trim(), cost: parseFloat(document.getElementById('sup-cost').value)||0, notes: document.getElementById('sup-notes').value.trim(), url: document.getElementById('sup-url').value.trim(), status: window._supplyStatus||'need' });
   save(); closeAllModals(); renderCostumePage();
 }
-function toggleSupplyStatus(i) {
+window.toggleSupplyStatus = function toggleSupplyStatus(i) {
   const c = getCostume(viewingId); if (!c) return;
   c.supplies[i].status = c.supplies[i].status==='bought' ? 'need' : 'bought';
   save(); renderCostumePage();
 }
-function deleteSupply(i) { const c=getCostume(viewingId);if(!c)return;c.supplies.splice(i,1);save();renderCostumePage(); }
+window.deleteSupply = function deleteSupply(i) { const c=getCostume(viewingId);if(!c)return;c.supplies.splice(i,1);save();renderCostumePage(); }
 function saveExpense(){} function deleteExpense(){}
 
 // ── TASKS ─────────────────────────────────────────────────────
-function switchTaskType(type) {
+window.switchTaskType = function switchTaskType(type) {
   const isTask = type === 'task';
   document.getElementById('taskFields').style.display = isTask ? 'block' : 'none';
   document.getElementById('categoryFields').style.display = isTask ? 'none' : 'block';
@@ -2335,7 +2335,7 @@ function switchTaskType(type) {
 }
 window._taskType = 'task';
 
-function saveTask(){
+window.saveTask = function saveTask(){
   const c=getCostume(viewingId);if(!c)return;
   if(!c.checklist)c.checklist=[];
   if(window._taskType==='category'){
@@ -2351,7 +2351,7 @@ function saveTask(){
   save();closeAllModals();renderCostumePage();
 }
 
-function toggleTask(i){
+window.toggleTask = function toggleTask(i){
   const c=getCostume(viewingId);if(!c)return;
   c.checklist[i].done=!c.checklist[i].done;
   const allTasks=c.checklist;
@@ -2362,9 +2362,9 @@ function toggleTask(i){
   save();renderCostumePage();renderHome();
 }
 
-function deleteTask(i){const c=getCostume(viewingId);if(!c)return;c.checklist.splice(i,1);save();renderCostumePage();}
+window.deleteTask = function deleteTask(i){const c=getCostume(viewingId);if(!c)return;c.checklist.splice(i,1);save();renderCostumePage();}
 
-function moveTask(i,dir){
+window.moveTask = function moveTask(i,dir){
   const c=getCostume(viewingId);if(!c)return;
   const list=c.checklist;
   const ni=i+dir;
@@ -2373,14 +2373,14 @@ function moveTask(i,dir){
   save();renderCostumePage();
 }
 
-function toggleCatGroup(i){
+window.toggleCatGroup = function toggleCatGroup(i){
   const c=getCostume(viewingId);if(!c)return;
   c.checklist[i].open=!( c.checklist[i].open!==false);
   save();renderCostumePage();
 }
 
 let _editingCatIndex=null;
-function openCatTaskModal(i){
+window.openCatTaskModal = function openCatTaskModal(i){
   _editingCatIndex=i;
   const c=getCostume(viewingId);
   document.getElementById('catTaskModalTitle').textContent='📋 Add Step to: '+(c.checklist[i].name);
@@ -2388,7 +2388,7 @@ function openCatTaskModal(i){
   openModal('catTaskModal');
 }
 
-function saveCatTask(){
+window.saveCatTask = function saveCatTask(){
   const text=document.getElementById('cat-task-text').value.trim();if(!text)return;
   const c=getCostume(viewingId);if(!c)return;
   if(!c.checklist[_editingCatIndex].steps)c.checklist[_editingCatIndex].steps=[];
@@ -2396,19 +2396,19 @@ function saveCatTask(){
   save();closeAllModals();renderCostumePage();
 }
 
-function toggleCatStep(ci,si){
+window.toggleCatStep = function toggleCatStep(ci,si){
   const c=getCostume(viewingId);if(!c)return;
   c.checklist[ci].steps[si].done=!c.checklist[ci].steps[si].done;
   save();renderCostumePage();renderHome();
 }
 
-function deleteCatStep(ci,si){
+window.deleteCatStep = function deleteCatStep(ci,si){
   const c=getCostume(viewingId);if(!c)return;
   c.checklist[ci].steps.splice(si,1);
   save();renderCostumePage();
 }
 
-function moveCatStep(ci,si,dir){
+window.moveCatStep = function moveCatStep(ci,si,dir){
   const c=getCostume(viewingId);if(!c)return;
   const steps=c.checklist[ci].steps;
   const ni=si+dir;
@@ -2421,7 +2421,7 @@ function moveCatStep(ci,si,dir){
 function saveMaterial(){} function deleteMaterial(){}
 
 // ── HOURS ─────────────────────────────────────────────────────
-function saveHours(){
+window.saveHours = function saveHours(){
   const desc=document.getElementById('hr-desc').value.trim(),hours=parseFloat(document.getElementById('hr-hours').value)||0;
   if(!desc||!hours){alert('Enter description and hours.');return;}
   const c=getCostume(viewingId);if(!c)return;
@@ -2429,10 +2429,10 @@ function saveHours(){
   c.hours.push({desc,hours});
   save();closeAllModals();document.getElementById('hr-desc').value='';document.getElementById('hr-hours').value='';renderCostumePage();
 }
-function deleteHour(i){const c=getCostume(viewingId);if(!c)return;c.hours.splice(i,1);save();renderCostumePage();}
+window.deleteHour = function deleteHour(i){const c=getCostume(viewingId);if(!c)return;c.hours.splice(i,1);save();renderCostumePage();}
 
 // ── LINKS ─────────────────────────────────────────────────────
-function saveLink(){
+window.saveLink = function saveLink(){
   const name=document.getElementById('lnk-name').value.trim(),url=document.getElementById('lnk-url').value.trim();
   if(!name||!url){alert('Enter a label and URL.');return;}
   const c=getCostume(viewingId);if(!c)return;
@@ -2440,10 +2440,10 @@ function saveLink(){
   c.links.push({name,url});
   save();closeAllModals();document.getElementById('lnk-name').value='';document.getElementById('lnk-url').value='';renderCostumePage();
 }
-function deleteLink(i){const c=getCostume(viewingId);if(!c)return;c.links.splice(i,1);save();renderCostumePage();}
+window.deleteLink = function deleteLink(i){const c=getCostume(viewingId);if(!c)return;c.links.splice(i,1);save();renderCostumePage();}
 
 // ── NOTES ─────────────────────────────────────────────────────
-function saveNotes(){
+window.saveNotes = function saveNotes(){
   const c=getCostume(viewingId);if(!c)return;
   c.notes=document.getElementById('costumeNotes').value;save();
   const btn=event.target;btn.textContent='Saved ✓';
@@ -2451,8 +2451,8 @@ function saveNotes(){
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────
-function changeMonth(d){calDate.setMonth(calDate.getMonth()+d);renderCalendar();}
-function renderCalendar(){
+window.changeMonth = function changeMonth(d){calDate.setMonth(calDate.getMonth()+d);renderCalendar();}
+window.renderCalendar = function renderCalendar(){
   const y=calDate.getFullYear(),m=calDate.getMonth();
   document.getElementById('calTitle').textContent=`${MONTHS[m]} ${y}`;
   document.getElementById('calLabels').innerHTML=DAYS.map(d=>`<div class="cal-dl">${d}</div>`).join('');
@@ -2499,7 +2499,7 @@ function renderCalendar(){
   renderEventList();
 }
 
-function renderEventList(){
+window.renderEventList = function renderEventList(){
   const now=new Date(),all=[];
   conventions.forEach(c=>{const d=Math.ceil((new Date(c.start+'T00:00:00')-now)/86400000);all.push({...c,days:d,type:'con'});});
   craftDays.forEach(cr=>{const d=Math.ceil((new Date(cr.date+'T00:00:00')-now)/86400000);all.push({...cr,days:d,type:'craft',start:cr.date,name:'🪡 '+cr.costumeName+' craft day'});});
@@ -2556,10 +2556,10 @@ window.saveCon = function saveCon(){
   ['c-name','c-start','c-end','c-location'].forEach(id=>document.getElementById(id).value='');
   save();closeAllModals();renderCalendar();
 }
-function deleteCon(id){conventions=conventions.filter(c=>c.id!==id);save();renderCalendar();}
+window.deleteCon = function deleteCon(id){conventions=conventions.filter(c=>c.id!==id);save();renderCalendar();}
 
 // ── STATS ─────────────────────────────────────────────────────
-function renderStats(){
+window.renderStats = function renderStats(){
   const now=new Date();
   document.getElementById('s-total').textContent=cosplays.length;
   document.getElementById('s-done').textContent=cosplays.filter(c=>c.status==='done').length;
@@ -2590,7 +2590,7 @@ document.querySelectorAll('.modal-overlay').forEach(o=>{
 let _dragTaskIdx = null, _dragStepCi = null, _dragStepSi = null;
 let _dragStartY = 0, _dragEl = null;
 
-function startTaskDrag(e, i) {
+window.startTaskDrag = function startTaskDrag(e, i) {
   e.preventDefault();
   _dragTaskIdx = i;
   _dragStartY = e.clientY || e.touches?.[0]?.clientY;
@@ -2621,7 +2621,7 @@ function onTaskDragEnd() {
   document.removeEventListener('touchend', onTaskDragEnd);
 }
 
-function startStepDrag(e, ci, si) {
+window.startStepDrag = function startStepDrag(e, ci, si) {
   e.preventDefault();
   e.stopPropagation();
   _dragStepCi = ci;
