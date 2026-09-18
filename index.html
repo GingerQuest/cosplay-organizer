@@ -330,6 +330,8 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .expense-item:last-child{border-bottom:none;}
 .exp-name{flex:1;font-size:14px;font-weight:600;}
 .exp-amount{font-size:14px;font-weight:800;color:var(--gold);}
+.mat-edit{color:var(--text-dim);cursor:pointer;padding:4px;transition:color .15s;font-size:15px;line-height:1;}
+.mat-edit:hover{color:var(--sage);}
 .exp-del,.mat-del,.hour-del,.link-del,.ev-del{color:var(--text-dim);cursor:pointer;padding:4px;transition:color .15s;font-size:18px;line-height:1;}
 .exp-del:hover,.mat-del:hover,.hour-del:hover,.link-del:hover,.ev-del:hover{color:var(--rose);}
 
@@ -1090,6 +1092,26 @@ select option{background:#1a2f1c;}
     <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
     <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
+  </div>
+</div>
+
+
+<!-- ══ EDIT CRAFT DAY MODAL ══ -->
+<div class="modal-overlay" id="craftEditModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">✎ Edit Craft Day</div>
+    <div class="form-group"><label>Date</label><input type="date" id="cr-edit-date"></div>
+    <div class="form-group"><label>Which Costume?</label>
+      <select id="cr-edit-costume"><option value="">— Select a costume —</option></select>
+    </div>
+    <div class="form-group"><label>What do you plan to work on?</label>
+      <textarea id="cr-edit-notes" style="min-height:80px;"></textarea>
+    </div>
+    <div class="form-group"><label>Planned Hours (optional)</label>
+      <input type="number" id="cr-edit-hours" placeholder="e.g. 3" min="0.5" step="0.5">
+    </div>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCraftEdit()">Save Changes ✿</button>
   </div>
 </div>
 
@@ -2421,8 +2443,8 @@ function renderEventList(){
         ${item.type==='craft'&&item.hours?`<div class="ev-sub">⏱ ${item.hours}h planned</div>`:''}
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
-      ${item.type==='con'?`<span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
-      ${item.type==='craft'?`<span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
+      ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
+      ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
       ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
