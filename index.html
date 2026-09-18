@@ -2173,14 +2173,12 @@ function saveCraftDay() {
   const costumeId=document.getElementById('cr-costume').value;
   const notes=document.getElementById('cr-notes').value.trim();
   if(!date){alert('Please pick a date.');return;}
-  if(!costumeId){alert('Please select a costume.');return;}
-  const costume=getCostume(costumeId);
+  const costume=costumeId?getCostume(costumeId):null;
   craftDays.push({
-    id:uid(), date, costumeId, costumeName:costume?.name||'',
+    id:uid(), date, costumeId:costumeId||'', costumeName:costume?.name||'General craft day',
     notes, hours:parseFloat(document.getElementById('cr-hours').value)||0
   });
   save(); closeAllModals();
-  // refresh current page
   const ap=document.querySelector('.page.active')?.id;
   if(ap==='page-calendar') renderCalendar();
   if(ap==='page-costume') renderCostumePage();
