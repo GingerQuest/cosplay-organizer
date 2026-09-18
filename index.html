@@ -564,8 +564,6 @@ select option{background:#1a2f1c;}
             <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(212,168,85,0.4);"></div><span style="color:var(--gold);font-size:10px;">Craft</span></div>
             <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(160,154,200,0.4);"></div><span style="color:var(--lavender);font-size:10px;">Photo</span></div>
             <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(196,120,138,0.4);"></div><span style="color:var(--rose);font-size:10px;">Deadline</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-craft" style="width:7px;height:7px;border-radius:50%;"></div>Craft Day</div>
-            <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-dl" style="width:7px;height:7px;border-radius:50%;"></div>Deadline</div>
           </div>
           <div class="cal-grid" id="calLabels"></div>
           <div class="cal-grid" id="calDays"></div>
@@ -2113,15 +2111,29 @@ function renderCalendar(){
     const isToday=now.getFullYear()===y&&now.getMonth()===m&&now.getDate()===d;
     const ev=evMap[ds]||{};
     let dayClass=isToday?'today':'';
+    let secondaryDots='';
     if(!isToday){
-      const ev=evMap[ds]||{};
-      if(ev.con&&ev.conMid) dayClass='day-con-mid';
-      else if(ev.con) dayClass='day-con';
-      else if(ev.craft) dayClass='day-craft';
-      else if(ev.photo) dayClass='day-photo';
-      else if(ev.dl) dayClass='day-dl';
+      // Priority: deadline > con > photo > craft
+      const types=[];
+      if(ev.dl) types.push('dl');
+      if(ev.con) types.push(ev.conMid?'con-mid':'con');
+      if(ev.photo) types.push('photo');
+      if(ev.craft) types.push('craft');
+      if(types.length>0){
+        const primary=types[0];
+        if(primary==='dl') dayClass='day-dl';
+        else if(primary==='con-mid') dayClass='day-con-mid';
+        else if(primary==='con') dayClass='day-con';
+        else if(primary==='photo') dayClass='day-photo';
+        else if(primary==='craft') dayClass='day-craft';
+        // Secondary dots for additional events
+        if(types.length>1){
+          const dotColors={'dl':'#c47a8a','con':'#7eb8c9','con-mid':'#7eb8c9','photo':'#a09ac8','craft':'#d4a855'};
+          secondaryDots=`<div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);display:flex;gap:2px;">${types.slice(1).map(t=>`<div style="width:4px;height:4px;border-radius:50%;background:${dotColors[t]};opacity:0.9;"></div>`).join('')}</div>`;
+        }
+      }
     }
-    html+=`<div class="cal-day ${dayClass}">${d}</div>`;
+    html+=`<div class="cal-day ${dayClass}" style="position:relative;">${d}${secondaryDots}</div>`;
   }
   document.getElementById('calDays').innerHTML=html;
   renderEventList();
