@@ -198,6 +198,7 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 .btn.rose-btn{background:rgba(196,120,138,.12);border-color:rgba(196,120,138,.3);color:var(--rose);}
 .btn.rose-btn:hover{background:rgba(196,120,138,.22);}
 .btn.craft-btn{background:#201a08;border-color:rgba(212,168,85,.6);color:var(--gold);}
+.photo-btn{background:#1a0f2e;border-color:#a09ac8;color:#c8c4e8;}
 .btn.craft-btn:hover{background:#2a2210;}
 .btn.sm{padding:7px 12px;font-size:12px;}
 
@@ -546,7 +547,7 @@ select option{background:#1a2f1c;}
         <div><div class="p-title">🗓 Calendar</div><div class="p-subtitle">Events & crafting days</div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn craft-btn sm" onclick="openCraftModal()">🪡 Craft Day</button>
-          <button class="btn sm" style="background:rgba(160,154,200,0.15);border-color:rgba(160,154,200,0.5);color:var(--lavender);" onclick="openPhotoModal()">📸 Photoshoot</button>
+          <button class="btn photo-btn sm" onclick="openPhotoModal()">📸 Photoshoot</button>
           <button class="btn sky-btn sm" onclick="openConModal()">🎪 Con/Event</button>
         </div>
       </div>
@@ -559,10 +560,10 @@ select option{background:#1a2f1c;}
           </div>
           <!-- Legend -->
           <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--text-dim);">
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(126,184,201,0.3);"></div><span style="color:var(--sky);">Convention</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(212,168,85,0.3);"></div><span style="color:var(--gold);">Craft Day</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(160,154,200,0.3);"></div><span style="color:var(--lavender);">Photoshoot</span></div>
-            <div style="display:flex;align-items:center;gap:4px;"><div style="width:10px;height:10px;border-radius:3px;background:rgba(196,120,138,0.3);"></div><span style="color:var(--rose);">Deadline</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(126,184,201,0.4);"></div><span style="color:var(--sky);font-size:10px;">Con</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(212,168,85,0.4);"></div><span style="color:var(--gold);font-size:10px;">Craft</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(160,154,200,0.4);"></div><span style="color:var(--lavender);font-size:10px;">Photo</span></div>
+            <div style="display:flex;align-items:center;gap:4px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(196,120,138,0.4);"></div><span style="color:var(--rose);font-size:10px;">Deadline</span></div>
             <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-craft" style="width:7px;height:7px;border-radius:50%;"></div>Craft Day</div>
             <div style="display:flex;align-items:center;gap:4px;"><div class="dot dot-dl" style="width:7px;height:7px;border-radius:50%;"></div>Deadline</div>
           </div>
