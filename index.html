@@ -908,7 +908,7 @@ let currentUser = null;
 async function saveToCloud() {
   if (!currentUser) { saveLocal(); return; }
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, updatedAt: Date.now() });
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, updatedAt: Date.now() });
   } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
 }
 async function loadFromCloud() {
@@ -920,6 +920,7 @@ async function loadFromCloud() {
       cosplays    = d.cosplays    || [];
       conventions = d.conventions || [];
       craftDays   = d.craftDays   || [];
+      photoshoots = d.photoshoots || [];
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -934,11 +935,13 @@ function saveLocal() {
   localStorage.setItem('cf_cosplays',    JSON.stringify(cosplays));
   localStorage.setItem('cf_conventions', JSON.stringify(conventions));
   localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
+  localStorage.setItem('cf_photoshoots',  JSON.stringify(photoshoots));
 }
 function loadLocal() {
   cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
   conventions = JSON.parse(localStorage.getItem('cf_conventions') || '[]');
   craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
+  photoshoots = JSON.parse(localStorage.getItem('cf_photoshoots')  || '[]');
 }
 
 // ── AUTH STATE LISTENER ───────────────────────────────────────
