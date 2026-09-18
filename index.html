@@ -475,6 +475,12 @@ select option{background:#1a2f1c;}
 .flex-row>*{flex:1;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;}
 .hidden{display:none!important;}
+/* ── HOME COS-PLANS BUTTON ── */
+.home-cosplans-btn{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 14px;background:rgba(28,44,30,0.78);border:1px solid rgba(160,154,200,0.25);
+  border-radius:var(--r);cursor:pointer;backdrop-filter:blur(10px);transition:all .2s;}
+.home-cosplans-btn:hover{border-color:rgba(160,154,200,0.5);}
+
 /* ── COS-PLANS ── */
 .cosplan-card{margin:0 16px 8px;background:rgba(28,44,30,0.78);border-radius:var(--r);
   border:1px solid var(--border);overflow:hidden;backdrop-filter:blur(10px);transition:all .2s;}
@@ -641,13 +647,15 @@ select option{background:#1a2f1c;}
         <div class="hero-greeting">✿ Welcome back</div>
         <div class="hero-title">Cosplay Forge</div>
         <div class="hero-stats">
-          <div class="hero-stat"><div class="hero-stat-num s" id="h-total">0</div><div class="hero-stat-label">Quests</div></div>
-          <div class="hero-stat"><div class="hero-stat-num p" id="h-active">0</div><div class="hero-stat-label">Active</div></div>
+          <div class="hero-stat"><div class="hero-stat-num s" id="h-total">0</div><div class="hero-stat-label">Active</div></div>
+          <div class="hero-stat"><div class="hero-stat-num p" id="h-cosplans">0</div><div class="hero-stat-label">Cos-Plans</div></div>
           <div class="hero-stat"><div class="hero-stat-num sk" id="h-cons">0</div><div class="hero-stat-label">Cons</div></div>
         </div>
       </div>
       <div id="urgentBannerHome"></div>
       <div id="questLimitBanner" class="hidden"></div>
+
+      <!-- Active Quests preview -->
       <div class="section-header-row">
         <div class="section-label sage" style="margin-bottom:0">Active Quests</div>
         <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="showPage('quests')">See all →</div>
@@ -658,38 +666,80 @@ select option{background:#1a2f1c;}
         <div class="e-title">No quests yet!</div>
         <div class="e-sub">Tap <strong>✿</strong> below to begin your first quest.</div>
       </div>
-      <div style="margin:8px 0 0;" id="cosPlansSection">
-        <div style="height:1px;background:var(--border);margin:12px 16px 16px;opacity:0.5;"></div>
-        <div class="section-header-row">
-          <div class="section-label lavender" style="margin-bottom:0;color:var(--lavender);">✨ Cos-Plans</div>
-          <div style="font-size:12px;font-weight:700;color:var(--lavender);cursor:pointer;" onclick="openAddCosPlanModal()">+ Add</div>
+
+      <!-- Cos-Plans button -->
+      <div style="margin:4px 16px 14px;">
+        <div class="home-cosplans-btn" onclick="showPage('quests');switchQuestTab('cosplans')">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:20px;">✨</span>
+            <div>
+              <div style="font-size:14px;font-weight:800;color:var(--lavender);">Cos-Plans</div>
+              <div style="font-size:12px;color:var(--text-dim);font-weight:600;margin-top:1px;" id="home-cosplans-sub">Your costume wishlist</div>
+            </div>
+          </div>
+          <span style="color:var(--text-dim);font-size:18px;">›</span>
         </div>
-        <div id="cosPlansEmpty" class="empty-state hidden" style="padding:24px;">
-          <span class="e-emoji" style="font-size:36px;">✨</span>
-          <div class="e-title" style="font-size:16px;">Your wishlist is empty</div>
-          <div class="e-sub">Save costume ideas here — no build slot needed.</div>
-        </div>
-        <div id="cosPlansList"></div>
       </div>
+
+      <!-- Upcoming events preview -->
+      <div class="section-header-row">
+        <div class="section-label sky" style="margin-bottom:0;">Upcoming</div>
+        <div style="font-size:12px;font-weight:700;color:var(--sky);cursor:pointer;" onclick="showPage('calendar')">See all →</div>
+      </div>
+      <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
     </div>
 
     <!-- QUESTS -->
     <div class="page" id="page-quests">
       <div class="p-header" style="justify-content:space-between;">
-        <div><div class="p-title">🗡️ Quests</div><div class="p-subtitle">All your cosplay projects</div></div>
-        <button class="btn sky-btn sm" onclick="openAddModal()">+ New</button>
+        <div><div class="p-title">⚔️ Quests</div><div class="p-subtitle">All your cosplay projects</div></div>
+        <button class="btn sky-btn sm" id="questsAddBtn" onclick="openAddModal()">+ New</button>
       </div>
-      <div class="filter-row">
-        <div class="filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</div>
-        <div class="filter-pill" data-filter="wip" onclick="setFilter('wip',this)">Active</div>
-        <div class="filter-pill" data-filter="planned" onclick="setFilter('planned',this)">Planned</div>
-        <div class="filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</div>
+      <!-- Quest inner tabs -->
+      <div class="inner-tabs" style="margin:0 16px 14px;">
+        <button class="inner-tab active" id="qtab-active" onclick="switchQuestTab('active')">Active</button>
+        <button class="inner-tab" id="qtab-cosplans" onclick="switchQuestTab('cosplans')">Cos-Plans</button>
+        <button class="inner-tab" id="qtab-closet" onclick="switchQuestTab('closet')">Closet 🔒</button>
       </div>
-      <div id="allQuestList"></div>
-      <div id="allEmpty" class="empty-state hidden">
-        <span class="e-emoji">🌿</span>
-        <div class="e-title">Nothing here yet</div>
-        <div class="e-sub">Add your first cosplay quest!</div>
+
+      <!-- Active pane -->
+      <div id="qpane-active">
+        <div class="filter-row">
+          <div class="filter-pill active" data-filter="all" onclick="setFilter('all',this)">All</div>
+          <div class="filter-pill" data-filter="wip" onclick="setFilter('wip',this)">Active</div>
+          <div class="filter-pill" data-filter="planned" onclick="setFilter('planned',this)">Planned</div>
+          <div class="filter-pill" data-filter="done" onclick="setFilter('done',this)">Done</div>
+          <div class="filter-pill" data-filter="worn" onclick="setFilter('worn',this)">Worn</div>
+        </div>
+        <div id="allQuestList"></div>
+        <div id="allEmpty" class="empty-state hidden">
+          <span class="e-emoji">🌿</span>
+          <div class="e-title">Nothing here yet</div>
+          <div class="e-sub">Tap ✿ below to add your first quest!</div>
+        </div>
+      </div>
+
+      <!-- Cos-Plans pane -->
+      <div id="qpane-cosplans" style="display:none;">
+        <div style="padding:0 16px 14px;">
+          <div id="cosPlansEmpty" class="empty-state hidden" style="padding:24px 0;">
+            <span class="e-emoji" style="font-size:36px;">✨</span>
+            <div class="e-title" style="font-size:16px;">Your wishlist is empty</div>
+            <div class="e-sub">Save costume ideas here — no build slot needed.</div>
+          </div>
+          <div id="cosPlansList"></div>
+          <button class="btn" style="width:100%;margin-top:8px;border-color:rgba(160,154,200,0.4);color:var(--lavender);background:rgba(160,154,200,0.08);" onclick="openAddCosPlanModal()">✨ Add a Cos-Plan</button>
+        </div>
+      </div>
+
+      <!-- Closet pane -->
+      <div id="qpane-closet" style="display:none;">
+        <div class="empty-state" style="padding:44px 24px;">
+          <span class="e-emoji">🗄</span>
+          <div class="e-title">Closet — Coming Soon</div>
+          <div class="e-sub" style="margin-bottom:16px;">Your master wardrobe of completed costumes. Packing lists, day assignments, and more — coming with Forge Pro. 🌿</div>
+          <span style="font-size:12px;font-weight:800;padding:6px 16px;border-radius:20px;background:rgba(160,154,200,0.15);color:var(--lavender);border:1px solid rgba(160,154,200,0.3);">Coming Soon ✨</span>
+        </div>
       </div>
     </div>
 
@@ -888,7 +938,7 @@ select option{background:#1a2f1c;}
 
   <nav class="tab-bar">
     <button class="tab-btn active" data-page="home" onclick="showPage('home')"><span class="t-icon">🏡</span><span class="t-label">Home</span></button>
-    <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">🗡️</span><span class="t-label">Quests</span></button>
+    <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">⚔️</span><span class="t-label">Quests</span></button>
     <button class="tab-btn fab-tab" onclick="openNewChoiceSheet()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
     <button class="tab-btn" data-page="calendar" onclick="showPage('calendar')"><span class="t-icon">🗓</span><span class="t-label">Calendar</span></button>
     <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Profile</span></button>
@@ -1694,9 +1744,19 @@ function backFromCostume() {
 // ── HOME ──────────────────────────────────────────────────────
 function renderHome() {
   const now = new Date();
-  document.getElementById('h-total').textContent  = cosplays.length;
-  document.getElementById('h-active').textContent = cosplays.filter(c=>c.status!=='done').length;
-  document.getElementById('h-cons').textContent   = conventions.filter(c=>new Date(c.start+'T00:00:00')>=now).length;
+  const activeCount = cosplays.filter(c=>c.status==='wip').length;
+  document.getElementById('h-total').textContent    = activeCount;
+  document.getElementById('h-cosplans').textContent = cosPlans.length;
+  document.getElementById('h-cons').textContent     = conventions.filter(c=>new Date(c.start+'T00:00:00')>=now).length;
+  // Update cos-plans subtitle
+  const cpSub = document.getElementById('home-cosplans-sub');
+  if (cpSub) cpSub.textContent = cosPlans.length ? cosPlans.length + ' idea' + (cosPlans.length !== 1 ? 's' : '') + ' waiting' : 'Your costume wishlist';
+  // Render event preview
+  const evEl = document.getElementById('homeEventPreview');
+  if (evEl) {
+    const upcoming = [...conventions, ...craftDays.map(c=>({...c,start:c.date,name:'🪡 '+c.costumeName+' craft day',type:'craft'}))].filter(e=>new Date((e.start||e.date)+'T00:00:00')>=now).sort((a,b)=>a.start.localeCompare(b.start)).slice(0,2);
+    evEl.innerHTML = upcoming.length ? upcoming.map(e=>{const d=new Date(e.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});return`<div class="event-item" style="margin-bottom:8px;"><div class="ev-dot" style="background:var(--sky);"></div><div class="ev-info"><div class="ev-name">${e.name}</div><div class="ev-date">${d}${e.location?' · '+e.location:''}</div></div></div>`;}).join('') : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
+  }
   const urgent = cosplays.filter(c=>{
     if(!c.deadline) return false;
     return Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000) <= 14 &&
@@ -2440,6 +2500,24 @@ window.startStepDrag = startStepDrag;
 let _editingCosPlanId = null;
 let _expandedCosPlanIds = new Set();
 let _pendingQuestName = null;
+
+window.switchQuestTab = function switchQuestTab(tab) {
+  // Update tab buttons
+  ['active','cosplans','closet'].forEach(t => {
+    document.getElementById('qtab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('qpane-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  // Update add button
+  const addBtn = document.getElementById('questsAddBtn');
+  if (addBtn) {
+    if (tab === 'active') { addBtn.textContent = '+ New'; addBtn.onclick = () => openAddModal(); addBtn.style.display = ''; }
+    else if (tab === 'cosplans') { addBtn.textContent = '+ Add'; addBtn.onclick = () => openAddCosPlanModal(); addBtn.style.display = ''; }
+    else { addBtn.style.display = 'none'; }
+  }
+  // Render if needed
+  if (tab === 'cosplans') renderCosPlansList();
+  if (tab === 'active') renderAllQuests();
+};
 
 window.openNewChoiceSheet = function openNewChoiceSheet() {
   const activeQuests = cosplays.filter(c => c.status !== 'done').length;
