@@ -499,11 +499,13 @@ select option{background:#1a2f1c;}
         <div class="hero-title">Cosplay Forge</div>
         <div class="hero-stats">
           <div class="hero-stat"><div class="hero-stat-num s" id="h-total">0</div><div class="hero-stat-label">Quests</div></div>
-          <div class="hero-stat"><div class="hero-stat-num p" id="h-active">0</div><div class="hero-stat-label">Active</div></div>
+          <div class="hero-stat"><div class="hero-stat-num p" id="h-cosplans">0</div><div class="hero-stat-label">Cos-Plans</div></div>
           <div class="hero-stat"><div class="hero-stat-num sk" id="h-cons">0</div><div class="hero-stat-label">Cons</div></div>
         </div>
       </div>
       <div id="urgentBannerHome"></div>
+
+      <!-- Active Quests -->
       <div class="section-header-row">
         <div class="section-label sage" style="margin-bottom:0">Active Quests</div>
         <div style="font-size:12px;font-weight:700;color:var(--sage);cursor:pointer;" onclick="showPage('quests')">See all →</div>
@@ -511,9 +513,25 @@ select option{background:#1a2f1c;}
       <div id="homeQuestList"></div>
       <div id="homeEmpty" class="empty-state hidden">
         <span class="e-emoji">🧵</span>
-        <div class="e-title">No quests yet!</div>
-        <div class="e-sub">Tap <strong>✿</strong> below to begin.</div>
+        <div class="e-title">No active quests!</div>
+        <div class="e-sub">Tap <strong>✿</strong> below to begin your first build.</div>
       </div>
+
+      <!-- Cos-Plans -->
+      <div id="homeCosPlanSection" class="hidden">
+        <div class="section-header-row" style="margin-top:8px;">
+          <div class="section-label lavender" style="margin-bottom:0;color:var(--lavender);">✨ Cos-Plans</div>
+          <div style="font-size:12px;font-weight:700;color:var(--lavender);cursor:pointer;" onclick="openAddCosPlanModal()">+ Add</div>
+        </div>
+        <div id="homeCosPlanList"></div>
+      </div>
+
+      <!-- Upcoming Events -->
+      <div class="section-header-row" style="margin-top:8px;">
+        <div class="section-label sky" style="margin-bottom:0;color:var(--sky);">📅 Coming Up</div>
+        <div style="font-size:12px;font-weight:700;color:var(--sky);cursor:pointer;" onclick="showPage('calendar')">See all →</div>
+      </div>
+      <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
     </div>
 
     <!-- QUESTS -->
@@ -853,6 +871,19 @@ select option{background:#1a2f1c;}
   </div>
 </div>
 
+<!-- ══ COS-PLAN MODAL ══ -->
+<div class="modal-overlay" id="cosPlanModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="cosPlanModalTitle">✨ Add a Cos-Plan</div>
+    <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
+    <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
+    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
+    <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
+    <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
+  </div>
+</div>
+
 <!-- ══ PHOTOSHOOT MODAL ══ -->
 <div class="modal-overlay" id="photoModal">
   <div class="modal">
@@ -925,6 +956,7 @@ async function loadFromCloud() {
       conventions = d.conventions || [];
       craftDays   = d.craftDays   || [];
       photoshoots = d.photoshoots || [];
+      cosPlans    = d.cosPlans    || [];
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -940,12 +972,14 @@ function saveLocal() {
   localStorage.setItem('cf_conventions', JSON.stringify(conventions));
   localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
   localStorage.setItem('cf_photoshoots',  JSON.stringify(photoshoots));
+  localStorage.setItem('cf_cosplans',     JSON.stringify(cosPlans));
 }
 function loadLocal() {
   cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
   conventions = JSON.parse(localStorage.getItem('cf_conventions') || '[]');
   craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
   photoshoots = JSON.parse(localStorage.getItem('cf_photoshoots')  || '[]');
+  cosPlans    = JSON.parse(localStorage.getItem('cf_cosplans')     || '[]');
 }
 
 // ── AUTH STATE LISTENER ───────────────────────────────────────
@@ -1038,6 +1072,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 let cosplays    = [];
 let conventions = [];
 let craftDays   = [];
+let cosPlans    = [];
 let photoshoots = [];
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
@@ -1515,21 +1550,69 @@ function backFromCostume() {
 // ── HOME ──────────────────────────────────────────────────────
 function renderHome() {
   const now = new Date();
-  document.getElementById('h-total').textContent  = cosplays.length;
-  document.getElementById('h-active').textContent = cosplays.filter(c=>c.status!=='done').length;
-  document.getElementById('h-cons').textContent   = conventions.filter(c=>new Date(c.start+'T00:00:00')>=now).length;
+
+  // Hero stats
+  const activeQuests = cosplays.filter(c=>c.status!=='done');
+  document.getElementById('h-total').textContent    = activeQuests.length;
+  document.getElementById('h-cosplans').textContent = (cosPlans||[]).length;
+  document.getElementById('h-cons').textContent     = conventions.filter(c=>new Date(c.start+'T00:00:00')>=now).length;
+
+  // Urgent deadlines banner
   const urgent = cosplays.filter(c=>{
     if(!c.deadline) return false;
-    return Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000) <= 14 &&
-           Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000) >= 0;
+    const d=Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000);
+    return d<=14&&d>=0;
   });
   document.getElementById('urgentBannerHome').innerHTML = urgent.length
     ? `<div class="urgent-banner"><div class="u-icon">⏰</div><div><div class="u-text">${urgent.length} deadline${urgent.length>1?'s':''} soon!</div><div class="u-sub">${urgent.map(c=>c.name).join(', ')}</div></div></div>` : '';
-  const recent = cosplays.filter(c=>c.status!=='done').slice(0,4);
+
+  // Active quests preview
+  const recent = activeQuests.slice(0,3);
   const list=document.getElementById('homeQuestList'), empty=document.getElementById('homeEmpty');
-  if (!recent.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
-  empty.classList.add('hidden');
-  list.innerHTML = recent.map(c=>questCard(c)).join('');
+  if (!recent.length) { list.innerHTML=''; empty.classList.remove('hidden'); }
+  else { empty.classList.add('hidden'); list.innerHTML = recent.map(c=>questCard(c)).join(''); }
+
+  // Cos-Plans section
+  const cpSection = document.getElementById('homeCosPlanSection');
+  const cpList = document.getElementById('homeCosPlanList');
+  if ((cosPlans||[]).length > 0) {
+    cpSection.classList.remove('hidden');
+    cpList.innerHTML = (cosPlans||[]).slice(0,3).map(cp=>`
+      <div style="margin:0 16px 8px;padding:10px 14px;background:rgba(160,154,200,0.08);border:1px solid rgba(160,154,200,0.2);border-radius:var(--r);display:flex;align-items:center;gap:10px;">
+        <div style="font-size:22px;width:36px;height:36px;border-radius:8px;background:rgba(160,154,200,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✨</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cp.name}</div>
+          <div style="font-size:12px;color:var(--text-soft);font-weight:600;">${cp.series||'—'}</div>
+        </div>
+      </div>`).join('');
+    if ((cosPlans||[]).length > 3) {
+      cpList.innerHTML += `<div style="margin:0 16px 8px;font-size:12px;font-weight:700;color:var(--lavender);text-align:center;">+${cosPlans.length-3} more ideas</div>`;
+    }
+  } else {
+    cpSection.classList.add('hidden');
+  }
+
+  // Upcoming events preview
+  const evEl = document.getElementById('homeEventPreview');
+  if (evEl) {
+    const upcoming = [
+      ...conventions.map(c=>({name:c.name,date:c.start,type:'con',location:c.location})),
+      ...craftDays.map(c=>({name:'🪡 '+c.costumeName+' craft day',date:c.date,type:'craft'})),
+      ...photoshoots.map(p=>({name:'📸 '+p.name,date:p.date,type:'photo'})),
+    ].filter(e=>e.date&&new Date(e.date+'T00:00:00')>=now)
+     .sort((a,b)=>a.date.localeCompare(b.date))
+     .slice(0,3);
+    const dotColor={con:'var(--sky)',craft:'var(--gold)',photo:'var(--lavender)'};
+    evEl.innerHTML = upcoming.length
+      ? upcoming.map(e=>{
+          const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+          return `<div class="event-item" style="margin-bottom:8px;">
+            <div class="ev-dot" style="background:${dotColor[e.type]||'var(--rose)'}"></div>
+            <div class="ev-info"><div class="ev-name">${e.name}</div><div class="ev-date">${d}${e.location?' · '+e.location:''}</div></div>
+          </div>`;
+        }).join('')
+      : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
+  }
 }
 
 // ── QUESTS ────────────────────────────────────────────────────
@@ -2343,6 +2426,41 @@ window.startTaskDrag = startTaskDrag;
 window.startStepDrag = startStepDrag;
 
 
+
+// ── COS-PLANS ─────────────────────────────────────────────────
+let _editingCosPlanId = null;
+
+function openAddCosPlanModal(prefillName) {
+  _editingCosPlanId = null;
+  document.getElementById('cosPlanModalTitle').textContent = '✨ Add a Cos-Plan';
+  document.getElementById('cp-name').value = prefillName || '';
+  document.getElementById('cp-series').value = '';
+  document.getElementById('cp-imgurl').value = '';
+  document.getElementById('cp-notes').value = '';
+  openModal('cosPlanModal');
+}
+
+function saveCosPlan() {
+  const name = document.getElementById('cp-name').value.trim();
+  if (!name) { alert('Please enter a character name!'); return; }
+  const item = { id: _editingCosPlanId || uid(), name,
+    series: document.getElementById('cp-series').value.trim(),
+    imgurl: document.getElementById('cp-imgurl').value.trim(),
+    notes:  document.getElementById('cp-notes').value.trim() };
+  if (_editingCosPlanId) {
+    const idx = cosPlans.findIndex(p => p.id === _editingCosPlanId);
+    if (idx !== -1) cosPlans[idx] = item;
+  } else { cosPlans.unshift(item); }
+  _editingCosPlanId = null;
+  save(); closeAllModals(); renderHome();
+}
+
+function deleteCosPlan(id) {
+  if (!confirm('Remove this Cos-Plan?')) return;
+  cosPlans = cosPlans.filter(p => p.id !== id);
+  save(); renderHome();
+}
+
 // ── PHOTOSHOOTS ───────────────────────────────────────────────
 let _editingPhotoId = null;
 function openPhotoModal(id) {
@@ -2401,6 +2519,7 @@ Object.assign(window, {
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
+  openAddCosPlanModal, saveCosPlan, deleteCosPlan,
   renderStats, switchInnerTab, toggleDayNight,
   exportData, confirmClearData, showSignedIn
 });
