@@ -671,7 +671,7 @@ select option{background:#1a2f1c;}
     </div>
 
     <!-- ADD / EDIT PIECE MODAL -->
-    <div class="modal-overlay hidden" id="piece-modal-overlay" onclick="closePieceModal(event)">
+    <div class="modal-overlay" id="piece-modal-overlay" onclick="closePieceModal(event)">
       <div class="modal-sheet" onclick="event.stopPropagation()">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
           <div class="modal-title" id="piece-modal-title">Add Piece</div>
@@ -3185,7 +3185,7 @@ function openAddPiece(costumeId) {
   document.getElementById('pm-storage').value = '';
   document.getElementById('pm-condition').value = 'good';
   document.getElementById('pm-notes').value = '';
-  document.getElementById('piece-modal-overlay').classList.remove('hidden');
+  document.getElementById('piece-modal-overlay').classList.add('open');
 }
 
 function openEditPiece(costumeId, pieceId) {
@@ -3198,12 +3198,12 @@ function openEditPiece(costumeId, pieceId) {
   document.getElementById('pm-storage').value = p.storage || '';
   document.getElementById('pm-condition').value = p.condition || 'good';
   document.getElementById('pm-notes').value = p.notes || '';
-  document.getElementById('piece-modal-overlay').classList.remove('hidden');
+  document.getElementById('piece-modal-overlay').classList.add('open');
 }
 
 function closePieceModal(event) {
   if (event && event.target !== document.getElementById('piece-modal-overlay')) return;
-  document.getElementById('piece-modal-overlay').classList.add('hidden');
+  document.getElementById('piece-modal-overlay').classList.remove('open');
   _editingPieceInfo = null;
 }
 
@@ -3229,7 +3229,7 @@ function savePiece() {
     c.pieces.push(pieceData);
   }
   save();
-  document.getElementById('piece-modal-overlay').classList.add('hidden');
+  document.getElementById('piece-modal-overlay').classList.remove('open');
   _editingPieceInfo = null;
   // Refresh the pieces list in the detail view
   const listEl = document.getElementById(`pieces-list-${costumeId}`);
