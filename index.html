@@ -664,6 +664,14 @@ select option{background:#1a2f1c;}
           <button onclick="closeCostumeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-dim);">✕</button>
         </div>
 
+        <!-- Costume Photo -->
+        <div style="display:flex;justify-content:center;margin-bottom:16px;">
+          <button onclick="alert('Photo uploads coming soon! 📷')" type="button" style="width:90px;height:90px;border-radius:50%;background:rgba(143,188,143,.1);border:2px dashed var(--sage);color:var(--sage);font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+            <span style="font-size:26px;">📷</span>
+            <span style="font-size:10px;">Add Photo</span>
+          </button>
+        </div>
+
         <!-- Name -->
         <label class="field-label">Costume Name *</label>
         <input id="cm-name" class="field-input" placeholder="e.g. Sailor Moon" maxlength="60" />
@@ -699,11 +707,15 @@ select option{background:#1a2f1c;}
         <textarea id="cm-notes" class="field-input" rows="3" placeholder="General notes about this costume..." style="resize:vertical;"></textarea>
 
         <!-- Makeup Ref -->
-        <label class="field-label">Makeup Reference / Notes</label>
+        <label class="field-label">💄 Makeup Reference</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+          <button onclick="alert('Photo uploads coming soon! 📷')" type="button" style="background:rgba(143,188,143,.15);border:1px dashed var(--sage);border-radius:10px;padding:8px 14px;color:var(--sage);font-size:13px;font-weight:700;cursor:pointer;">📷 Add Photo</button>
+          <span style="font-size:11px;color:var(--text-dim);">Coming soon</span>
+        </div>
         <textarea id="cm-makeup" class="field-input" rows="2" placeholder="Makeup look, products used..." style="resize:vertical;"></textarea>
 
         <!-- Contacts -->
-        <label class="field-label">Contact Lenses</label>
+        <label class="field-label">👁 Contact Lenses</label>
         <input id="cm-contacts" class="field-input" placeholder="Brand, color, prescription..." />
 
         <!-- Repair Notes (shown when status = needs_repair) -->
@@ -2735,37 +2747,44 @@ function deletePhoto(id) {
 // ══════════════════════════════════════════════════════════════
 
 const CLOSET_TAGS = [
-  // Craft type
-  {id:'handmade',label:'🪡 Handmade',group:'craft'},
-  {id:'bought',label:'🛍 Store-Bought',group:'craft'},
-  {id:'hybrid',label:'🔀 Hybrid',group:'craft'},
-  {id:'commissioned',label:'💼 Commissioned',group:'craft'},
-  // Complexity
-  {id:'beginner',label:'🌱 Beginner',group:'level'},
-  {id:'intermediate',label:'⚡ Intermediate',group:'level'},
-  {id:'advanced',label:'🔥 Advanced',group:'level'},
-  {id:'armor',label:'🛡 Armor',group:'level'},
-  // Wear
-  {id:'comfy',label:'☁️ Comfy',group:'wear'},
-  {id:'sweaty',label:'🥵 Sweaty',group:'wear'},
-  {id:'wig',label:'💇 Wig',group:'wear'},
-  {id:'contacts',label:'👁 Contacts',group:'wear'},
-  {id:'prosthetics',label:'🎭 Prosthetics',group:'wear'},
-  {id:'full_day',label:'📅 Full-Day Wear',group:'wear'},
-  // Season / Event
-  {id:'summer',label:'☀️ Summer',group:'season'},
-  {id:'winter',label:'❄️ Winter',group:'season'},
-  {id:'outdoor',label:'🌳 Outdoor',group:'season'},
-  {id:'indoor',label:'🏟 Indoor',group:'season'},
-  // Special
-  {id:'skit',label:'🎬 Skit',group:'special'},
-  {id:'group',label:'👥 Group',group:'special'},
-  {id:'solo',label:'🙋 Solo',group:'special'},
-  {id:'debut',label:'✨ Debut',group:'special'},
-  {id:'award',label:'🏆 Award Winner',group:'special'},
-  {id:'mashup',label:'🎨 Mashup/OC',group:'special'},
-  {id:'genderbend',label:'💫 Genderbend',group:'special'},
-  {id:'needs_photos',label:'📷 Needs Photos',group:'special'},
+  // Build type
+  {id:'armor',        label:'🛡 Armor',          group:'build'},
+  {id:'sewn',         label:'🪡 Sewn',            group:'build'},
+  {id:'closet_cos',   label:'🛍 Closet Cosplay',  group:'build'},
+  {id:'bounding',     label:'✨ Bounding',         group:'build'},
+  {id:'furry',        label:'🐾 Furry',            group:'build'},
+  {id:'original',     label:'🎨 Original Design',  group:'build'},
+  // Style
+  {id:'genderbend',   label:'💫 Gender Bend',      group:'style'},
+  {id:'crossplay',    label:'🔄 Crossplay',         group:'style'},
+  {id:'gijinka',      label:'🌸 Gijinka',           group:'style'},
+  {id:'kemonomimi',   label:'🐱 Kemonomimi',        group:'style'},
+  {id:'magical_girl', label:'⭐ Magical Girl',      group:'style'},
+  {id:'princess',     label:'👑 Princess',          group:'style'},
+  {id:'prince',       label:'🤴 Prince',            group:'style'},
+  {id:'hero',         label:'⚡ Hero',              group:'style'},
+  {id:'villain',      label:'🖤 Villain',           group:'style'},
+  {id:'horror',       label:'💀 Horror',            group:'style'},
+  {id:'fantasy',      label:'🧝 Fantasy',           group:'style'},
+  // Source
+  {id:'anime',        label:'🎌 Anime',             group:'source'},
+  {id:'comics',       label:'💥 Comics',            group:'source'},
+  {id:'video_games',  label:'🎮 Video Games',       group:'source'},
+  {id:'western',      label:'🎬 Western/Live Action',group:'source'},
+  {id:'mecha',        label:'🤖 Mecha',             group:'source'},
+  {id:'scifi',        label:'🚀 Sci-Fi',            group:'source'},
+  {id:'cartoon',      label:'📺 Cartoon',           group:'source'},
+  // Outfit type
+  {id:'swim',         label:'👙 Swim',              group:'outfit'},
+  {id:'summer',       label:'☀️ Summer',            group:'outfit'},
+  {id:'winter',       label:'❄️ Winter',            group:'outfit'},
+  {id:'bunny',        label:'🐰 Bunny Suit',        group:'outfit'},
+  // Context
+  {id:'competition',  label:'🏆 Competition',       group:'context'},
+  {id:'casual',       label:'😊 Casual',            group:'context'},
+  {id:'performance',  label:'🎭 Performance',       group:'context'},
+  {id:'duo',          label:'👫 Duo',               group:'context'},
+  {id:'group',        label:'👥 Group',             group:'context'},
 ];
 
 const STATUS_LABELS = {
@@ -2932,12 +2951,21 @@ function toggleRepairSection() {
   document.getElementById('cm-repair-section').style.display = status === 'needs_repair' ? 'block' : 'none';
 }
 
+const TAG_GROUP_LABELS = {
+  build: 'Build Type', style: 'Style', source: 'Source',
+  outfit: 'Outfit Type', context: 'Context'
+};
 function renderTagPicker() {
   const container = document.getElementById('cm-tags-container');
   if (!container) return;
-  container.innerHTML = CLOSET_TAGS.map(t => {
-    const sel = _selectedTags.includes(t.id) ? 'selected' : '';
-    return `<span class="tag-chip ${sel}" onclick="toggleCostumeTag('${t.id}')">${t.label}</span>`;
+  const groups = ['build','style','source','outfit','context'];
+  container.innerHTML = groups.map(g => {
+    const tags = CLOSET_TAGS.filter(t => t.group === g);
+    const chips = tags.map(t => {
+      const sel = _selectedTags.includes(t.id) ? 'selected' : '';
+      return `<span class="tag-chip ${sel}" onclick="toggleCostumeTag('${t.id}')">${t.label}</span>`;
+    }).join('');
+    return `<div style="width:100%;margin:6px 0 2px;font-size:10px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.6px;">${TAG_GROUP_LABELS[g]}</div>${chips}`;
   }).join('');
 }
 
