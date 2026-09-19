@@ -906,6 +906,12 @@ select option{background:#1a2f1c;}
           </div>
         </div>
 
+        <!-- Closet Archive -->
+        <div class="setting-section">
+          <div class="setting-section-title">📦 Closet Archive</div>
+          <div id="archive-list"></div>
+        </div>
+
         <!-- Data -->
         <div class="setting-section">
           <div class="setting-section-title">🗂 Data</div>
@@ -1705,6 +1711,7 @@ function switchInnerTab(name) {
     document.getElementById('itab-' + n).classList.toggle('active', n === name);
     document.getElementById('ipane-' + n).classList.toggle('active', n === name);
   });
+  if (name === 'settings') renderArchiveList();
 }
 
 // ── SIGN IN / SIGN UP ─────────────────────────────────────────
@@ -3207,6 +3214,37 @@ function deleteCostume(id) {
   renderClosetList();
 }
 
+// ── ARCHIVE ───────────────────────────────────────────────────
+function renderArchiveList() {
+  const el = document.getElementById('archive-list');
+  if (!el) return;
+  const archived = (closet || []).filter(c => c.archivedAt)
+    .sort((a, b) => b.archivedAt - a.archivedAt);
+  if (!archived.length) {
+    el.innerHTML = '<div style="font-size:13px;color:var(--text-dim);padding:8px 0;">No archived costumes yet.</div>';
+    return;
+  }
+  el.innerHTML = archived.map(c => {
+    const date = new Date(c.archivedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+        <div style="font-size:12px;color:var(--text-dim);font-weight:600;">${c.character || c.fandom || '—'} · Archived ${date}</div>
+      </div>
+      <button onclick="restoreCostume('${c.id}')" style="flex-shrink:0;background:rgba(143,188,143,.15);border:1px solid rgba(143,188,143,.35);color:var(--sage);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;">↩ Restore</button>
+    </div>`;
+  }).join('');
+}
+
+function restoreCostume(id) {
+  const c = (closet || []).find(x => x.id === id);
+  if (!c) return;
+  delete c.archivedAt;
+  save();
+  renderArchiveList();
+  renderClosetList();
+}
+
 // ── show/hide FAB when closet tab active ──────────────────────
 // (handled naturally since FAB is inside the pane)
 
@@ -3341,7 +3379,8 @@ Object.assign(window, {
   toggleCostumeTag, toggleRepairSection, toggleClosetFavorite,
   archiveCostume, deleteCostume,
   showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset,
-  renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece
+  renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece,
+  renderArchiveList, restoreCostume
 });
 </script>
 <script>
