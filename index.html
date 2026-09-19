@@ -1958,7 +1958,7 @@ function renderHome() {
       ? upcoming.map(e=>{
           const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
           const packBtn = e.type==='con' && e.id
-            ? `<button onclick="openPackingPage('${e.id}')" style="flex-shrink:0;background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">🎒 Pack</button>`
+            ? `<button onclick="openPackingPage('${e.id}','con','home')" style="flex-shrink:0;background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">🎒 Pack</button>`
             : '';
           return `<div class="event-item" style="margin-bottom:8px;">
             <div class="ev-dot" style="background:${dotColor[e.type]||'var(--rose)'}"></div>
@@ -2713,6 +2713,8 @@ function renderEventList(){
         ${item.type==='craft'&&item.hours?`<div class="ev-sub">⏱ ${item.hours}h planned</div>`:''}
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
+      ${item.type==='con'?`<button onclick="openPackingPage('${item.id}','con','calendar')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
+      ${item.type==='photo'?`<button onclick="openPackingPage('${item.id}','photo','calendar')" style="background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.35);color:var(--lavender);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
       ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
       ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
       ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;cursor:pointer;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
@@ -3530,7 +3532,9 @@ function deletePiece(costumeId, pieceId) {
 }
 
 // ── PACKING PLANNER ──────────────────────────────────────────
-let _packingConId = null;
+let _packingConId   = null;
+let _packingType    = 'con';   // 'con' | 'photo'
+let _packingSource  = 'home';  // 'home' | 'calendar'
 
 function _getPackPlan(conId) {
   let plan = (packingPlans || []).find(p => p.conId === conId);
@@ -3561,8 +3565,10 @@ function _costumeSelect(activeCloset, selectedId, conId, dateStr, slot) {
   return `<select class="field-input" style="margin:0;font-size:13px;" onchange="savePackingSlot('${conId}','${dateStr}','${slot}',this.value)">${opts}</select>`;
 }
 
-function openPackingPage(conId) {
-  _packingConId = conId;
+function openPackingPage(eventId, type, source) {
+  _packingConId  = eventId;
+  _packingType   = type   || 'con';
+  _packingSource = source || 'home';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
   document.getElementById('page-packing').classList.add('active');
@@ -3570,10 +3576,24 @@ function openPackingPage(conId) {
 }
 
 function closePackingPage() {
-  showPage('home');
+  if (_packingSource === 'calendar') showPage('calendar');
+  else showPage('home');
+}
+
+// Returns a lightweight event object for any plan key (con or photo)
+function _getEventForPlan(planKey) {
+  const con = (conventions || []).find(c => c.id === planKey);
+  if (con) return con;
+  if (planKey.startsWith('photo_')) {
+    const photoId = planKey.slice(6);
+    const photo   = (photoshoots || []).find(p => p.id === photoId);
+    if (photo) return { id: planKey, name: photo.name, start: photo.date, end: photo.date };
+  }
+  return { id: planKey };
 }
 
 function renderPackingPage() {
+  if (_packingType === 'photo') { _renderPhotoPackingPage(); return; }
   const con = (conventions || []).find(c => c.id === _packingConId);
   const el  = document.getElementById('packing-page-content');
   if (!con || !el) return;
@@ -3622,6 +3642,44 @@ function renderPackingPage() {
   el.innerHTML = html;
 }
 
+function _renderPhotoPackingPage() {
+  const photo = (photoshoots || []).find(p => p.id === _packingConId);
+  const el    = document.getElementById('packing-page-content');
+  if (!photo || !el) return;
+
+  const planKey      = 'photo_' + photo.id;
+  const plan         = _getPackPlan(planKey);
+  const activeCloset = (closet || []).filter(c => !c.archivedAt);
+  const dateLabel    = new Date(photo.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+  const slotKey      = photo.date + '_full';
+  const selectedId   = plan.slots[slotKey] || '';
+
+  let opts = '<option value="">— None —</option>';
+  activeCloset.forEach(c => {
+    const sel   = c.id === selectedId ? ' selected' : '';
+    const label = c.name + (c.character ? ' · ' + c.character : '');
+    opts += `<option value="${c.id}"${sel}>${label}</option>`;
+  });
+
+  const pseudoEv = { id: planKey, name: photo.name, start: photo.date, end: photo.date };
+
+  let html = `<div style="margin-bottom:18px;">
+    <div style="font-size:16px;font-weight:800;color:var(--cream);margin-bottom:2px;">📸 ${photo.name}</div>
+    <div style="font-size:12px;color:var(--text-dim);">${dateLabel}${photo.location ? ' · ' + photo.location : ''}</div>
+  </div>
+
+  <div style="font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Costume for this Shoot</div>
+
+  <div style="margin-bottom:18px;padding:14px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:14px;">
+    <div style="font-size:11px;font-weight:700;color:var(--lavender);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">👗 Choose Costume</div>
+    <select class="field-input" style="margin:0;font-size:13px;" onchange="savePackingSlot('${planKey}','${photo.date}','full',this.value)">${opts}</select>
+  </div>
+
+  <div id="packing-checklist-wrap">${_buildPackingChecklist(pseudoEv, plan, activeCloset)}</div>`;
+
+  el.innerHTML = html;
+}
+
 function savePackingSlot(conId, dateStr, slot, costumeId) {
   const plan = _getPackPlan(conId);
   const key  = dateStr + '_' + slot;
@@ -3629,10 +3687,10 @@ function savePackingSlot(conId, dateStr, slot, costumeId) {
   else delete plan.slots[key];
   save();
   // Refresh just the checklist
-  const con          = (conventions || []).find(c => c.id === conId);
+  const ev           = _getEventForPlan(conId);
   const activeCloset = (closet || []).filter(c => !c.archivedAt);
   const wrap         = document.getElementById('packing-checklist-wrap');
-  if (wrap) wrap.innerHTML = _buildPackingChecklist(con, plan, activeCloset);
+  if (wrap) wrap.innerHTML = _buildPackingChecklist(ev, plan, activeCloset);
 }
 
 function _buildPackingChecklist(con, plan, activeCloset) {
@@ -3719,10 +3777,10 @@ function togglePackItem(conId, checkKey) {
   if (!plan.checked) plan.checked = {};
   plan.checked[checkKey] = !plan.checked[checkKey];
   save();
-  const con          = (conventions || []).find(c => c.id === conId);
+  const ev           = _getEventForPlan(conId);
   const activeCloset = (closet || []).filter(c => !c.archivedAt);
   const wrap         = document.getElementById('packing-checklist-wrap');
-  if (wrap) wrap.innerHTML = _buildPackingChecklist(con, plan, activeCloset);
+  if (wrap) wrap.innerHTML = _buildPackingChecklist(ev, plan, activeCloset);
 }
 
 renderHome();
