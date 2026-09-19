@@ -730,6 +730,15 @@ select option{background:#1a2f1c;}
       </div>
     </div>
 
+    <!-- PACKING PLANNER PAGE -->
+    <div class="page slide-in" id="page-packing">
+      <div class="p-header" style="align-items:center;gap:10px;">
+        <button class="back-btn" onclick="closePackingPage()">← Back</button>
+        <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);">🎒 Packing Planner</div>
+      </div>
+      <div id="packing-page-content" style="padding:0 16px 100px;"></div>
+    </div>
+
     <!-- MOVE TO CLOSET PROMPT -->
     <div class="modal-overlay hidden" id="closet-prompt-overlay" onclick="dismissClosetPrompt()">
       <div class="modal-sheet" onclick="event.stopPropagation()" style="text-align:center;padding:28px 24px 36px;">
@@ -1246,7 +1255,7 @@ let currentUser = null;
 async function saveToCloud() {
   if (!currentUser) { saveLocal(); return; }
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, cosPlans, closet, updatedAt: Date.now() });
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, cosPlans, closet, packingPlans, updatedAt: Date.now() });
   } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
 }
 async function loadFromCloud() {
@@ -1260,7 +1269,8 @@ async function loadFromCloud() {
       craftDays   = d.craftDays   || [];
       photoshoots = d.photoshoots || [];
       cosPlans    = d.cosPlans    || [];
-      closet      = d.closet      || [];
+      closet        = d.closet        || [];
+      packingPlans  = d.packingPlans  || [];
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -1277,7 +1287,8 @@ function saveLocal() {
   localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
   localStorage.setItem('cf_photoshoots',  JSON.stringify(photoshoots));
   localStorage.setItem('cf_cosplans',     JSON.stringify(cosPlans));
-  localStorage.setItem('cf_closet',       JSON.stringify(closet));
+  localStorage.setItem('cf_closet',        JSON.stringify(closet));
+  localStorage.setItem('cf_packingplans',  JSON.stringify(packingPlans));
 }
 function loadLocal() {
   cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
@@ -1285,7 +1296,8 @@ function loadLocal() {
   craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
   photoshoots = JSON.parse(localStorage.getItem('cf_photoshoots')  || '[]');
   cosPlans    = JSON.parse(localStorage.getItem('cf_cosplans')     || '[]');
-  closet      = JSON.parse(localStorage.getItem('cf_closet')       || '[]');
+  closet        = JSON.parse(localStorage.getItem('cf_closet')        || '[]');
+  packingPlans  = JSON.parse(localStorage.getItem('cf_packingplans')  || '[]');
 }
 
 // ── AUTH STATE LISTENER ───────────────────────────────────────
@@ -1380,7 +1392,8 @@ let conventions = [];
 let craftDays   = [];
 let cosPlans    = [];
 let photoshoots = [];
-let closet      = []; // { id, name, character, fandom, status, tags[], notes, pieces[], makeupRef, contactsRef, favorite, archivedAt? }
+let closet        = []; // { id, name, character, fandom, status, tags[], notes, pieces[], makeupRef, contactsRef, favorite, archivedAt? }
+let packingPlans  = []; // { conId, slots:{ 'YYYY-MM-DD_am|pm|full': closetId }, checked:{ key: bool } }
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
 
@@ -1934,7 +1947,7 @@ function renderHome() {
   const evEl = document.getElementById('homeEventPreview');
   if (evEl) {
     const upcoming = [
-      ...conventions.map(c=>({name:c.name,date:c.start,type:'con',location:c.location})),
+      ...conventions.map(c=>({name:c.name,date:c.start,type:'con',location:c.location,id:c.id})),
       ...craftDays.map(c=>({name:'🪡 '+c.costumeName+' craft day',date:c.date,type:'craft'})),
       ...photoshoots.map(p=>({name:'📸 '+p.name,date:p.date,type:'photo'})),
     ].filter(e=>e.date&&new Date(e.date+'T00:00:00')>=now)
@@ -1944,9 +1957,13 @@ function renderHome() {
     evEl.innerHTML = upcoming.length
       ? upcoming.map(e=>{
           const d=new Date(e.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
+          const packBtn = e.type==='con' && e.id
+            ? `<button onclick="openPackingPage('${e.id}')" style="flex-shrink:0;background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">🎒 Pack</button>`
+            : '';
           return `<div class="event-item" style="margin-bottom:8px;">
             <div class="ev-dot" style="background:${dotColor[e.type]||'var(--rose)'}"></div>
             <div class="ev-info"><div class="ev-name">${e.name}</div><div class="ev-date">${d}${e.location?' · '+e.location:''}</div></div>
+            ${packBtn}
           </div>`;
         }).join('')
       : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
@@ -3512,6 +3529,202 @@ function deletePiece(costumeId, pieceId) {
   if (listEl) listEl.innerHTML = renderPiecesList(c);
 }
 
+// ── PACKING PLANNER ──────────────────────────────────────────
+let _packingConId = null;
+
+function _getPackPlan(conId) {
+  let plan = (packingPlans || []).find(p => p.conId === conId);
+  if (!plan) {
+    plan = { conId, slots: {}, checked: {} };
+    packingPlans.push(plan);
+  }
+  return plan;
+}
+
+function _conDays(con) {
+  const dates = [];
+  const start = new Date(con.start + 'T00:00:00');
+  const end   = new Date((con.end || con.start) + 'T00:00:00');
+  for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+    dates.push(new Date(d).toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+function _costumeSelect(activeCloset, selectedId, conId, dateStr, slot) {
+  let opts = '<option value="">— None —</option>';
+  activeCloset.forEach(c => {
+    const sel = c.id === selectedId ? ' selected' : '';
+    const label = c.name + (c.character ? ' · ' + c.character : '');
+    opts += `<option value="${c.id}"${sel}>${label}</option>`;
+  });
+  return `<select class="field-input" style="margin:0;font-size:13px;" onchange="savePackingSlot('${conId}','${dateStr}','${slot}',this.value)">${opts}</select>`;
+}
+
+function openPackingPage(conId) {
+  _packingConId = conId;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-packing').classList.add('active');
+  renderPackingPage();
+}
+
+function closePackingPage() {
+  showPage('home');
+}
+
+function renderPackingPage() {
+  const con = (conventions || []).find(c => c.id === _packingConId);
+  const el  = document.getElementById('packing-page-content');
+  if (!con || !el) return;
+
+  const plan        = _getPackPlan(con.id);
+  const days        = _conDays(con);
+  const activeCloset = (closet || []).filter(c => !c.archivedAt);
+
+  const startLabel = new Date(con.start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const endLabel   = con.end && con.end !== con.start
+    ? ' – ' + new Date(con.end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : '';
+
+  let html = `<div style="margin-bottom:18px;">
+    <div style="font-size:16px;font-weight:800;color:var(--cream);margin-bottom:2px;">${con.name}</div>
+    <div style="font-size:12px;color:var(--text-dim);">${startLabel}${endLabel}${con.location ? ' · ' + con.location : ''}</div>
+  </div>`;
+
+  // Day-by-day selectors
+  html += `<div style="font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Costume Schedule</div>`;
+
+  days.forEach(dateStr => {
+    const dayLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const amVal   = plan.slots[dateStr + '_am']   || '';
+    const pmVal   = plan.slots[dateStr + '_pm']   || '';
+    const fullVal = plan.slots[dateStr + '_full'] || '';
+
+    html += `<div style="margin-bottom:14px;padding:14px 14px 10px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:14px;">
+      <div style="font-size:13px;font-weight:800;color:var(--sage);margin-bottom:12px;">📅 ${dayLabel}</div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🌅 Morning / AM</div>
+        ${_costumeSelect(activeCloset, amVal, con.id, dateStr, 'am')}
+      </div>
+      <div style="margin-bottom:10px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🌆 Afternoon / PM</div>
+        ${_costumeSelect(activeCloset, pmVal, con.id, dateStr, 'pm')}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🌞 Full Day</div>
+        ${_costumeSelect(activeCloset, fullVal, con.id, dateStr, 'full')}
+      </div>
+    </div>`;
+  });
+
+  html += `<div id="packing-checklist-wrap">${_buildPackingChecklist(con, plan, activeCloset)}</div>`;
+  el.innerHTML = html;
+}
+
+function savePackingSlot(conId, dateStr, slot, costumeId) {
+  const plan = _getPackPlan(conId);
+  const key  = dateStr + '_' + slot;
+  if (costumeId) plan.slots[key] = costumeId;
+  else delete plan.slots[key];
+  save();
+  // Refresh just the checklist
+  const con          = (conventions || []).find(c => c.id === conId);
+  const activeCloset = (closet || []).filter(c => !c.archivedAt);
+  const wrap         = document.getElementById('packing-checklist-wrap');
+  if (wrap) wrap.innerHTML = _buildPackingChecklist(con, plan, activeCloset);
+}
+
+function _buildPackingChecklist(con, plan, activeCloset) {
+  // Deduplicate: same costume on same day counts once (e.g. both AM and Full Day assigned same)
+  const seen = new Set();
+  const entries = [];
+  Object.entries(plan.slots).forEach(([key, costumeId]) => {
+    if (!costumeId) return;
+    const lastUnder = key.lastIndexOf('_');
+    const dateStr   = key.slice(0, lastUnder);
+    const slot      = key.slice(lastUnder + 1);
+    const dedupeKey = dateStr + '_' + costumeId;
+    if (!seen.has(dedupeKey)) {
+      seen.add(dedupeKey);
+      entries.push({ dateStr, slot, costumeId });
+    }
+  });
+
+  if (!entries.length) {
+    return `<div style="margin-top:8px;padding:16px;background:rgba(10,24,12,0.3);border:1px dashed var(--border);border-radius:14px;text-align:center;">
+      <div style="font-size:22px;margin-bottom:6px;">🧳</div>
+      <div style="font-size:13px;color:var(--text-dim);">Assign costumes above and your packing list will appear here.</div>
+    </div>`;
+  }
+
+  const slotLabels = { am: 'Morning', pm: 'Afternoon', full: 'Full Day' };
+  entries.sort((a, b) => a.dateStr.localeCompare(b.dateStr) || a.slot.localeCompare(b.slot));
+
+  let html = `<div style="margin-top:20px;">
+    <div style="font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📋 Packing Checklist</div>`;
+
+  entries.forEach(({ dateStr, slot, costumeId }) => {
+    const costume  = activeCloset.find(c => c.id === costumeId);
+    if (!costume) return;
+    const dayLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const pieces   = costume.pieces || [];
+
+    html += `<div style="margin-bottom:12px;padding:12px 14px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--lavender);margin-bottom:4px;">${dayLabel} · ${slotLabels[slot] || slot}</div>
+      <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:10px;">👗 ${costume.name}</div>`;
+
+    const checkRow = (ckKey, label) => {
+      const isChecked = !!(plan.checked && plan.checked[ckKey]);
+      return `<div onclick="togglePackItem('${con.id}','${ckKey}')" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid rgba(100,140,100,0.08);">
+        <div style="width:20px;height:20px;border-radius:6px;border:2px solid ${isChecked ? 'var(--sage)' : 'var(--border)'};background:${isChecked ? 'rgba(143,188,143,.25)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          ${isChecked ? '<span style="color:var(--sage);font-size:12px;font-weight:900;line-height:1;">✓</span>' : ''}
+        </div>
+        <div style="flex:1;font-size:13px;font-weight:600;color:${isChecked ? 'var(--text-dim)' : 'var(--text)'};text-decoration:${isChecked ? 'line-through' : 'none'};">${label}</div>
+      </div>`;
+    };
+
+    if (pieces.length) {
+      pieces.forEach(piece => {
+        const ckKey = `${con.id}_${dateStr}_${slot}_${piece.id}`;
+        const storageHint = piece.storage ? ` <span style="color:var(--text-dim);font-size:11px;">(${piece.storage})</span>` : '';
+        const isChecked = !!(plan.checked && plan.checked[ckKey]);
+        html += `<div onclick="togglePackItem('${con.id}','${ckKey}')" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid rgba(100,140,100,0.08);">
+          <div style="width:20px;height:20px;border-radius:6px;border:2px solid ${isChecked ? 'var(--sage)' : 'var(--border)'};background:${isChecked ? 'rgba(143,188,143,.25)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            ${isChecked ? '<span style="color:var(--sage);font-size:12px;font-weight:900;line-height:1;">✓</span>' : ''}
+          </div>
+          <div style="flex:1;font-size:13px;font-weight:600;color:${isChecked ? 'var(--text-dim)' : 'var(--text)'};text-decoration:${isChecked ? 'line-through' : 'none'};">${piece.name}${storageHint}</div>
+        </div>`;
+      });
+    } else {
+      html += `<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:6px 0;">No pieces logged yet — add them in your Closet detail.</div>`;
+    }
+
+    if (costume.makeupRef) {
+      html += checkRow(`${con.id}_${dateStr}_${slot}_makeup`, `💄 Makeup · ${costume.makeupRef}`);
+    }
+    if (costume.contactsRef) {
+      html += checkRow(`${con.id}_${dateStr}_${slot}_contacts`, `👁️ Contacts · ${costume.contactsRef}`);
+    }
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function togglePackItem(conId, checkKey) {
+  const plan = _getPackPlan(conId);
+  if (!plan.checked) plan.checked = {};
+  plan.checked[checkKey] = !plan.checked[checkKey];
+  save();
+  const con          = (conventions || []).find(c => c.id === conId);
+  const activeCloset = (closet || []).filter(c => !c.archivedAt);
+  const wrap         = document.getElementById('packing-checklist-wrap');
+  if (wrap) wrap.innerHTML = _buildPackingChecklist(con, plan, activeCloset);
+}
+
 renderHome();
 renderCalendar();
 
@@ -3543,7 +3756,8 @@ Object.assign(window, {
   showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset,
   renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece,
   renderArchiveList, restoreCostume, openArchivePage, closeArchivePage, _updateArchiveBadge,
-  dismissUnpackNudge
+  dismissUnpackNudge,
+  openPackingPage, closePackingPage, renderPackingPage, savePackingSlot, togglePackItem
 });
 </script>
 <script>
