@@ -481,6 +481,34 @@ select option{background:#1a2f1c;}
 .flex-row>*{flex:1;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;}
 .hidden{display:none!important;}
+
+/* ── CLOSET ── */
+.field-label{display:block;font-size:11px;font-weight:800;color:var(--text-soft);margin:10px 0 4px;text-transform:uppercase;letter-spacing:.7px;}
+.field-input{width:100%;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--border);
+  background:rgba(0,0,0,.3);color:var(--text);font-family:'Nunito',sans-serif;font-size:14px;font-weight:600;
+  outline:none;box-sizing:border-box;transition:border-color .2s;}
+.field-input:focus{border-color:var(--sage);}
+.field-input option{background:#1a2f1c;}
+.modal-sheet{background:rgba(22,38,24,0.97);border-radius:24px 24px 0 0;border:1px solid var(--border);border-bottom:none;
+  width:100%;max-width:430px;padding:20px 18px 44px;}
+.closet-card{background:var(--card);border-radius:var(--r-md);border:1px solid var(--border);
+  padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;}
+.closet-card:active{border-color:var(--sage);}
+.closet-card-emoji{font-size:32px;flex-shrink:0;}
+.closet-card-body{flex:1;min-width:0;}
+.closet-card-name{font-family:'Lora',serif;font-size:16px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.closet-card-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.closet-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+.status-pill{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.status-complete{background:rgba(143,188,143,.2);color:var(--sage);}
+.status-wip{background:rgba(173,151,215,.2);color:var(--lavender);}
+.status-on_hold{background:rgba(200,200,180,.15);color:var(--text-dim);}
+.status-needs_repair{background:rgba(220,100,80,.15);color:#e88;}
+.status-retired{background:rgba(100,100,100,.2);color:var(--text-dim);}
+.tag-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;
+  background:rgba(143,188,143,.15);border:1px solid rgba(143,188,143,.3);color:var(--sage);cursor:pointer;transition:all .15s;}
+.tag-chip.selected{background:var(--sage);color:#fff;border-color:var(--sage);}
+.sage-btn{background:var(--sage)!important;color:#fff!important;}
 </style>
 </head>
 <body>
@@ -558,7 +586,7 @@ select option{background:#1a2f1c;}
       <div class="inner-tabs">
         <button class="inner-tab active" id="qtab-active"   onclick="switchQuestTab('active')">Active</button>
         <button class="inner-tab"        id="qtab-cosplans" onclick="switchQuestTab('cosplans')">Cos-Plans</button>
-        <button class="inner-tab"        id="qtab-closet"   onclick="switchQuestTab('closet')">Closet 🔒</button>
+        <button class="inner-tab"        id="qtab-closet"   onclick="switchQuestTab('closet')">Closet 👗</button>
       </div>
 
       <!-- Active pane -->
@@ -589,17 +617,106 @@ select option{background:#1a2f1c;}
 
       <!-- Closet pane -->
       <div id="qpane-closet" style="display:none;">
-        <div class="empty-state" style="padding:44px 24px;">
-          <span class="e-emoji">🗄</span>
-          <div class="e-title">Closet — Coming Soon</div>
-          <div class="e-sub">Your master wardrobe of completed costumes. Coming with Forge Pro. 🌿</div>
+        <!-- Filter / sort bar -->
+        <div style="display:flex;gap:8px;align-items:center;padding:8px 16px 4px;flex-wrap:wrap;">
+          <select id="closet-filter-status" onchange="renderClosetList()" style="flex:1;min-width:110px;padding:6px 8px;border-radius:10px;border:1px solid var(--lavender);background:var(--card);color:var(--text);font-size:13px;">
+            <option value="all">All costumes</option>
+            <option value="complete">✅ Complete</option>
+            <option value="wip">🪡 WIP</option>
+            <option value="on_hold">⏸ On Hold</option>
+            <option value="needs_repair">🔧 Needs Repair</option>
+            <option value="retired">📦 Retired</option>
+          </select>
+          <select id="closet-sort" onchange="renderClosetList()" style="flex:1;min-width:110px;padding:6px 8px;border-radius:10px;border:1px solid var(--lavender);background:var(--card);color:var(--text);font-size:13px;">
+            <option value="recent">Recently added</option>
+            <option value="alpha">A → Z</option>
+            <option value="fandom">By fandom</option>
+            <option value="favorites">❤️ Favorites first</option>
+          </select>
         </div>
+        <!-- Closet list -->
+        <div id="closet-list" style="padding:4px 12px 80px;"></div>
+        <div id="closet-empty" class="empty-state hidden" style="padding:44px 24px;">
+          <span class="e-emoji">👗</span>
+          <div class="e-title">Your closet is empty!</div>
+          <div class="e-sub">Tap + to add your first costume.</div>
+        </div>
+        <!-- Add button -->
+        <button onclick="openAddCostume()" style="position:fixed;bottom:76px;right:20px;z-index:90;background:var(--sage);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:pointer;display:flex;align-items:center;justify-content:center;" id="closet-fab">＋</button>
       </div>
     </div>
 
     <!-- COSTUME DETAIL -->
     <div class="page slide-in" id="page-costume">
       <div id="costumePageContent"></div>
+    </div>
+
+    <!-- CLOSET DETAIL PAGE -->
+    <div class="page slide-in" id="page-closet-detail">
+      <div id="closetDetailContent"></div>
+    </div>
+
+    <!-- ADD / EDIT COSTUME MODAL -->
+    <div class="modal-overlay hidden" id="costume-modal-overlay" onclick="closeCostumeModal(event)">
+      <div class="modal-sheet" onclick="event.stopPropagation()" style="max-height:92vh;overflow-y:auto;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="modal-title" id="costume-modal-title">Add Costume</div>
+          <button onclick="closeCostumeModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-dim);">✕</button>
+        </div>
+
+        <!-- Name -->
+        <label class="field-label">Costume Name *</label>
+        <input id="cm-name" class="field-input" placeholder="e.g. Sailor Moon" maxlength="60" />
+
+        <!-- Character + Fandom -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label class="field-label">Character</label>
+            <input id="cm-character" class="field-input" placeholder="Character name" maxlength="60" />
+          </div>
+          <div>
+            <label class="field-label">Fandom / Series</label>
+            <input id="cm-fandom" class="field-input" placeholder="Fandom" maxlength="60" />
+          </div>
+        </div>
+
+        <!-- Status -->
+        <label class="field-label">Status</label>
+        <select id="cm-status" class="field-input">
+          <option value="complete">✅ Complete</option>
+          <option value="wip">🪡 Work in Progress</option>
+          <option value="on_hold">⏸ On Hold</option>
+          <option value="needs_repair">🔧 Needs Repair</option>
+          <option value="retired">📦 Retired</option>
+        </select>
+
+        <!-- Tags -->
+        <label class="field-label">Tags</label>
+        <div id="cm-tags-container" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;"></div>
+
+        <!-- Notes -->
+        <label class="field-label">Notes</label>
+        <textarea id="cm-notes" class="field-input" rows="3" placeholder="General notes about this costume..." style="resize:vertical;"></textarea>
+
+        <!-- Makeup Ref -->
+        <label class="field-label">Makeup Reference / Notes</label>
+        <textarea id="cm-makeup" class="field-input" rows="2" placeholder="Makeup look, products used..." style="resize:vertical;"></textarea>
+
+        <!-- Contacts -->
+        <label class="field-label">Contact Lenses</label>
+        <input id="cm-contacts" class="field-input" placeholder="Brand, color, prescription..." />
+
+        <!-- Repair Notes (shown when status = needs_repair) -->
+        <div id="cm-repair-section" style="display:none;">
+          <label class="field-label">🔧 What Needs Repair?</label>
+          <textarea id="cm-repair-notes" class="field-input" rows="2" placeholder="Describe what needs to be fixed..." style="resize:vertical;"></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn" onclick="closeCostumeModal()" style="flex:1;background:var(--card);color:var(--text);">Cancel</button>
+          <button class="btn sage-btn" onclick="saveCostume()" style="flex:2;">Save Costume</button>
+        </div>
+      </div>
     </div>
 
     <!-- CALENDAR -->
@@ -986,7 +1103,7 @@ let currentUser = null;
 async function saveToCloud() {
   if (!currentUser) { saveLocal(); return; }
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, updatedAt: Date.now() });
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, cosPlans, closet, updatedAt: Date.now() });
   } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
 }
 async function loadFromCloud() {
@@ -1000,6 +1117,7 @@ async function loadFromCloud() {
       craftDays   = d.craftDays   || [];
       photoshoots = d.photoshoots || [];
       cosPlans    = d.cosPlans    || [];
+      closet      = d.closet      || [];
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -1016,6 +1134,7 @@ function saveLocal() {
   localStorage.setItem('cf_craftdays',   JSON.stringify(craftDays));
   localStorage.setItem('cf_photoshoots',  JSON.stringify(photoshoots));
   localStorage.setItem('cf_cosplans',     JSON.stringify(cosPlans));
+  localStorage.setItem('cf_closet',       JSON.stringify(closet));
 }
 function loadLocal() {
   cosplays    = JSON.parse(localStorage.getItem('cf_cosplays')    || '[]');
@@ -1023,6 +1142,7 @@ function loadLocal() {
   craftDays   = JSON.parse(localStorage.getItem('cf_craftdays')   || '[]');
   photoshoots = JSON.parse(localStorage.getItem('cf_photoshoots')  || '[]');
   cosPlans    = JSON.parse(localStorage.getItem('cf_cosplans')     || '[]');
+  closet      = JSON.parse(localStorage.getItem('cf_closet')       || '[]');
 }
 
 // ── AUTH STATE LISTENER ───────────────────────────────────────
@@ -1117,6 +1237,7 @@ let conventions = [];
 let craftDays   = [];
 let cosPlans    = [];
 let photoshoots = [];
+let closet      = []; // { id, name, character, fandom, status, tags[], notes, pieces[], makeupRef, contactsRef, favorite, archivedAt? }
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
 
@@ -2485,6 +2606,7 @@ function switchQuestTab(tab) {
     else { addBtn.style.display='none'; }
   }
   if (tab==='cosplans') renderQuestCosPlanList();
+  if (tab==='closet') renderClosetList();
 }
 
 function renderQuestCosPlanList() {
@@ -2608,6 +2730,290 @@ function deletePhoto(id) {
   save(); renderCalendar();
 }
 
+// ══════════════════════════════════════════════════════════════
+// CLOSET FEATURE
+// ══════════════════════════════════════════════════════════════
+
+const CLOSET_TAGS = [
+  // Craft type
+  {id:'handmade',label:'🪡 Handmade',group:'craft'},
+  {id:'bought',label:'🛍 Store-Bought',group:'craft'},
+  {id:'hybrid',label:'🔀 Hybrid',group:'craft'},
+  {id:'commissioned',label:'💼 Commissioned',group:'craft'},
+  // Complexity
+  {id:'beginner',label:'🌱 Beginner',group:'level'},
+  {id:'intermediate',label:'⚡ Intermediate',group:'level'},
+  {id:'advanced',label:'🔥 Advanced',group:'level'},
+  {id:'armor',label:'🛡 Armor',group:'level'},
+  // Wear
+  {id:'comfy',label:'☁️ Comfy',group:'wear'},
+  {id:'sweaty',label:'🥵 Sweaty',group:'wear'},
+  {id:'wig',label:'💇 Wig',group:'wear'},
+  {id:'contacts',label:'👁 Contacts',group:'wear'},
+  {id:'prosthetics',label:'🎭 Prosthetics',group:'wear'},
+  {id:'full_day',label:'📅 Full-Day Wear',group:'wear'},
+  // Season / Event
+  {id:'summer',label:'☀️ Summer',group:'season'},
+  {id:'winter',label:'❄️ Winter',group:'season'},
+  {id:'outdoor',label:'🌳 Outdoor',group:'season'},
+  {id:'indoor',label:'🏟 Indoor',group:'season'},
+  // Special
+  {id:'skit',label:'🎬 Skit',group:'special'},
+  {id:'group',label:'👥 Group',group:'special'},
+  {id:'solo',label:'🙋 Solo',group:'special'},
+  {id:'debut',label:'✨ Debut',group:'special'},
+  {id:'award',label:'🏆 Award Winner',group:'special'},
+  {id:'mashup',label:'🎨 Mashup/OC',group:'special'},
+  {id:'genderbend',label:'💫 Genderbend',group:'special'},
+  {id:'needs_photos',label:'📷 Needs Photos',group:'special'},
+];
+
+const STATUS_LABELS = {
+  complete:     '✅ Complete',
+  wip:          '🪡 WIP',
+  on_hold:      '⏸ On Hold',
+  needs_repair: '🔧 Needs Repair',
+  retired:      '📦 Retired',
+};
+
+let _editingClosetId = null;
+let _selectedTags = [];
+
+// ── render closet list ─────────────────────────────────────────
+function renderClosetList() {
+  const filterStatus = document.getElementById('closet-filter-status')?.value || 'all';
+  const sortBy = document.getElementById('closet-sort')?.value || 'recent';
+  const listEl = document.getElementById('closet-list');
+  const emptyEl = document.getElementById('closet-empty');
+  if (!listEl) return;
+
+  // Filter out archived items for main list
+  let items = (closet || []).filter(c => !c.archivedAt);
+  if (filterStatus !== 'all') items = items.filter(c => c.status === filterStatus);
+
+  // Sort
+  if (sortBy === 'alpha') items = [...items].sort((a,b)=>a.name.localeCompare(b.name));
+  else if (sortBy === 'fandom') items = [...items].sort((a,b)=>(a.fandom||'').localeCompare(b.fandom||''));
+  else if (sortBy === 'favorites') items = [...items].sort((a,b)=>(b.favorite?1:0)-(a.favorite?1:0));
+  // 'recent' = natural order (unshift on add)
+
+  if (!items.length) {
+    listEl.innerHTML = '';
+    emptyEl?.classList.remove('hidden');
+    return;
+  }
+  emptyEl?.classList.add('hidden');
+
+  listEl.innerHTML = items.map(c => {
+    const statusClass = 'status-' + (c.status || 'complete');
+    const statusLabel = STATUS_LABELS[c.status] || c.status;
+    const fave = c.favorite ? '❤️' : '';
+    const tags = (c.tags || []).slice(0,3).map(tid => {
+      const t = CLOSET_TAGS.find(x=>x.id===tid);
+      return t ? `<span style="font-size:11px;color:var(--text-dim);">${t.label}</span>` : '';
+    }).join(' ');
+    return `<div class="closet-card" onclick="openClosetDetail('${c.id}')">
+      <div class="closet-card-emoji">👗</div>
+      <div class="closet-card-body">
+        <div class="closet-card-name">${fave} ${c.name}</div>
+        <div class="closet-card-sub">${c.character||''}${c.fandom?' · '+c.fandom:''}</div>
+        ${tags ? `<div style="margin-top:4px;">${tags}</div>` : ''}
+      </div>
+      <div class="closet-card-right">
+        <span class="status-pill ${statusClass}">${statusLabel}</span>
+        <button onclick="event.stopPropagation();openEditCostume('${c.id}')" style="background:none;border:none;font-size:16px;cursor:pointer;color:var(--text-dim);padding:2px 4px;">✏️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── open closet detail ─────────────────────────────────────────
+function openClosetDetail(id) {
+  const c = (closet||[]).find(x=>x.id===id);
+  if (!c) return;
+  const statusClass = 'status-' + (c.status||'complete');
+  const statusLabel = STATUS_LABELS[c.status]||c.status;
+  const tagChips = (c.tags||[]).map(tid=>{
+    const t = CLOSET_TAGS.find(x=>x.id===tid);
+    return t ? `<span class="tag-chip selected" style="cursor:default;">${t.label}</span>` : '';
+  }).join('');
+
+  document.getElementById('closetDetailContent').innerHTML = `
+    <div class="p-header" style="justify-content:space-between;align-items:center;">
+      <button class="back-btn" onclick="closeClosetDetail()">← Back</button>
+      <div style="display:flex;gap:8px;">
+        <button onclick="toggleClosetFavorite('${c.id}')" style="background:none;border:none;font-size:22px;cursor:pointer;">${c.favorite?'❤️':'🤍'}</button>
+        <button onclick="openEditCostume('${c.id}')" class="btn sage-btn sm" style="font-size:13px;padding:6px 14px;">Edit</button>
+      </div>
+    </div>
+    <div style="padding:0 16px 80px;">
+      <div style="font-family:'Lora',serif;font-size:24px;font-weight:700;color:var(--cream);margin-bottom:4px;">${c.name}</div>
+      <div style="color:var(--text-dim);font-size:14px;margin-bottom:10px;">${c.character||''}${c.fandom?' · '+c.fandom:''}</div>
+      <span class="status-pill ${statusClass}" style="font-size:13px;padding:5px 14px;">${statusLabel}</span>
+
+      ${c.tags?.length ? `<div style="margin-top:14px;"><div style="font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Tags</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${tagChips}</div></div>` : ''}
+
+      ${c.notes ? `<div style="margin-top:16px;"><div style="font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">Notes</div><div style="color:var(--text);font-size:14px;line-height:1.6;white-space:pre-wrap;">${c.notes}</div></div>` : ''}
+
+      ${c.makeupRef ? `<div style="margin-top:16px;"><div style="font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">💄 Makeup Reference</div><div style="color:var(--text);font-size:14px;line-height:1.6;white-space:pre-wrap;">${c.makeupRef}</div></div>` : ''}
+
+      ${c.contactsRef ? `<div style="margin-top:16px;"><div style="font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">👁 Contact Lenses</div><div style="color:var(--text);font-size:14px;">${c.contactsRef}</div></div>` : ''}
+
+      ${c.repairNotes ? `<div style="margin-top:16px;background:rgba(220,100,80,.1);border:1px solid rgba(220,100,80,.25);border-radius:12px;padding:12px 14px;"><div style="font-size:11px;font-weight:800;color:#e88;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">🔧 Repair Notes</div><div style="color:var(--text);font-size:14px;white-space:pre-wrap;">${c.repairNotes}</div></div>` : ''}
+
+      <div style="margin-top:24px;display:flex;gap:10px;">
+        <button onclick="archiveCostume('${c.id}')" class="btn" style="flex:1;background:rgba(100,100,100,.2);color:var(--text-dim);font-size:13px;">📦 Archive</button>
+        <button onclick="deleteCostume('${c.id}')" class="btn" style="flex:1;background:rgba(220,80,80,.15);color:#e88;font-size:13px;">🗑 Delete</button>
+      </div>
+    </div>`;
+
+  showPage('closet-detail');
+}
+
+function closeClosetDetail() {
+  showPage('quests');
+  switchQuestTab('closet');
+}
+
+// ── favorite toggle ────────────────────────────────────────────
+function toggleClosetFavorite(id) {
+  const c = (closet||[]).find(x=>x.id===id);
+  if (!c) return;
+  c.favorite = !c.favorite;
+  save();
+  openClosetDetail(id); // re-render
+}
+
+// ── add / edit modal ───────────────────────────────────────────
+function openAddCostume() {
+  _editingClosetId = null;
+  _selectedTags = [];
+  document.getElementById('cm-name').value = '';
+  document.getElementById('cm-character').value = '';
+  document.getElementById('cm-fandom').value = '';
+  document.getElementById('cm-status').value = 'complete';
+  document.getElementById('cm-notes').value = '';
+  document.getElementById('cm-makeup').value = '';
+  document.getElementById('cm-contacts').value = '';
+  document.getElementById('cm-repair-notes').value = '';
+  document.getElementById('cm-repair-section').style.display = 'none';
+  document.getElementById('costume-modal-title').textContent = 'Add Costume';
+  renderTagPicker();
+  const overlay = document.getElementById('costume-modal-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('open');
+  document.getElementById('cm-status').onchange = toggleRepairSection;
+}
+
+function openEditCostume(id) {
+  const c = (closet||[]).find(x=>x.id===id);
+  if (!c) return;
+  _editingClosetId = id;
+  _selectedTags = [...(c.tags||[])];
+  document.getElementById('cm-name').value = c.name||'';
+  document.getElementById('cm-character').value = c.character||'';
+  document.getElementById('cm-fandom').value = c.fandom||'';
+  document.getElementById('cm-status').value = c.status||'complete';
+  document.getElementById('cm-notes').value = c.notes||'';
+  document.getElementById('cm-makeup').value = c.makeupRef||'';
+  document.getElementById('cm-contacts').value = c.contactsRef||'';
+  document.getElementById('cm-repair-notes').value = c.repairNotes||'';
+  document.getElementById('cm-repair-section').style.display = (c.status==='needs_repair')?'block':'none';
+  document.getElementById('costume-modal-title').textContent = 'Edit Costume';
+  renderTagPicker();
+  const overlay = document.getElementById('costume-modal-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('open');
+  document.getElementById('cm-status').onchange = toggleRepairSection;
+}
+
+function toggleRepairSection() {
+  const status = document.getElementById('cm-status').value;
+  document.getElementById('cm-repair-section').style.display = status === 'needs_repair' ? 'block' : 'none';
+}
+
+function renderTagPicker() {
+  const container = document.getElementById('cm-tags-container');
+  if (!container) return;
+  container.innerHTML = CLOSET_TAGS.map(t => {
+    const sel = _selectedTags.includes(t.id) ? 'selected' : '';
+    return `<span class="tag-chip ${sel}" onclick="toggleCostumeTag('${t.id}')">${t.label}</span>`;
+  }).join('');
+}
+
+function toggleCostumeTag(tid) {
+  if (_selectedTags.includes(tid)) {
+    _selectedTags = _selectedTags.filter(x=>x!==tid);
+  } else {
+    _selectedTags.push(tid);
+  }
+  renderTagPicker();
+}
+
+function closeCostumeModal(e) {
+  if (e && e.target !== document.getElementById('costume-modal-overlay')) return;
+  const overlay = document.getElementById('costume-modal-overlay');
+  overlay.classList.remove('open');
+  overlay.classList.add('hidden');
+  _editingClosetId = null;
+  _selectedTags = [];
+}
+
+function saveCostume() {
+  const name = document.getElementById('cm-name').value.trim();
+  if (!name) { alert('Please enter a costume name.'); return; }
+  const status = document.getElementById('cm-status').value;
+  const item = {
+    id: _editingClosetId || ('cl_' + Date.now()),
+    name,
+    character: document.getElementById('cm-character').value.trim(),
+    fandom:    document.getElementById('cm-fandom').value.trim(),
+    status,
+    tags:      [..._selectedTags],
+    notes:     document.getElementById('cm-notes').value.trim(),
+    makeupRef: document.getElementById('cm-makeup').value.trim(),
+    contactsRef: document.getElementById('cm-contacts').value.trim(),
+    repairNotes: status === 'needs_repair' ? document.getElementById('cm-repair-notes').value.trim() : '',
+    favorite:  _editingClosetId ? ((closet||[]).find(x=>x.id===_editingClosetId)?.favorite||false) : false,
+    createdAt: _editingClosetId ? ((closet||[]).find(x=>x.id===_editingClosetId)?.createdAt||Date.now()) : Date.now(),
+  };
+  if (_editingClosetId) {
+    const idx = (closet||[]).findIndex(x=>x.id===_editingClosetId);
+    if (idx !== -1) closet[idx] = item;
+  } else {
+    closet.unshift(item);
+  }
+  _editingClosetId = null;
+  _selectedTags = [];
+  save();
+  closeCostumeModal();
+  renderClosetList();
+}
+
+// ── archive / delete ───────────────────────────────────────────
+function archiveCostume(id) {
+  const c = (closet||[]).find(x=>x.id===id);
+  if (!c) return;
+  if (!confirm(`Archive "${c.name}"? You can view it in Settings › Archive.`)) return;
+  c.archivedAt = Date.now();
+  save();
+  closeClosetDetail();
+  renderClosetList();
+}
+
+function deleteCostume(id) {
+  const c = (closet||[]).find(x=>x.id===id);
+  if (!c) return;
+  if (!confirm(`Delete "${c.name}" permanently? This cannot be undone.`)) return;
+  closet = closet.filter(x=>x.id!==id);
+  save();
+  closeClosetDetail();
+  renderClosetList();
+}
+
+// ── show/hide FAB when closet tab active ──────────────────────
+// (handled naturally since FAB is inside the pane)
+
 renderHome();
 renderCalendar();
 
@@ -2631,7 +3037,11 @@ Object.assign(window, {
   openAddCosPlanModal, saveCosPlan, deleteCosPlan,
   switchQuestTab, renderQuestCosPlanList, toggleHomeSection, openFabChoice,
   renderStats, switchInnerTab, toggleDayNight,
-  exportData, confirmClearData, showSignedIn
+  exportData, confirmClearData, showSignedIn,
+  renderClosetList, openClosetDetail, closeClosetDetail,
+  openAddCostume, openEditCostume, closeCostumeModal, saveCostume,
+  toggleCostumeTag, toggleRepairSection, toggleClosetFavorite,
+  archiveCostume, deleteCostume
 });
 </script>
 <script>
