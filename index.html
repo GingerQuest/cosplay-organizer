@@ -2287,7 +2287,14 @@ function saveSupply() {
   const c = getCostume(viewingId); if (!c) return;
   if (!c.supplies) c.supplies = [];
   c.supplies.push({ name, qty: document.getElementById('sup-qty').value.trim(), cost: parseFloat(document.getElementById('sup-cost').value)||0, notes: document.getElementById('sup-notes').value.trim(), url: document.getElementById('sup-url').value.trim(), status: window._supplyStatus||'need' });
-  save(); closeAllModals(); renderCostumePage();
+  save(); renderCostumePage();
+  // stay open — clear fields for next supply
+  document.getElementById('sup-name').value = '';
+  document.getElementById('sup-qty').value = '';
+  document.getElementById('sup-cost').value = '';
+  document.getElementById('sup-notes').value = '';
+  document.getElementById('sup-url').value = '';
+  document.getElementById('sup-name').focus();
 }
 function toggleSupplyStatus(i) {
   const c = getCostume(viewingId); if (!c) return;
@@ -2321,7 +2328,7 @@ function saveTask(){
     if(c.status==='planned')c.status='wip';
     document.getElementById('task-text').value='';
   }
-  save();closeAllModals();renderCostumePage();
+  save();renderCostumePage();
 }
 
 function toggleTask(i){
@@ -2368,7 +2375,10 @@ function saveCatTask(){
   const c=getCostume(viewingId);if(!c)return;
   if(!c.checklist[_editingCatIndex].steps)c.checklist[_editingCatIndex].steps=[];
   c.checklist[_editingCatIndex].steps.push({text,done:false});
-  save();closeAllModals();renderCostumePage();
+  save();renderCostumePage();
+  // stay open — clear for next step
+  document.getElementById('cat-task-text').value='';
+  document.getElementById('cat-task-text').focus();
 }
 
 function toggleCatStep(ci,si){
@@ -3225,12 +3235,20 @@ function savePiece() {
   if (pieceId) {
     const idx = c.pieces.findIndex(x => x.id === pieceId);
     if (idx !== -1) c.pieces[idx] = pieceData;
+    // editing: close modal
+    document.getElementById('piece-modal-overlay').classList.remove('open');
+    _editingPieceInfo = null;
   } else {
     c.pieces.push(pieceData);
+    // adding: stay open, clear for next piece
+    document.getElementById('pm-name').value = '';
+    document.getElementById('pm-storage').value = '';
+    document.getElementById('pm-condition').value = 'good';
+    document.getElementById('pm-notes').value = '';
+    document.getElementById('pm-name').focus();
+    _editingPieceInfo = { costumeId, pieceId: null };
   }
   save();
-  document.getElementById('piece-modal-overlay').classList.remove('open');
-  _editingPieceInfo = null;
   // Refresh the pieces list in the detail view
   const listEl = document.getElementById(`pieces-list-${costumeId}`);
   if (listEl) listEl.innerHTML = renderPiecesList(c);
