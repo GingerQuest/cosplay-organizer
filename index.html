@@ -564,6 +564,17 @@ select option{background:#1a2f1c;}
         </div>
       </div>
 
+      <!-- Repairs & Care -->
+      <div id="homeRepairsSection" class="hidden">
+        <div class="home-sec-header section-header-row" id="hheader-repairs" style="margin-top:8px;" onclick="toggleHomeSection('repairs')">
+          <div class="section-label" id="hlabel-repairs" style="margin-bottom:0;color:#e88;transition:font-size .2s;">🔧 Repairs & Care</div>
+          <span class="home-sec-chev" id="hchev-repairs" style="color:#e88;transition:transform .2s;">▾</span>
+        </div>
+        <div id="hsec-repairs" style="display:block;">
+          <div id="homeRepairsList" style="padding:0 16px 8px;"></div>
+        </div>
+      </div>
+
       <!-- Upcoming Events -->
       <div class="home-sec-header section-header-row" id="hheader-events" style="margin-top:8px;" onclick="toggleHomeSection('events')">
         <div class="section-label sky" id="hlabel-events" style="margin-bottom:0;color:var(--sky);transition:font-size .2s;">📅 Coming Up</div>
@@ -1835,6 +1846,41 @@ function renderHome() {
         }).join('')
       : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
   }
+
+  // Repairs & Care
+  const repairSection = document.getElementById('homeRepairsSection');
+  const repairList    = document.getElementById('homeRepairsList');
+  if (repairSection && repairList) {
+    const needsAttention = [];
+    (closet || []).filter(c => !c.archivedAt).forEach(c => {
+      (c.pieces || []).forEach(p => {
+        if (p.condition === 'repair' || p.condition === 'wash') {
+          needsAttention.push({ costume: c, piece: p });
+        }
+      });
+    });
+    if (needsAttention.length) {
+      repairSection.classList.remove('hidden');
+      repairList.innerHTML = needsAttention.map(({costume, piece}) => {
+        const isRepair = piece.condition === 'repair';
+        const color  = isRepair ? '#e88' : '#c9a84c';
+        const icon   = isRepair ? '🔧' : '🧺';
+        const label  = isRepair ? 'Needs Repair' : 'Needs Wash';
+        const bg     = isRepair ? 'rgba(220,100,80,.08)' : 'rgba(201,168,76,.08)';
+        const border = isRepair ? 'rgba(220,100,80,.25)' : 'rgba(201,168,76,.25)';
+        return `<div onclick="openClosetDetail('${costume.id}')" style="margin-bottom:8px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:10px;">
+          <div style="font-size:20px;flex-shrink:0;">${icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${piece.name}</div>
+            <div style="font-size:12px;font-weight:600;color:${color};">${label} · ${costume.name}</div>
+          </div>
+          <div style="font-size:14px;color:var(--text-dim);">→</div>
+        </div>`;
+      }).join('');
+    } else {
+      repairSection.classList.add('hidden');
+    }
+  }
 }
 
 // ── QUESTS ────────────────────────────────────────────────────
@@ -2719,7 +2765,7 @@ function openFabChoice() {
 }
 
 // ── HOME SECTION TOGGLE ───────────────────────────────────────
-const _homeSectionState = { quests: true, cosplans: true, events: true };
+const _homeSectionState = { quests: true, cosplans: true, repairs: true, events: true };
 function toggleHomeSection(section) {
   _homeSectionState[section] = !_homeSectionState[section];
   const expanded = _homeSectionState[section];
