@@ -656,6 +656,20 @@ select option{background:#1a2f1c;}
       <div id="closetDetailContent"></div>
     </div>
 
+    <!-- MOVE TO CLOSET PROMPT -->
+    <div class="modal-overlay hidden" id="closet-prompt-overlay" onclick="dismissClosetPrompt()">
+      <div class="modal-sheet" onclick="event.stopPropagation()" style="text-align:center;padding:28px 24px 36px;">
+        <div style="font-size:44px;margin-bottom:12px;">🎉</div>
+        <div style="font-family:'Lora',serif;font-size:20px;font-weight:700;color:var(--cream);margin-bottom:8px;">Quest Complete!</div>
+        <div id="closet-prompt-name" style="color:var(--sage);font-size:15px;font-weight:700;margin-bottom:12px;"></div>
+        <div style="color:var(--text-dim);font-size:14px;line-height:1.6;margin-bottom:24px;">Ready to move this costume to your Closet? You can still access it from Quests anytime.</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <button onclick="confirmMoveToCloset()" class="btn sage-btn" style="font-size:15px;padding:14px;">👗 Yes, add to Closet!</button>
+          <button onclick="dismissClosetPrompt()" style="background:none;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:8px;">Not yet</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ADD / EDIT COSTUME MODAL -->
     <div class="modal-overlay hidden" id="costume-modal-overlay" onclick="closeCostumeModal(event)">
       <div class="modal-sheet" onclick="event.stopPropagation()" style="max-height:92vh;overflow-y:auto;">
@@ -1890,8 +1904,10 @@ document.querySelectorAll('.emoji-opt').forEach(opt=>{
 function saveCosplay() {
   const name=document.getElementById('f-name').value.trim();
   if(!name){alert('Please enter a character name!');return;}
+  const newStatus=document.getElementById('f-status').value;
+  const prevStatus=editingId?(cosplays.find(c=>c.id===editingId)?.status||'wip'):'wip';
   const data={name,series:document.getElementById('f-series').value.trim(),imgurl:document.getElementById('f-imgurl').value.trim(),
-    emoji:selectedEmoji,status:document.getElementById('f-status').value,deadline:document.getElementById('f-deadline').value,
+    emoji:selectedEmoji,status:newStatus,deadline:document.getElementById('f-deadline').value,
     notes:document.getElementById('f-notes').value.trim()};
   if(editingId){const i=cosplays.findIndex(c=>c.id===editingId);cosplays[i]={...cosplays[i],...data};}
   else cosplays.unshift({id:uid(),checklist:[],expenses:[],materials:[],supplies:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
@@ -1900,6 +1916,9 @@ function saveCosplay() {
   const ap=document.querySelector('.page.active')?.id;
   if(ap==='page-quests') renderAllQuests();
   if(ap==='page-stats') renderStats();
+  // Prompt to move to Closet if newly marked done
+  const savedId = editingId || cosplays[0]?.id;
+  if(newStatus==='done' && prevStatus!=='done') showClosetPrompt(savedId);
 }
 function deleteCurrent() {
   if(!confirm('Delete this cosplay?')) return;
@@ -2281,9 +2300,11 @@ function toggleTask(i){
   const allTasks=c.checklist;
   const totalItems=allTasks.reduce((acc,t)=>t.type==='category'?acc+(t.steps||[]).length:acc+1,0);
   const doneItems=allTasks.reduce((acc,t)=>t.type==='category'?acc+(t.steps||[]).filter(s=>s.done).length:acc+(t.done?1:0),0);
+  const wasAlreadyDone = c.status==='done';
   if(totalItems>0&&doneItems===totalItems)c.status='done';
   else if(doneItems>0)c.status='wip';
   save();renderCostumePage();renderHome();
+  if(c.status==='done'&&!wasAlreadyDone) showClosetPrompt(c.id);
 }
 
 function deleteTask(i){const c=getCostume(viewingId);if(!c)return;c.checklist.splice(i,1);save();renderCostumePage();}
@@ -2742,6 +2763,56 @@ function deletePhoto(id) {
   save(); renderCalendar();
 }
 
+// ── MOVE QUEST → CLOSET PROMPT ────────────────────────────────
+let _promptCosplayId = null;
+
+function showClosetPrompt(id) {
+  const c = cosplays.find(x=>x.id===id);
+  if (!c) return;
+  // Don't prompt if already in closet
+  if ((closet||[]).some(cl=>cl.sourceQuestId===id)) return;
+  _promptCosplayId = id;
+  document.getElementById('closet-prompt-name').textContent = c.name || c.series || 'your costume';
+  const overlay = document.getElementById('closet-prompt-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('open');
+}
+
+function dismissClosetPrompt() {
+  const overlay = document.getElementById('closet-prompt-overlay');
+  overlay.classList.remove('open');
+  overlay.classList.add('hidden');
+  _promptCosplayId = null;
+}
+
+function confirmMoveToCloset() {
+  const c = cosplays.find(x=>x.id===_promptCosplayId);
+  if (!c) { dismissClosetPrompt(); return; }
+  // Create a closet entry pre-filled from the quest
+  const item = {
+    id: 'cl_' + Date.now(),
+    sourceQuestId: c.id,
+    name: c.name || c.series || 'My Costume',
+    character: c.name || '',
+    fandom: c.series || '',
+    status: 'complete',
+    tags: [],
+    notes: c.notes || '',
+    makeupRef: '',
+    contactsRef: '',
+    repairNotes: '',
+    favorite: false,
+    createdAt: Date.now(),
+  };
+  closet.unshift(item);
+  save();
+  dismissClosetPrompt();
+  // Switch to closet tab so they see it
+  showPage('quests');
+  switchQuestTab('closet');
+  renderClosetList();
+}
+
 // ══════════════════════════════════════════════════════════════
 // CLOSET FEATURE
 // ══════════════════════════════════════════════════════════════
@@ -3069,7 +3140,8 @@ Object.assign(window, {
   renderClosetList, openClosetDetail, closeClosetDetail,
   openAddCostume, openEditCostume, closeCostumeModal, saveCostume,
   toggleCostumeTag, toggleRepairSection, toggleClosetFavorite,
-  archiveCostume, deleteCostume
+  archiveCostume, deleteCostume,
+  showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset
 });
 </script>
 <script>
