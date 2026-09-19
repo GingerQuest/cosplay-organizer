@@ -534,6 +534,7 @@ select option{background:#1a2f1c;}
         </div>
       </div>
       <div id="urgentBannerHome"></div>
+      <div id="unpackNudge"></div>
 
       <!-- Active Quests -->
       <div class="home-sec-header section-header-row" id="hheader-quests" onclick="toggleHomeSection('quests')">
@@ -1067,6 +1068,15 @@ select option{background:#1a2f1c;}
       <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
     </div>
     <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="General notes, ideas…"></textarea></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--cream);">📋 Commission</div>
+        <div style="font-size:12px;color:var(--text-dim);">Mark this quest as a paid commission</div>
+      </div>
+      <div class="sw-track" id="commissionSwitch" onclick="toggleCommissionSwitch()" style="background:rgba(0,0,0,.3);">
+        <div class="sw-thumb" id="commissionSwitchThumb">○</div>
+      </div>
+    </div>
     <div class="flex-row" style="margin-top:6px;gap:10px;">
       <button class="btn rose-btn hidden" id="deleteBtn" onclick="deleteCurrent()">Delete</button>
       <button class="btn primary" style="flex:2;" onclick="saveCosplay()">Save Quest ✿</button>
@@ -1864,6 +1874,34 @@ function renderHome() {
   document.getElementById('urgentBannerHome').innerHTML = urgent.length
     ? `<div class="urgent-banner"><div class="u-icon">⏰</div><div><div class="u-text">${urgent.length} deadline${urgent.length>1?'s':''} soon!</div><div class="u-sub">${urgent.map(c=>c.name).join(', ')}</div></div></div>` : '';
 
+  // "I'm home!" unpack nudge — shows for up to 3 days after a con ends
+  const dismissed = JSON.parse(localStorage.getItem('cf_dismissed_unpack') || '[]');
+  const recentCon = (conventions || []).find(c => {
+    const endDate = new Date((c.end || c.start) + 'T23:59:59');
+    const daysAgo = (now - endDate) / 86400000;
+    return daysAgo >= 0 && daysAgo <= 3 && !dismissed.includes(c.id || c.name);
+  });
+  const nudgeEl = document.getElementById('unpackNudge');
+  if (nudgeEl) {
+    if (recentCon) {
+      const conKey = recentCon.id || recentCon.name;
+      nudgeEl.innerHTML = `
+        <div style="margin:0 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(143,188,143,.12),rgba(160,154,200,.08));border:1px solid rgba(143,188,143,.3);border-radius:14px;display:flex;align-items:flex-start;gap:12px;">
+          <div style="font-size:26px;line-height:1;flex-shrink:0;">🏠</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:2px;">Welcome home from ${recentCon.name}!</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Time to check your pieces — any repairs or washes needed?</div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="showPage('quests');switchQuestTab('closet')" style="background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.4);color:var(--sage);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">👗 Open Closet</button>
+              <button onclick="dismissUnpackNudge('${conKey.replace(/'/g,"\\'")}');renderHome()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;">✓ All good!</button>
+            </div>
+          </div>
+        </div>`;
+    } else {
+      nudgeEl.innerHTML = '';
+    }
+  }
+
   // Active quests preview
   const recent = activeQuests.slice(0,3);
   const list=document.getElementById('homeQuestList'), empty=document.getElementById('homeEmpty');
@@ -1935,7 +1973,7 @@ function renderHome() {
         const label  = isRepair ? 'Needs Repair' : 'Needs Wash';
         const bg     = isRepair ? 'rgba(220,100,80,.08)' : 'rgba(201,168,76,.08)';
         const border = isRepair ? 'rgba(220,100,80,.25)' : 'rgba(201,168,76,.25)';
-        return `<div onclick="openClosetDetail('${costume.id}')" style="margin-bottom:8px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:10px;">
+        return `<div onclick="openClosetDetail('${costume.id}','home')" style="margin-bottom:8px;padding:10px 14px;background:${bg};border:1px solid ${border};border-radius:var(--r);cursor:pointer;display:flex;align-items:center;gap:10px;">
           <div style="font-size:20px;flex-shrink:0;">${icon}</div>
           <div style="flex:1;min-width:0;">
             <div style="font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${piece.name}</div>
@@ -1996,6 +2034,7 @@ function questCard(c) {
           <div class="qc-series">${c.series||'—'}</div>
           <div class="qc-badges">
             <span class="badge ${sClass}">${sLabel}</span>
+            ${c.isCommission?`<span class="badge" style="background:rgba(200,160,255,.15);color:#c8a0ff;border:1px solid rgba(200,160,255,.3);">📋 Commission</span>`:''}
             ${c.budgetEnabled&&c.budget?`<span class="badge b-planned">💰 $${totalSpent.toFixed(0)}/$${c.budget}</span>`:''}
           </div>
         </div>
@@ -2029,6 +2068,7 @@ function openEdit(id) {
   document.getElementById('f-notes').value=c.notes||'';
   selectedEmoji=c.emoji||'🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e===selectedEmoji));
+  _setCommissionSwitch(!!c.isCommission);
   openModal('cosplayModal');
 }
 function clearForm() {
@@ -2036,6 +2076,10 @@ function clearForm() {
   document.getElementById('f-status').value='wip';
   selectedEmoji='🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
+  if (_commissionOn) toggleCommissionSwitch(); // reset to off
+}
+function _setCommissionSwitch(val) {
+  if (!!val !== _commissionOn) toggleCommissionSwitch();
 }
 document.querySelectorAll('.emoji-opt').forEach(opt=>{
   opt.addEventListener('click',()=>{
@@ -2044,6 +2088,24 @@ document.querySelectorAll('.emoji-opt').forEach(opt=>{
     opt.classList.add('sel');
   });
 });
+let _commissionOn = false;
+function toggleCommissionSwitch() {
+  _commissionOn = !_commissionOn;
+  const track = document.getElementById('commissionSwitch');
+  const thumb = document.getElementById('commissionSwitchThumb');
+  if (_commissionOn) {
+    track.style.background = 'rgba(200,160,255,.4)';
+    track.style.borderColor = 'rgba(200,160,255,.6)';
+    thumb.textContent = '●';
+    thumb.style.transform = 'translateX(20px)';
+  } else {
+    track.style.background = 'rgba(0,0,0,.3)';
+    track.style.borderColor = '';
+    thumb.textContent = '○';
+    thumb.style.transform = '';
+  }
+}
+
 function saveCosplay() {
   const name=document.getElementById('f-name').value.trim();
   if(!name){alert('Please enter a character name!');return;}
@@ -2051,7 +2113,7 @@ function saveCosplay() {
   const prevStatus=editingId?(cosplays.find(c=>c.id===editingId)?.status||'wip'):'wip';
   const data={name,series:document.getElementById('f-series').value.trim(),imgurl:document.getElementById('f-imgurl').value.trim(),
     emoji:selectedEmoji,status:newStatus,deadline:document.getElementById('f-deadline').value,
-    notes:document.getElementById('f-notes').value.trim()};
+    notes:document.getElementById('f-notes').value.trim(),isCommission:_commissionOn};
   if(editingId){const i=cosplays.findIndex(c=>c.id===editingId);cosplays[i]={...cosplays[i],...data};}
   else cosplays.unshift({id:uid(),checklist:[],expenses:[],materials:[],supplies:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
   save(); closeAllModals(); renderHome();
@@ -3073,7 +3135,9 @@ function renderClosetList() {
 }
 
 // ── open closet detail ─────────────────────────────────────────
-function openClosetDetail(id) {
+let _closetDetailSource = 'closet'; // 'closet' | 'home'
+function openClosetDetail(id, source) {
+  _closetDetailSource = source || 'closet';
   const c = (closet||[]).find(x=>x.id===id);
   if (!c) return;
   const statusClass = 'status-' + (c.status||'complete');
@@ -3125,8 +3189,12 @@ function openClosetDetail(id) {
 }
 
 function closeClosetDetail() {
-  showPage('quests');
-  switchQuestTab('closet');
+  if (_closetDetailSource === 'home') {
+    showPage('home');
+  } else {
+    showPage('quests');
+    switchQuestTab('closet');
+  }
 }
 
 // ── favorite toggle ────────────────────────────────────────────
@@ -3276,6 +3344,14 @@ function deleteCostume(id) {
 }
 
 // ── ARCHIVE PAGE ──────────────────────────────────────────────
+function dismissUnpackNudge(conKey) {
+  try {
+    const dismissed = JSON.parse(localStorage.getItem('cf_dismissed_unpack') || '[]');
+    if (!dismissed.includes(conKey)) dismissed.push(conKey);
+    localStorage.setItem('cf_dismissed_unpack', JSON.stringify(dismissed));
+  } catch(e) {}
+}
+
 function _updateArchiveBadge() {
   const badge = document.getElementById('archive-count-badge');
   if (!badge) return;
@@ -3443,7 +3519,7 @@ renderCalendar();
 Object.assign(window, {
   showPage, openCostumePage, backFromCostume,
   renderHome, renderAllQuests, setFilter,
-  openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent,
+  openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent, toggleCommissionSwitch, _setCommissionSwitch,
   renderCostumePage, toggleBlock, toggleBudget, saveBudget,
   openModal, closeAllModals,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
@@ -3466,7 +3542,8 @@ Object.assign(window, {
   archiveCostume, deleteCostume,
   showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset,
   renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece,
-  renderArchiveList, restoreCostume, openArchivePage, closeArchivePage, _updateArchiveBadge
+  renderArchiveList, restoreCostume, openArchivePage, closeArchivePage, _updateArchiveBadge,
+  dismissUnpackNudge
 });
 </script>
 <script>
