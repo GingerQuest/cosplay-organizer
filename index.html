@@ -608,6 +608,14 @@ select option{background:#1a2f1c;}
         <div style="padding:0 16px 12px;display:flex;justify-content:flex-end;">
           <button class="btn sky-btn sm" onclick="openAddModal()">+ New Quest</button>
         </div>
+        <!-- Filter pills -->
+        <div style="display:flex;gap:8px;padding:0 16px 12px;flex-wrap:wrap;">
+          <button class="filter-pill active" id="pill-all"        onclick="setFilter('all',this)">All</button>
+          <button class="filter-pill"        id="pill-wip"        onclick="setFilter('wip',this)">⚙ Active</button>
+          <button class="filter-pill"        id="pill-planned"    onclick="setFilter('planned',this)">◇ Planned</button>
+          <button class="filter-pill"        id="pill-done"       onclick="setFilter('done',this)">✓ Done</button>
+          <button class="filter-pill"        id="pill-commission" onclick="setFilter('commission',this)">📋 Commission</button>
+        </div>
         <div id="allQuestList"></div>
         <div id="allEmpty" class="empty-state hidden">
           <span class="e-emoji">🌿</span>
@@ -737,6 +745,15 @@ select option{background:#1a2f1c;}
         <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);">🎒 Packing Planner</div>
       </div>
       <div id="packing-page-content" style="padding:0 16px 100px;"></div>
+    </div>
+
+    <!-- CON BUDGET PAGE -->
+    <div class="page slide-in" id="page-con-budget">
+      <div class="p-header" style="align-items:center;gap:10px;">
+        <button class="back-btn" onclick="closeConBudgetPage()">← Back</button>
+        <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);">💰 Con Budget</div>
+      </div>
+      <div id="con-budget-content" style="padding:0 16px 100px;"></div>
     </div>
 
     <!-- MOVE TO CLOSET PROMPT -->
@@ -1076,6 +1093,11 @@ select option{background:#1a2f1c;}
       </div>
       <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
     </div>
+    <div class="form-group"><label>Target Convention</label>
+      <select id="f-target-con">
+        <option value="">— None —</option>
+      </select>
+    </div>
     <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="General notes, ideas…"></textarea></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;">
       <div>
@@ -1179,6 +1201,18 @@ select option{background:#1a2f1c;}
       <div class="form-group"><label>End Time <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="time" id="c-end-time"></div>
     </div>
     <div class="form-group"><label>Location</label><input type="text" id="c-location" placeholder="City, Venue…"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 4px;">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--cream);">💰 Con Budget</div>
+        <div style="font-size:12px;color:var(--text-dim);">Set a total spend limit for this con</div>
+      </div>
+      <div class="sw-track" id="conBudgetSwitch" onclick="toggleConBudgetSwitch()" style="background:rgba(0,0,0,.3);">
+        <div class="sw-thumb" id="conBudgetSwitchThumb">○</div>
+      </div>
+    </div>
+    <div id="conBudgetInputWrap" style="display:none;padding-bottom:6px;">
+      <input type="number" id="c-budget" placeholder="Total budget (e.g. 300)" min="0" style="width:100%;">
+    </div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCon()">Save Con/Event ✿</button>
   </div>
 </div>
@@ -1960,10 +1994,13 @@ function renderHome() {
           const packBtn = e.type==='con' && e.id
             ? `<button onclick="openPackingPage('${e.id}','con','home')" style="flex-shrink:0;background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">🎒 Pack</button>`
             : '';
+          const budgetBtn = e.type==='con' && e.id
+            ? `<button onclick="openConBudgetPage('${e.id}','home')" style="flex-shrink:0;background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:4px 10px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">💰 Budget</button>`
+            : '';
           return `<div class="event-item" style="margin-bottom:8px;">
             <div class="ev-dot" style="background:${dotColor[e.type]||'var(--rose)'}"></div>
             <div class="ev-info"><div class="ev-name">${e.name}</div><div class="ev-date">${d}${e.location?' · '+e.location:''}</div></div>
-            ${packBtn}
+            <div style="display:flex;gap:6px;flex-shrink:0;">${packBtn}${budgetBtn}</div>
           </div>`;
         }).join('')
       : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
@@ -2007,9 +2044,24 @@ function renderHome() {
 
 // ── QUESTS ────────────────────────────────────────────────────
 function renderAllQuests() {
-  const filtered = currentFilter==='all' ? cosplays : cosplays.filter(c=>c.status===currentFilter);
+  const filtered = currentFilter==='all' ? cosplays
+    : currentFilter==='commission' ? cosplays.filter(c=>c.isCommission)
+    : cosplays.filter(c=>c.status===currentFilter);
   const list=document.getElementById('allQuestList'), empty=document.getElementById('allEmpty');
-  if (!filtered.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+  if (!filtered.length) {
+    list.innerHTML='';
+    if (currentFilter==='commission') {
+      empty.querySelector('.e-emoji').textContent='📋';
+      empty.querySelector('.e-title').textContent='No commissions yet';
+      empty.querySelector('.e-sub').textContent='Mark a quest as a commission when creating or editing it!';
+    } else {
+      empty.querySelector('.e-emoji').textContent='🌿';
+      empty.querySelector('.e-title').textContent='Nothing here yet';
+      empty.querySelector('.e-sub').textContent='Tap + New Quest above to start your first build!';
+    }
+    empty.classList.remove('hidden');
+    return;
+  }
   empty.classList.add('hidden');
   list.innerHTML = filtered.map(c=>questCard(c)).join('');
 }
@@ -2066,11 +2118,19 @@ function questCard(c) {
 }
 
 // ── ADD/EDIT COSPLAY ──────────────────────────────────────────
+function _populateConSelect(selectedId) {
+  const sel = document.getElementById('f-target-con');
+  if (!sel) return;
+  const sorted = [...(conventions||[])].sort((a,b)=>a.start.localeCompare(b.start));
+  sel.innerHTML = '<option value="">— None —</option>' +
+    sorted.map(c=>`<option value="${c.id}"${c.id===selectedId?' selected':''}>${c.name}${c.start?' ('+new Date(c.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',year:'numeric'})+')':''}</option>`).join('');
+}
+
 function openAddModal() {
   editingId=null;
   document.getElementById('modalTitle').textContent='🌿 New Quest';
   document.getElementById('deleteBtn').classList.add('hidden');
-  clearForm(); openModal('cosplayModal');
+  clearForm(); _populateConSelect(''); openModal('cosplayModal');
 }
 function openEdit(id) {
   const c=getCostume(id); if(!c) return;
@@ -2086,10 +2146,11 @@ function openEdit(id) {
   selectedEmoji=c.emoji||'🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e===selectedEmoji));
   _setCommissionSwitch(!!c.isCommission);
+  _populateConSelect(c.targetConId||'');
   openModal('cosplayModal');
 }
 function clearForm() {
-  ['f-name','f-series','f-imgurl','f-deadline','f-notes'].forEach(id=>document.getElementById(id).value='');
+  ['f-name','f-series','f-imgurl','f-deadline','f-notes','f-target-con'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   document.getElementById('f-status').value='wip';
   selectedEmoji='🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
@@ -2130,7 +2191,8 @@ function saveCosplay() {
   const prevStatus=editingId?(cosplays.find(c=>c.id===editingId)?.status||'wip'):'wip';
   const data={name,series:document.getElementById('f-series').value.trim(),imgurl:document.getElementById('f-imgurl').value.trim(),
     emoji:selectedEmoji,status:newStatus,deadline:document.getElementById('f-deadline').value,
-    notes:document.getElementById('f-notes').value.trim(),isCommission:_commissionOn};
+    notes:document.getElementById('f-notes').value.trim(),isCommission:_commissionOn,
+    targetConId:document.getElementById('f-target-con')?.value||''};
   if(editingId){const i=cosplays.findIndex(c=>c.id===editingId);cosplays[i]={...cosplays[i],...data};}
   else cosplays.unshift({id:uid(),checklist:[],expenses:[],materials:[],supplies:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
   save(); closeAllModals(); renderHome();
@@ -2714,6 +2776,7 @@ function renderEventList(){
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
       ${item.type==='con'?`<button onclick="openPackingPage('${item.id}','con','calendar')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
+      ${item.type==='con'?`<button onclick="openConBudgetPage('${item.id}','calendar')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">💰 Budget</button>`:''}
       ${item.type==='photo'?`<button onclick="openPackingPage('${item.id}','photo','calendar')" style="background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.35);color:var(--lavender);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
       ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
       ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
@@ -2723,6 +2786,25 @@ function renderEventList(){
 }
 
 // ── CON ───────────────────────────────────────────────────────
+function toggleConBudgetSwitch() {
+  const track = document.getElementById('conBudgetSwitch');
+  const thumb = document.getElementById('conBudgetSwitchThumb');
+  const wrap  = document.getElementById('conBudgetInputWrap');
+  const on    = track.classList.toggle('on');
+  thumb.textContent = on ? '●' : '○';
+  thumb.style.transform = on ? 'translateX(18px)' : '';
+  wrap.style.display = on ? 'block' : 'none';
+  if (!on) document.getElementById('c-budget').value = '';
+}
+function _setConBudgetSwitch(on, budget) {
+  const track = document.getElementById('conBudgetSwitch');
+  const thumb = document.getElementById('conBudgetSwitchThumb');
+  const wrap  = document.getElementById('conBudgetInputWrap');
+  if (on) { track.classList.add('on'); thumb.textContent='●'; thumb.style.transform='translateX(18px)'; wrap.style.display='block'; }
+  else    { track.classList.remove('on'); thumb.textContent='○'; thumb.style.transform=''; wrap.style.display='none'; }
+  document.getElementById('c-budget').value = budget || '';
+}
+
 function openConModal(id) {
   window._editingConId = id || null;
   if (id) {
@@ -2735,17 +2817,21 @@ function openConModal(id) {
       document.getElementById('c-location').value = con.location || '';
       document.getElementById('c-start-time').value = con.startTime || '';
       document.getElementById('c-end-time').value = con.endTime || '';
+      _setConBudgetSwitch(!!(con.budget), con.budget||'');
     }
   } else {
     document.getElementById('conModalTitle').textContent = '🎪 Add Con/Event';
     ['c-name','c-start','c-end','c-location','c-start-time','c-end-time'].forEach(id => document.getElementById(id).value = '');
+    _setConBudgetSwitch(false, '');
   }
   openModal('conModal');
 }
 function saveCon(){
   const name=document.getElementById('c-name').value.trim(),start=document.getElementById('c-start').value;
   if(!name||!start){alert('Please enter a name and start date.');return;}
-  const item={name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim(),startTime:document.getElementById('c-start-time').value,endTime:document.getElementById('c-end-time').value};
+  const budgetOn = document.getElementById('conBudgetSwitch').classList.contains('on');
+  const budget   = budgetOn ? (parseFloat(document.getElementById('c-budget').value)||0) : 0;
+  const item={name,start,end:document.getElementById('c-end').value,location:document.getElementById('c-location').value.trim(),startTime:document.getElementById('c-start-time').value,endTime:document.getElementById('c-end-time').value,budget};
   if(window._editingConId){
     const idx=conventions.findIndex(c=>c.id===window._editingConId);
     if(idx!==-1) conventions[idx]={...conventions[idx],...item};
@@ -2754,6 +2840,7 @@ function saveCon(){
     conventions.push({id:uid(),...item});
   }
   ['c-name','c-start','c-end','c-location','c-start-time','c-end-time'].forEach(id=>document.getElementById(id).value='');
+  _setConBudgetSwitch(false,'');
   save();closeAllModals();renderCalendar();
 }
 function deleteCon(id){conventions=conventions.filter(c=>c.id!==id);save();renderCalendar();}
@@ -3786,11 +3873,124 @@ function togglePackItem(conId, checkKey) {
 renderHome();
 renderCalendar();
 
+// ── CON BUDGET PAGE ───────────────────────────────────────────
+let _budgetConId  = null;
+let _budgetSource = 'home';
+
+function openConBudgetPage(conId, source) {
+  _budgetConId  = conId;
+  _budgetSource = source || 'home';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-con-budget').classList.add('active');
+  _renderConBudgetPage();
+}
+
+function closeConBudgetPage() {
+  if (_budgetSource === 'calendar') showPage('calendar');
+  else showPage('home');
+}
+
+function _renderConBudgetPage() {
+  const con = (conventions||[]).find(c => c.id === _budgetConId);
+  const wrap = document.getElementById('con-budget-content');
+  if (!con || !wrap) return;
+
+  // All quests targeting this con
+  const linked = (cosplays||[]).filter(c => c.targetConId === _budgetConId);
+
+  const fmt = (n) => '$' + n.toFixed(2);
+  const fmtDate = (d) => d ? new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+
+  // Per-quest spend calc (same formula as costume detail page)
+  const questData = linked.map(c => {
+    const spent  = (c.supplies||[]).filter(s=>s.status==='bought').reduce((a,s)=>a+(s.cost||0),0);
+    const needed = (c.supplies||[]).filter(s=>s.status!=='bought').reduce((a,s)=>a+(s.cost||0),0);
+    return { c, spent, needed };
+  });
+
+  const totalSpent    = questData.reduce((a,q)=>a+q.spent, 0);
+  const totalNeeded   = questData.reduce((a,q)=>a+q.needed, 0);
+  // Prefer the con's own budget; fall back to sum of quest budgets
+  const conBudget     = con.budget || 0;
+  const questBudgetSum = questData.reduce((a,q)=>a+(q.c.budget||0), 0);
+  const totalBudgeted = conBudget || questBudgetSum;
+  const remaining     = totalBudgeted - totalSpent;
+  const hasBudget     = totalBudgeted > 0;
+
+  const dateRange = con.start === con.end || !con.end
+    ? fmtDate(con.start)
+    : fmtDate(con.start) + ' – ' + fmtDate(con.end);
+
+  let html = `
+    <div style="margin-bottom:20px;padding:16px;background:rgba(0,0,0,.25);border-radius:var(--r);border:1px solid rgba(212,168,85,.2);">
+      <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);margin-bottom:4px;">${con.name}</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-soft);">📅 ${dateRange}${con.location?' · 📍'+con.location:''}</div>
+    </div>`;
+
+  if (linked.length === 0) {
+    html += `<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:40px;margin-bottom:12px;">🎭</div>
+      <div style="font-size:15px;font-weight:700;color:var(--cream);margin-bottom:8px;">No quests linked yet</div>
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.6;">When creating or editing a quest, choose this convention as the <strong style="color:var(--text-soft);">Target Convention</strong> to track its costs here.</div>
+    </div>`;
+    wrap.innerHTML = html;
+    return;
+  }
+
+  // Summary tiles
+  html += `<div class="budget-summary" style="margin-bottom:16px;">
+    <div class="budget-tile"><div class="budget-tile-val gold">${fmt(totalSpent)}</div><div class="budget-tile-label">Total Spent</div></div>
+    ${hasBudget?`<div class="budget-tile"><div class="budget-tile-val peach">${fmt(totalBudgeted)}</div><div class="budget-tile-label">Budgeted</div></div>`:''}
+    ${hasBudget?`<div class="budget-tile"><div class="budget-tile-val ${remaining<0?'rose':'green'}">${fmt(Math.abs(remaining))}</div><div class="budget-tile-label">${remaining<0?'Over':'Left'}</div></div>`:''}
+    ${!hasBudget?`<div class="budget-tile"><div class="budget-tile-val peach">${fmt(totalNeeded)}</div><div class="budget-tile-label">Est. Still Needed</div></div>`:''}
+  </div>`;
+
+  if (hasBudget) {
+    const pct = Math.min(100, Math.round(totalSpent/totalBudgeted*100));
+    const over = totalSpent > totalBudgeted;
+    html += `<div class="budget-bar-wrap" style="margin-bottom:20px;">
+      <div class="budget-bar-label"><span>Total used</span><span>${pct}%</span></div>
+      <div class="budget-bar"><div class="budget-bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
+    </div>`;
+  }
+
+  // Per-quest breakdown
+  html += `<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">Quest Breakdown</div>`;
+
+  questData.forEach(({c, spent, needed}) => {
+    const pct = c.budget ? Math.min(100, Math.round(spent/c.budget*100)) : 0;
+    const over = c.budget && spent > c.budget;
+    const sClass = c.status==='done'?'b-done':c.status==='wip'?'b-wip':'b-planned';
+    const sLabel = c.status==='done'?'✓ Done':c.status==='wip'?'⚙ Active':'◇ Planned';
+    html += `<div onclick="openCostumePage('${c.id}')" style="cursor:pointer;margin-bottom:10px;padding:14px;background:rgba(0,0,0,.2);border-radius:var(--r);border:1px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:${c.budget?'10px':'0'};">
+        <div style="font-size:26px;width:40px;height:40px;border-radius:10px;background:rgba(30,50,30,.6);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${c.imgurl?`<img src="${c.imgurl}" style="width:100%;height:100%;border-radius:10px;object-fit:cover;" onerror="this.parentElement.textContent='${c.emoji||'🧙'}'">`:c.emoji||'🧙'}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:14px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.name}</div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:3px;">
+            <span class="badge ${sClass}" style="font-size:10px;">${sLabel}</span>
+            ${c.isCommission?`<span class="badge" style="background:rgba(200,160,255,.15);color:#c8a0ff;border:1px solid rgba(200,160,255,.3);font-size:10px;">📋</span>`:''}
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;">
+          <div style="font-size:16px;font-weight:900;color:var(--gold);">${fmt(spent)}</div>
+          ${c.budget?`<div style="font-size:11px;color:var(--text-dim);">of ${fmt(c.budget)}</div>`:'<div style="font-size:11px;color:var(--text-dim);">spent</div>'}
+        </div>
+      </div>
+      ${c.budget?`<div class="budget-bar"><div class="budget-bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>`:''}
+      ${!c.budget && needed>0?`<div style="font-size:12px;color:var(--text-soft);margin-top:6px;">🛒 Est. still needed: <strong style="color:var(--gold);">${fmt(needed)}</strong></div>`:''}
+    </div>`;
+  });
+
+  wrap.innerHTML = html;
+}
+
 // ── EXPOSE FUNCTIONS TO WINDOW (required for ES module onclick handlers) ──
 Object.assign(window, {
   showPage, openCostumePage, backFromCostume,
   renderHome, renderAllQuests, setFilter,
-  openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent, toggleCommissionSwitch, _setCommissionSwitch,
+  openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent, toggleCommissionSwitch, _setCommissionSwitch, _populateConSelect,
   renderCostumePage, toggleBlock, toggleBudget, saveBudget,
   openModal, closeAllModals,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
@@ -3800,7 +4000,7 @@ Object.assign(window, {
   saveSupply, toggleSupplyStatus, deleteSupply, openSupplyModal, switchSupplyStatus,
   saveMaterial, deleteMaterial, saveHours, deleteHour,
   saveLink, deleteLink, saveNotes,
-  changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
+  changeMonth, renderCalendar, openConModal, saveCon, deleteCon, toggleConBudgetSwitch, _setConBudgetSwitch,
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
   openAddCosPlanModal, saveCosPlan, deleteCosPlan,
@@ -3815,7 +4015,8 @@ Object.assign(window, {
   renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece,
   renderArchiveList, restoreCostume, openArchivePage, closeArchivePage, _updateArchiveBadge,
   dismissUnpackNudge,
-  openPackingPage, closePackingPage, renderPackingPage, savePackingSlot, togglePackItem
+  openPackingPage, closePackingPage, renderPackingPage, savePackingSlot, togglePackItem,
+  openConBudgetPage, closeConBudgetPage
 });
 </script>
 <script>
