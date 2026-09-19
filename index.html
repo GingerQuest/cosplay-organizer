@@ -670,6 +670,36 @@ select option{background:#1a2f1c;}
       </div>
     </div>
 
+    <!-- ADD / EDIT PIECE MODAL -->
+    <div class="modal-overlay hidden" id="piece-modal-overlay" onclick="closePieceModal(event)">
+      <div class="modal-sheet" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="modal-title" id="piece-modal-title">Add Piece</div>
+          <button onclick="closePieceModal()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--text-dim);">✕</button>
+        </div>
+        <label class="field-label">Piece Name *</label>
+        <input id="pm-name" class="field-input" placeholder="e.g. Wig, Breastplate, Boots..." maxlength="60" />
+
+        <label class="field-label">Storage Location</label>
+        <input id="pm-storage" class="field-input" placeholder="e.g. Bin 3, Hanging in closet..." maxlength="80" />
+
+        <label class="field-label">Condition</label>
+        <select id="pm-condition" class="field-input">
+          <option value="good">✅ Good</option>
+          <option value="wash">🧺 Needs Wash</option>
+          <option value="repair">🔧 Needs Repair</option>
+        </select>
+
+        <label class="field-label">Notes</label>
+        <textarea id="pm-notes" class="field-input" rows="2" placeholder="Any details about this piece..." style="resize:vertical;"></textarea>
+
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button class="btn" onclick="closePieceModal()" style="flex:1;background:rgba(255,255,255,.06);color:var(--text);">Cancel</button>
+          <button class="btn sage-btn" onclick="savePiece()" style="flex:2;">Save Piece</button>
+        </div>
+      </div>
+    </div>
+
     <!-- ADD / EDIT COSTUME MODAL -->
     <div class="modal-overlay hidden" id="costume-modal-overlay" onclick="closeCostumeModal(event)">
       <div class="modal-sheet" onclick="event.stopPropagation()" style="max-height:92vh;overflow-y:auto;">
@@ -2951,6 +2981,15 @@ function openClosetDetail(id) {
 
       ${c.repairNotes ? `<div style="margin-top:16px;background:rgba(220,100,80,.1);border:1px solid rgba(220,100,80,.25);border-radius:12px;padding:12px 14px;"><div style="font-size:11px;font-weight:800;color:#e88;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">🔧 Repair Notes</div><div style="color:var(--text);font-size:14px;white-space:pre-wrap;">${c.repairNotes}</div></div>` : ''}
 
+      <!-- PIECES & PARTS -->
+      <div style="margin-top:24px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+          <div style="font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.7px;">🧩 Pieces & Parts</div>
+          <button onclick="openAddPiece('${c.id}')" style="background:var(--sage);color:#fff;border:none;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer;">+ Add</button>
+        </div>
+        <div id="pieces-list-${c.id}">${renderPiecesList(c)}</div>
+      </div>
+
       <div style="margin-top:24px;display:flex;gap:10px;">
         <button onclick="archiveCostume('${c.id}')" class="btn" style="flex:1;background:rgba(100,100,100,.2);color:var(--text-dim);font-size:13px;">📦 Archive</button>
         <button onclick="deleteCostume('${c.id}')" class="btn" style="flex:1;background:rgba(220,80,80,.15);color:#e88;font-size:13px;">🗑 Delete</button>
@@ -3113,6 +3152,100 @@ function deleteCostume(id) {
 // ── show/hide FAB when closet tab active ──────────────────────
 // (handled naturally since FAB is inside the pane)
 
+// ══════════════════════════════════════════════════════════
+//  PIECES & PARTS
+// ══════════════════════════════════════════════════════════
+let _editingPieceInfo = null; // { costumeId, pieceId }
+
+function renderPiecesList(c) {
+  const pieces = c.pieces || [];
+  if (!pieces.length) return '<div style="color:var(--text-dim);font-size:13px;padding:8px 0;">No pieces added yet.</div>';
+  return pieces.map(p => {
+    const condColor = p.condition === 'repair' ? '#e88' : p.condition === 'wash' ? '#c9a84c' : 'var(--sage)';
+    const condLabel = p.condition === 'repair' ? '🔧 Needs Repair' : p.condition === 'wash' ? '🧺 Needs Wash' : '✅ Good';
+    return `<div style="background:rgba(0,0,0,.22);border-radius:10px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="font-weight:700;color:var(--cream);font-size:14px;">${p.name}</div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="openEditPiece('${c.id}','${p.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:15px;line-height:1;">✏️</button>
+          <button onclick="deletePiece('${c.id}','${p.id}')" style="background:none;border:none;cursor:pointer;color:#e88;font-size:15px;line-height:1;">🗑</button>
+        </div>
+      </div>
+      ${p.storage ? `<div style="font-size:12px;color:var(--text-dim);margin-top:3px;">📦 ${p.storage}</div>` : ''}
+      <div style="font-size:12px;color:${condColor};margin-top:4px;font-weight:700;">${condLabel}</div>
+      ${p.notes ? `<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">${p.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openAddPiece(costumeId) {
+  _editingPieceInfo = { costumeId, pieceId: null };
+  document.getElementById('piece-modal-title').textContent = 'Add Piece';
+  document.getElementById('pm-name').value = '';
+  document.getElementById('pm-storage').value = '';
+  document.getElementById('pm-condition').value = 'good';
+  document.getElementById('pm-notes').value = '';
+  document.getElementById('piece-modal-overlay').classList.remove('hidden');
+}
+
+function openEditPiece(costumeId, pieceId) {
+  const c = (closet || []).find(x => x.id === costumeId);
+  const p = (c?.pieces || []).find(x => x.id === pieceId);
+  if (!p) return;
+  _editingPieceInfo = { costumeId, pieceId };
+  document.getElementById('piece-modal-title').textContent = 'Edit Piece';
+  document.getElementById('pm-name').value = p.name || '';
+  document.getElementById('pm-storage').value = p.storage || '';
+  document.getElementById('pm-condition').value = p.condition || 'good';
+  document.getElementById('pm-notes').value = p.notes || '';
+  document.getElementById('piece-modal-overlay').classList.remove('hidden');
+}
+
+function closePieceModal(event) {
+  if (event && event.target !== document.getElementById('piece-modal-overlay')) return;
+  document.getElementById('piece-modal-overlay').classList.add('hidden');
+  _editingPieceInfo = null;
+}
+
+function savePiece() {
+  if (!_editingPieceInfo) return;
+  const name = document.getElementById('pm-name').value.trim();
+  if (!name) { alert('Please enter a piece name.'); return; }
+  const { costumeId, pieceId } = _editingPieceInfo;
+  const c = (closet || []).find(x => x.id === costumeId);
+  if (!c) return;
+  if (!c.pieces) c.pieces = [];
+  const pieceData = {
+    id: pieceId || ('pc_' + Date.now()),
+    name,
+    storage:   document.getElementById('pm-storage').value.trim(),
+    condition: document.getElementById('pm-condition').value,
+    notes:     document.getElementById('pm-notes').value.trim(),
+  };
+  if (pieceId) {
+    const idx = c.pieces.findIndex(x => x.id === pieceId);
+    if (idx !== -1) c.pieces[idx] = pieceData;
+  } else {
+    c.pieces.push(pieceData);
+  }
+  save();
+  document.getElementById('piece-modal-overlay').classList.add('hidden');
+  _editingPieceInfo = null;
+  // Refresh the pieces list in the detail view
+  const listEl = document.getElementById(`pieces-list-${costumeId}`);
+  if (listEl) listEl.innerHTML = renderPiecesList(c);
+}
+
+function deletePiece(costumeId, pieceId) {
+  const c = (closet || []).find(x => x.id === costumeId);
+  if (!c || !c.pieces) return;
+  if (!confirm('Remove this piece?')) return;
+  c.pieces = c.pieces.filter(x => x.id !== pieceId);
+  save();
+  const listEl = document.getElementById(`pieces-list-${costumeId}`);
+  if (listEl) listEl.innerHTML = renderPiecesList(c);
+}
+
 renderHome();
 renderCalendar();
 
@@ -3141,7 +3274,8 @@ Object.assign(window, {
   openAddCostume, openEditCostume, closeCostumeModal, saveCostume,
   toggleCostumeTag, toggleRepairSection, toggleClosetFavorite,
   archiveCostume, deleteCostume,
-  showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset
+  showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset,
+  renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece
 });
 </script>
 <script>
