@@ -647,6 +647,54 @@ select option{background:#1a2f1c;}
             <option value="favorites">❤️ Favorites first</option>
           </select>
         </div>
+        <div style="padding:0 16px 6px;">
+          <select id="closet-filter-tag" onchange="renderClosetList()" style="width:100%;padding:6px 8px;border-radius:10px;border:1px solid var(--lavender);background:var(--card);color:var(--text);font-size:13px;">
+            <option value="">🏷 Filter by tag…</option>
+            <optgroup label="Build Type">
+              <option value="armor">🛡 Armor</option>
+              <option value="sewn">🪡 Sewn</option>
+              <option value="closet_cos">🛍 Closet Cosplay</option>
+              <option value="bounding">✨ Bounding</option>
+              <option value="furry">🐾 Furry</option>
+              <option value="original">🎨 Original Design</option>
+            </optgroup>
+            <optgroup label="Style">
+              <option value="genderbend">💫 Gender Bend</option>
+              <option value="crossplay">🔄 Crossplay</option>
+              <option value="gijinka">🌸 Gijinka</option>
+              <option value="kemonomimi">🐱 Kemonomimi</option>
+              <option value="magical_girl">⭐ Magical Girl</option>
+              <option value="princess">👑 Princess</option>
+              <option value="prince">🤴 Prince</option>
+              <option value="hero">⚡ Hero</option>
+              <option value="villain">🖤 Villain</option>
+              <option value="horror">💀 Horror</option>
+              <option value="fantasy">🧝 Fantasy</option>
+            </optgroup>
+            <optgroup label="Source">
+              <option value="anime">🎌 Anime</option>
+              <option value="comics">💥 Comics</option>
+              <option value="video_games">🎮 Video Games</option>
+              <option value="western">🎬 Western / Live Action</option>
+              <option value="mecha">🤖 Mecha</option>
+              <option value="scifi">🚀 Sci-Fi</option>
+              <option value="cartoon">📺 Cartoon</option>
+            </optgroup>
+            <optgroup label="Outfit Type">
+              <option value="swim">👙 Swim</option>
+              <option value="summer">☀️ Summer</option>
+              <option value="winter">❄️ Winter</option>
+              <option value="bunny">🐰 Bunny Suit</option>
+            </optgroup>
+            <optgroup label="Context">
+              <option value="competition">🏆 Competition</option>
+              <option value="casual">😊 Casual</option>
+              <option value="performance">🎭 Performance</option>
+              <option value="duo">👫 Duo</option>
+              <option value="group">👥 Group</option>
+            </optgroup>
+          </select>
+        </div>
         <!-- Closet list -->
         <div id="closet-list" style="padding:4px 12px 80px;"></div>
         <div id="closet-empty" class="empty-state hidden" style="padding:44px 24px;">
@@ -2975,6 +3023,8 @@ function renderClosetList() {
   // Filter out archived items for main list
   let items = (closet || []).filter(c => !c.archivedAt);
   if (filterStatus !== 'all') items = items.filter(c => c.status === filterStatus);
+  const filterTag = document.getElementById('closet-filter-tag')?.value || '';
+  if (filterTag) items = items.filter(c => (c.tags || []).includes(filterTag));
 
   // Sort
   if (sortBy === 'alpha') items = [...items].sort((a,b)=>a.name.localeCompare(b.name));
