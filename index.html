@@ -3596,11 +3596,31 @@ function _conDays(con) {
 
 function _costumeSelect(activeCloset, selectedId, conId, dateStr, slot) {
   let opts = '<option value="">— None —</option>';
-  activeCloset.forEach(c => {
-    const sel = c.id === selectedId ? ' selected' : '';
-    const label = c.name + (c.character ? ' · ' + c.character : '');
-    opts += `<option value="${c.id}"${sel}>${label}</option>`;
-  });
+
+  // ── Closet (finished costumes) ──
+  if (activeCloset.length) {
+    opts += '<optgroup label="✅ Closet">';
+    activeCloset.forEach(c => {
+      const sel = c.id === selectedId ? ' selected' : '';
+      const label = c.name + (c.character ? ' · ' + c.character : '');
+      opts += `<option value="${c.id}"${sel}>${label}</option>`;
+    });
+    opts += '</optgroup>';
+  }
+
+  // ── Active / Planned Quests ──
+  const activeQuests = (cosplays || []).filter(c => c.status !== 'done');
+  if (activeQuests.length) {
+    opts += '<optgroup label="⚙️ Quests (In Progress)">';
+    activeQuests.forEach(c => {
+      const val = 'quest_' + c.id;
+      const sel = val === selectedId ? ' selected' : '';
+      const statusIcon = c.status === 'wip' ? '⚙ ' : '◇ ';
+      opts += `<option value="${val}"${sel}>${statusIcon}${c.name}${c.series ? ' · '+c.series : ''}</option>`;
+    });
+    opts += '</optgroup>';
+  }
+
   return `<select class="field-input" style="margin:0;font-size:13px;" onchange="savePackingSlot('${conId}','${dateStr}','${slot}',this.value)">${opts}</select>`;
 }
 
@@ -3694,11 +3714,26 @@ function _renderPhotoPackingPage() {
   const selectedId   = plan.slots[slotKey] || '';
 
   let opts = '<option value="">— None —</option>';
-  activeCloset.forEach(c => {
-    const sel   = c.id === selectedId ? ' selected' : '';
-    const label = c.name + (c.character ? ' · ' + c.character : '');
-    opts += `<option value="${c.id}"${sel}>${label}</option>`;
-  });
+  if (activeCloset.length) {
+    opts += '<optgroup label="✅ Closet">';
+    activeCloset.forEach(c => {
+      const sel   = c.id === selectedId ? ' selected' : '';
+      const label = c.name + (c.character ? ' · ' + c.character : '');
+      opts += `<option value="${c.id}"${sel}>${label}</option>`;
+    });
+    opts += '</optgroup>';
+  }
+  const photoActiveQuests = (cosplays || []).filter(c => c.status !== 'done');
+  if (photoActiveQuests.length) {
+    opts += '<optgroup label="⚙️ Quests (In Progress)">';
+    photoActiveQuests.forEach(c => {
+      const val = 'quest_' + c.id;
+      const sel = val === selectedId ? ' selected' : '';
+      const statusIcon = c.status === 'wip' ? '⚙ ' : '◇ ';
+      opts += `<option value="${val}"${sel}>${statusIcon}${c.name}${c.series ? ' · '+c.series : ''}</option>`;
+    });
+    opts += '</optgroup>';
+  }
 
   const pseudoEv = { id: planKey, name: photo.name, start: photo.date, end: photo.date };
 
@@ -3762,14 +3797,22 @@ function _buildPackingChecklist(con, plan, activeCloset) {
     <div style="font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📋 Packing Checklist</div>`;
 
   entries.forEach(({ dateStr, slot, costumeId }) => {
-    const costume  = activeCloset.find(c => c.id === costumeId);
-    if (!costume) return;
+    const isQuest   = costumeId.startsWith('quest_');
+    const realId    = isQuest ? costumeId.slice(6) : costumeId;
+    const costume   = isQuest ? null : activeCloset.find(c => c.id === realId);
+    const quest     = isQuest ? (cosplays || []).find(c => c.id === realId) : null;
+    if (!costume && !quest) return;
+
+    const name     = isQuest ? quest.name : costume.name;
+    const icon     = isQuest ? (quest.emoji || '⚙️') : '👗';
     const dayLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const pieces   = costume.pieces || [];
 
     html += `<div style="margin-bottom:12px;padding:12px 14px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:12px;">
       <div style="font-size:11px;font-weight:700;color:var(--lavender);margin-bottom:4px;">${dayLabel} · ${slotLabels[slot] || slot}</div>
-      <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:10px;">👗 ${costume.name}</div>`;
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <div style="font-size:14px;font-weight:800;color:var(--cream);">${icon} ${name}</div>
+        ${isQuest ? `<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(212,168,85,.15);color:var(--gold);border:1px solid rgba(212,168,85,.3);font-weight:700;">⚙ Quest</span>` : ''}
+      </div>`;
 
     const checkRow = (ckKey, label) => {
       const isChecked = !!(plan.checked && plan.checked[ckKey]);
@@ -3781,27 +3824,36 @@ function _buildPackingChecklist(con, plan, activeCloset) {
       </div>`;
     };
 
-    if (pieces.length) {
-      pieces.forEach(piece => {
-        const ckKey = `${con.id}_${dateStr}_${slot}_${piece.id}`;
-        const storageHint = piece.storage ? ` <span style="color:var(--text-dim);font-size:11px;">(${piece.storage})</span>` : '';
-        const isChecked = !!(plan.checked && plan.checked[ckKey]);
-        html += `<div onclick="togglePackItem('${con.id}','${ckKey}')" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid rgba(100,140,100,0.08);">
-          <div style="width:20px;height:20px;border-radius:6px;border:2px solid ${isChecked ? 'var(--sage)' : 'var(--border)'};background:${isChecked ? 'rgba(143,188,143,.25)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-            ${isChecked ? '<span style="color:var(--sage);font-size:12px;font-weight:900;line-height:1;">✓</span>' : ''}
-          </div>
-          <div style="flex:1;font-size:13px;font-weight:600;color:${isChecked ? 'var(--text-dim)' : 'var(--text)'};text-decoration:${isChecked ? 'line-through' : 'none'};">${piece.name}${storageHint}</div>
-        </div>`;
+    if (isQuest) {
+      // Quest packing: show bought supplies as packable items + generic costume check
+      const boughtSupplies = (quest.supplies || []).filter(s => s.status === 'bought');
+      html += checkRow(`${con.id}_${dateStr}_${slot}_qcostume`, `🎒 ${quest.name} — full costume packed`);
+      boughtSupplies.forEach(s => {
+        html += checkRow(`${con.id}_${dateStr}_${slot}_qs_${s.id}`, `📦 ${s.name}${s.cost ? ' ($'+Number(s.cost).toFixed(2)+')' : ''}`);
       });
+      if (!boughtSupplies.length) {
+        html += `<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:4px 0 2px;">Purchased supplies will appear here as pack items.</div>`;
+      }
     } else {
-      html += `<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:6px 0;">No pieces logged yet — add them in your Closet detail.</div>`;
-    }
-
-    if (costume.makeupRef) {
-      html += checkRow(`${con.id}_${dateStr}_${slot}_makeup`, `💄 Makeup · ${costume.makeupRef}`);
-    }
-    if (costume.contactsRef) {
-      html += checkRow(`${con.id}_${dateStr}_${slot}_contacts`, `👁️ Contacts · ${costume.contactsRef}`);
+      // Closet packing: pieces + makeup/contacts
+      const pieces = costume.pieces || [];
+      if (pieces.length) {
+        pieces.forEach(piece => {
+          const ckKey = `${con.id}_${dateStr}_${slot}_${piece.id}`;
+          const storageHint = piece.storage ? ` <span style="color:var(--text-dim);font-size:11px;">(${piece.storage})</span>` : '';
+          const isChecked = !!(plan.checked && plan.checked[ckKey]);
+          html += `<div onclick="togglePackItem('${con.id}','${ckKey}')" style="display:flex;align-items:center;gap:10px;padding:7px 0;cursor:pointer;border-bottom:1px solid rgba(100,140,100,0.08);">
+            <div style="width:20px;height:20px;border-radius:6px;border:2px solid ${isChecked ? 'var(--sage)' : 'var(--border)'};background:${isChecked ? 'rgba(143,188,143,.25)' : 'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              ${isChecked ? '<span style="color:var(--sage);font-size:12px;font-weight:900;line-height:1;">✓</span>' : ''}
+            </div>
+            <div style="flex:1;font-size:13px;font-weight:600;color:${isChecked ? 'var(--text-dim)' : 'var(--text)'};text-decoration:${isChecked ? 'line-through' : 'none'};">${piece.name}${storageHint}</div>
+          </div>`;
+        });
+      } else {
+        html += `<div style="font-size:12px;color:var(--text-dim);font-style:italic;padding:6px 0;">No pieces logged yet — add them in your Closet detail.</div>`;
+      }
+      if (costume.makeupRef) html += checkRow(`${con.id}_${dateStr}_${slot}_makeup`, `💄 Makeup · ${costume.makeupRef}`);
+      if (costume.contactsRef) html += checkRow(`${con.id}_${dateStr}_${slot}_contacts`, `👁️ Contacts · ${costume.contactsRef}`);
     }
 
     html += `</div>`;
