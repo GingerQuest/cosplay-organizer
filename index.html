@@ -4393,14 +4393,18 @@ renderHome();
 renderCalendar();
 
 // ── CON BUDGET PAGE ───────────────────────────────────────────
-let _budgetConId    = null;
-let _budgetSource   = 'home';
-let _addExpenseOpen = false;
-let _addExpenseCat  = null;
+let _budgetConId       = null;
+let _budgetSource      = 'home';
+let _addExpenseOpen    = false;
+let _addExpenseCat     = null;
+let _budgetTopCollapsed = false;
+let _budgetCatCollapsed = {};
 
 function openConBudgetPage(conId, source) {
-  _budgetConId  = conId;
-  _budgetSource = source || 'home';
+  _budgetConId        = conId;
+  _budgetSource       = source || 'home';
+  _budgetTopCollapsed = false;
+  _budgetCatCollapsed = {};
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
   document.getElementById('page-con-budget').classList.add('active');
@@ -4489,6 +4493,16 @@ function updateConBudget(conId, value) {
   if (idx === -1) return;
   conventions[idx].budget = parseFloat(value) || 0;
   save();
+  _renderConBudgetPage();
+}
+
+function toggleBudgetTop() {
+  _budgetTopCollapsed = !_budgetTopCollapsed;
+  _renderConBudgetPage();
+}
+
+function toggleCatBudget(catType) {
+  _budgetCatCollapsed[catType] = !_budgetCatCollapsed[catType];
   _renderConBudgetPage();
 }
 
@@ -4635,11 +4649,14 @@ function _renderConBudgetPage() {
     <div style="margin-bottom:16px;padding:16px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(212,168,85,.25);">
       <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);margin-bottom:4px;">${con.name}</div>
       <div style="font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:12px;">📅 ${dateRange}${con.location?' · 📍'+con.location:''}</div>
-      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:5px;">Total Budget</div>
-      <div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:8px 12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);">Total Budget</div>
+        <button onclick="toggleBudgetTop()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 6px;font-size:14px;line-height:1;transition:transform .2s;${_budgetTopCollapsed?'transform:rotate(-90deg);':''}">▾</button>
+      </div>
+      ${!_budgetTopCollapsed ? `<div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:6px;">
         <span style="color:var(--text-dim);font-size:15px;margin-right:4px;">$</span>
         <input type="number" min="0" step="1" value="${totalBudget||''}" placeholder="0.00" onchange="updateConBudget('${con.id}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:18px;font-weight:800;width:100%;outline:none;" />
-      </div>
+      </div>` : ''}
     </div>`;
 
   // Summary tiles — Budgeted → Remaining → Spent
@@ -4734,25 +4751,24 @@ function _renderConBudgetPage() {
     if (varExpenses.length > 0) {
       html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;${fixedExpenses.length?'margin-top:14px;':''}">💳 Variable Expenses</div>`;
       varExpenses.forEach(cat => {
-        const catSpent  = cat.items.reduce((a,i) => a + (i.amount||0), 0);
-        const catBudget = cat.budget || 0;
-        const catOver   = catBudget > 0 && catSpent > catBudget;
-        const catPct    = catBudget > 0 ? Math.min(100, Math.round(catSpent / catBudget * 100)) : 0;
+        const catSpent     = cat.items.reduce((a,i) => a + (i.amount||0), 0);
+        const catBudget    = cat.budget || 0;
+        const catOver      = catBudget > 0 && catSpent > catBudget;
+        const catPct       = catBudget > 0 ? Math.min(100, Math.round(catSpent / catBudget * 100)) : 0;
+        const catCollapsed = !!_budgetCatCollapsed[cat.type];
         html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(100,160,80,.2);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div style="font-size:14px;font-weight:800;color:var(--cream);">${cat.label}</div>
             <button onclick="deleteVarCat('${con.id}','${cat.type}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;">×</button>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:${catBudget||cat.items.length?'10px':'0'};">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);white-space:nowrap;">Ideal Budget</div>
-            <div style="display:flex;align-items:center;flex:1;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:5px 10px;">
-              <span style="color:var(--text-dim);font-size:12px;margin-right:4px;">$</span>
-              <input type="number" min="0" value="${catBudget||''}" placeholder="optional" onchange="updateVarBudget('${con.id}','${cat.type}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:13px;font-weight:700;width:100%;outline:none;" />
-            </div>
-          </div>`;
-        if (catBudget > 0) {
-          html += `<div class="budget-bar" style="margin-bottom:10px;"><div class="budget-bar-fill ${catOver?'over':''}" style="width:${catPct}%"></div></div>`;
-        }
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${!catCollapsed?'8px':'${cat.items.length?'10px':'0'}'};">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);">Ideal Budget</div>
+            <button onclick="toggleCatBudget('${cat.type}')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;font-size:12px;line-height:1;transition:transform .2s;${catCollapsed?'transform:rotate(-90deg);':''}">▾</button>
+          </div>
+          ${!catCollapsed ? `<div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:5px 10px;margin-bottom:${catBudget>0?'8px':'10px'};">
+            <span style="color:var(--text-dim);font-size:12px;margin-right:4px;">$</span>
+            <input type="number" min="0" value="${catBudget||''}" placeholder="optional" onchange="updateVarBudget('${con.id}','${cat.type}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:13px;font-weight:700;width:100%;outline:none;" />
+          </div>${catBudget>0?`<div class="budget-bar" style="margin-bottom:10px;"><div class="budget-bar-fill ${catOver?'over':''}" style="width:${catPct}%"></div></div>`:''}` : ''}`;
         if (cat.items.length > 0) {
           html += `<div style="border-top:1px solid rgba(255,255,255,.06);padding-top:8px;">`;
           cat.items.forEach((item, i) => {
@@ -4837,6 +4853,7 @@ Object.assign(window, {
   openConBudgetPage, closeConBudgetPage,
   openAddExpense, selectExpenseCat, submitAddExpense,
   updateConBudget,
+  toggleBudgetTop, toggleCatBudget,
   updateFixedExpense, deleteFixedExpense,
   updateVarBudget, deleteVarItem, deleteVarCat,
   deleteQuickPurchase,
