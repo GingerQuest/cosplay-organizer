@@ -993,8 +993,8 @@ select option{background:#1a2f1c;}
                 <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Forge Hours</div>
               </div>
               <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
-                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--sky);line-height:1;" id="s-pieces-total">0</div>
-                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Pieces Tracked</div>
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--sky);line-height:1;" id="s-craft-days">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Craft Days Logged</div>
               </div>
             </div>
           </div>
@@ -1015,9 +1015,10 @@ select option{background:#1a2f1c;}
                 <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--sky);line-height:1;" id="s-photoshoots-done">0</div>
                 <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Photoshoots</div>
               </div>
-              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
-                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--cream);line-height:1;" id="s-road-spent">$0</div>
-                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Total Spent</div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.12);border-radius:14px;padding:14px 16px;opacity:0.55;">
+                <div style="font-size:14px;font-weight:800;color:var(--sage);line-height:1;margin-bottom:2px;">✦</div>
+                <div style="font-size:13px;font-weight:700;color:var(--cream);margin-top:6px;margin-bottom:4px;">Groups Done</div>
+                <div style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--sage);">Coming Soon</div>
               </div>
             </div>
           </div>
@@ -3360,8 +3361,7 @@ function renderStats(){
   const done = cosplays.filter(c => c.status === 'done').length;
   const wip  = cosplays.filter(c => c.status === 'wip').length;
   const hrs  = cosplays.reduce((a,c) => (c.hours||[]).reduce((x,h) => x + (h.hours||0), a), 0);
-  const pieces = cosplays.reduce((a,c) => a + (c.pieces||[]).length, 0)
-               + (closet||[]).reduce((a,c) => a + (c.pieces||[]).length, 0);
+  const craftDaysCount = (craftDays||[]).length;
 
   // ── HERO: total costumes ever brought to life (archived + done + wip) ──
   const totalCostumes = (closet||[]).length + cosplays.length;
@@ -3375,7 +3375,7 @@ function renderStats(){
   document.getElementById('s-builds-done').textContent = done;
   document.getElementById('s-builds-wip').textContent  = wip;
   document.getElementById('s-forge-hours').textContent = hrs + 'h';
-  document.getElementById('s-pieces-total').textContent = pieces;
+  document.getElementById('s-craft-days').textContent = craftDaysCount;
 
   // ── ROAD STATS ──
   const pastCons = (conventions||[]).filter(c => new Date((c.end||c.start)+'T23:59:59') < now);
@@ -3386,12 +3386,10 @@ function renderStats(){
     return total + Math.round((e - s) / 86400000) + 1;
   }, 0);
   const pastPhotos = (photoshoots||[]).filter(p => new Date(p.date+'T23:59:59') < now);
-  const totalSpent = cosplays.reduce((a,c) => (c.supplies||[]).filter(s=>s.status==='bought').reduce((x,s)=>x+(s.cost||0),0)+a, 0);
 
-  document.getElementById('s-cons-attended').textContent   = pastCons.length;
-  document.getElementById('s-con-days').textContent        = conDays;
+  document.getElementById('s-cons-attended').textContent    = pastCons.length;
+  document.getElementById('s-con-days').textContent         = conDays;
   document.getElementById('s-photoshoots-done').textContent = pastPhotos.length;
-  document.getElementById('s-road-spent').textContent      = '$' + totalSpent.toFixed(0);
 }
 
 // ── CLOSE ON OVERLAY TAP ──────────────────────────────────────
