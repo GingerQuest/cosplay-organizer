@@ -967,12 +967,61 @@ select option{background:#1a2f1c;}
 
       <!-- ── STATS PANE ── -->
       <div class="inner-pane active" id="ipane-stats">
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-card-label">Total Quests</div><div class="stat-card-val sage" id="s-total">0</div></div>
-          <div class="stat-card"><div class="stat-card-label">Completed</div><div class="stat-card-val peach" id="s-done">0</div></div>
-          <div class="stat-card"><div class="stat-card-label">In Progress</div><div class="stat-card-val sky" id="s-wip">0</div></div>
-          <div class="stat-card"><div class="stat-card-label">Total Spent</div><div class="stat-card-val gold" id="s-spent">$0</div></div>
-          <div class="stat-card wide"><div class="stat-card-label">Total Hours Logged</div><div class="stat-card-val sage" id="s-hours">0h</div></div>
+        <div style="padding:16px 16px 4px;">
+
+          <!-- HERO MILESTONE -->
+          <div style="text-align:center;padding:22px 0 26px;border-bottom:1px solid rgba(143,188,143,0.12);margin-bottom:20px;">
+            <div style="font-size:54px;font-weight:900;font-family:'Lora',serif;color:var(--cream);line-height:1;" id="s-hero-num">0</div>
+            <div style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-top:6px;">Costumes Brought to Life</div>
+            <div style="font-size:11px;color:var(--sage);margin-top:10px;font-weight:600;" id="s-hero-sub"></div>
+          </div>
+
+          <!-- THE FORGE -->
+          <div style="margin-bottom:22px;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:12px;">⚔️ &nbsp;The Forge</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--sage);line-height:1;" id="s-builds-done">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Quests Complete</div>
+              </div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--peach);line-height:1;" id="s-builds-wip">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">In Progress</div>
+              </div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--gold);line-height:1;" id="s-forge-hours">0h</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Forge Hours</div>
+              </div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--sky);line-height:1;" id="s-pieces-total">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Pieces Tracked</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- THE ROAD -->
+          <div style="margin-bottom:20px;">
+            <div style="font-size:10px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--sage);margin-bottom:12px;">🗺️ &nbsp;The Road</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--peach);line-height:1;" id="s-cons-attended">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Cons Attended</div>
+              </div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--gold);line-height:1;" id="s-con-days">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Con Days</div>
+              </div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--sky);line-height:1;" id="s-photoshoots-done">0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Photoshoots</div>
+              </div>
+              <div style="background:rgba(10,24,12,0.55);border:1px solid rgba(143,188,143,0.15);border-radius:14px;padding:14px 16px;">
+                <div style="font-size:30px;font-weight:900;font-family:'Lora',serif;color:var(--cream);line-height:1;" id="s-road-spent">$0</div>
+                <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Total Spent</div>
+              </div>
+            </div>
+          </div>
+
         </div>
         <!-- Archive + Past Events buttons -->
         <div style="padding:0 16px 24px;margin-top:8px;display:flex;flex-direction:column;gap:10px;">
@@ -3305,24 +3354,44 @@ function deleteCon(id){conventions=conventions.filter(c=>c.id!==id);save();rende
 
 // ── STATS ─────────────────────────────────────────────────────
 function renderStats(){
-  const now=new Date();
-  document.getElementById('s-total').textContent=cosplays.length;
-  document.getElementById('s-done').textContent=cosplays.filter(c=>c.status==='done').length;
-  document.getElementById('s-wip').textContent=cosplays.filter(c=>c.status==='wip').length;
-  const spent=cosplays.reduce((a,c)=>(c.supplies||[]).filter(s=>s.status==='bought').reduce((x,s)=>x+(s.cost||0),0)+a,0);
-  document.getElementById('s-spent').textContent='$'+spent.toFixed(0);
-  const hrs=cosplays.reduce((a,c)=>(c.hours||[]).reduce((x,h)=>x+h.hours,a),0);
-  document.getElementById('s-hours').textContent=hrs+'h';
-  const el=document.getElementById('overviewList');
-  if(!cosplays.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:13px;font-weight:600;">No cosplays yet 🌿</div>';return;}
-  const sorted=[...cosplays].sort((a,b)=>calcProgress(b)-calcProgress(a));
-  el.innerHTML=sorted.map(c=>{const p=calcProgress(c);return`<div style="margin-bottom:14px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-      <span style="font-size:14px;font-weight:700;">${c.emoji||'🧙'} ${c.name}</span>
-      <span style="font-size:12px;font-weight:800;color:var(--sage);">${p}%</span>
-    </div>
-    <div class="prog-track"><div class="prog-fill ${p===100?'full':''}" style="width:${p}%"></div></div>
-  </div>`;}).join('');
+  const now = new Date();
+
+  // ── FORGE STATS ──
+  const done = cosplays.filter(c => c.status === 'done').length;
+  const wip  = cosplays.filter(c => c.status === 'wip').length;
+  const hrs  = cosplays.reduce((a,c) => (c.hours||[]).reduce((x,h) => x + (h.hours||0), a), 0);
+  const pieces = cosplays.reduce((a,c) => a + (c.pieces||[]).length, 0)
+               + (closet||[]).reduce((a,c) => a + (c.pieces||[]).length, 0);
+
+  // ── HERO: total costumes ever brought to life (archived + done + wip) ──
+  const totalCostumes = (closet||[]).length + cosplays.length;
+  document.getElementById('s-hero-num').textContent = totalCostumes;
+  const subParts = [];
+  if ((closet||[]).length) subParts.push(`${(closet||[]).length} archived`);
+  if (done) subParts.push(`${done} completed`);
+  if (wip)  subParts.push(`${wip} in progress`);
+  document.getElementById('s-hero-sub').textContent = subParts.length ? subParts.join(' · ') : 'Start your first quest ✦';
+
+  document.getElementById('s-builds-done').textContent = done;
+  document.getElementById('s-builds-wip').textContent  = wip;
+  document.getElementById('s-forge-hours').textContent = hrs + 'h';
+  document.getElementById('s-pieces-total').textContent = pieces;
+
+  // ── ROAD STATS ──
+  const pastCons = (conventions||[]).filter(c => new Date((c.end||c.start)+'T23:59:59') < now);
+  const conDays  = pastCons.reduce((total, c) => {
+    if (!c.start) return total;
+    const s = new Date(c.start + 'T00:00:00');
+    const e = new Date((c.end||c.start) + 'T23:59:59');
+    return total + Math.round((e - s) / 86400000) + 1;
+  }, 0);
+  const pastPhotos = (photoshoots||[]).filter(p => new Date(p.date+'T23:59:59') < now);
+  const totalSpent = cosplays.reduce((a,c) => (c.supplies||[]).filter(s=>s.status==='bought').reduce((x,s)=>x+(s.cost||0),0)+a, 0);
+
+  document.getElementById('s-cons-attended').textContent   = pastCons.length;
+  document.getElementById('s-con-days').textContent        = conDays;
+  document.getElementById('s-photoshoots-done').textContent = pastPhotos.length;
+  document.getElementById('s-road-spent').textContent      = '$' + totalSpent.toFixed(0);
 }
 
 // ── CLOSE ON OVERLAY TAP ──────────────────────────────────────
