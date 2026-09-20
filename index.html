@@ -1101,7 +1101,7 @@ select option{background:#1a2f1c;}
     <button class="tab-btn" data-page="quests" onclick="showPage('quests')"><span class="t-icon">🗡️</span><span class="t-label">Quests</span></button>
     <button class="tab-btn fab-tab" onclick="openFabChoice()"><div class="t-icon-wrap">✿</div><span class="t-label">New</span></button>
     <button class="tab-btn" data-page="calendar" onclick="showPage('calendar')"><span class="t-icon">🗓</span><span class="t-label">Calendar</span></button>
-    <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Profile</span></button>
+    <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">⚙️</span><span class="t-label">Profile</span></button>
   </nav>
 </div>
 
@@ -4291,7 +4291,7 @@ function _buildPackingChecklist(con, plan, activeCloset) {
     const lastUnder = key.lastIndexOf('_');
     const dateStr   = key.slice(0, lastUnder);
     const slot      = key.slice(lastUnder + 1);
-    const dedupeKey = dateStr + '_' + costumeId;
+    const dedupeKey = costumeId;
     if (!seen.has(dedupeKey)) {
       seen.add(dedupeKey);
       entries.push({ dateStr, slot, costumeId });
