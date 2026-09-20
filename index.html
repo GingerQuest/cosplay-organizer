@@ -792,6 +792,15 @@ select option{background:#1a2f1c;}
       <div id="unpack-page-content" style="padding:0 16px 100px;"></div>
     </div>
 
+    <!-- PAST CONS PAGE -->
+    <div class="page slide-in" id="page-past-cons">
+      <div class="p-header" style="align-items:center;gap:10px;">
+        <button class="back-btn" onclick="closePastConsPage()">← Back</button>
+        <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);">📁 Past Cons</div>
+      </div>
+      <div id="past-cons-content" style="padding:0 16px 100px;"></div>
+    </div>
+
     <!-- MOVE TO CLOSET PROMPT -->
     <div class="modal-overlay hidden" id="closet-prompt-overlay" onclick="dismissClosetPrompt()">
       <div class="modal-sheet" onclick="event.stopPropagation()" style="text-align:center;padding:28px 24px 36px;">
@@ -2202,10 +2211,11 @@ function renderHome() {
   const evEl = document.getElementById('homeEventPreview');
   if (evEl) {
     const upcoming = [
-      ...conventions.map(c=>({name:c.name,date:c.start,type:'con',location:c.location,id:c.id})),
-      ...craftDays.map(c=>({name:'🪡 '+c.costumeName+' craft day',date:c.date,type:'craft'})),
-      ...photoshoots.map(p=>({name:'📸 '+p.name,date:p.date,type:'photo',id:p.id})),
-    ].filter(e=>e.date&&new Date(e.date+'T00:00:00')>=now)
+      // For cons, keep showing until end date passes; fall back to start if no end
+      ...conventions.map(c=>({name:c.name,date:c.start,endDate:c.end||c.start,type:'con',location:c.location,id:c.id})),
+      ...craftDays.map(c=>({name:'🪡 '+c.costumeName+' craft day',date:c.date,endDate:c.date,type:'craft'})),
+      ...photoshoots.map(p=>({name:'📸 '+p.name,date:p.date,endDate:p.date,type:'photo',id:p.id})),
+    ].filter(e=>e.date&&new Date((e.endDate||e.date)+'T23:59:59')>=now)
      .sort((a,b)=>a.date.localeCompare(b.date))
      .slice(0,3);
     const dotColor={con:'var(--sky)',craft:'var(--gold)',photo:'var(--lavender)'};
@@ -2226,6 +2236,14 @@ function renderHome() {
           </div>`;
         }).join('')
       : '<div style="padding:8px 0;font-size:13px;font-weight:600;color:var(--text-dim);">No upcoming events 🌿</div>';
+    // Past cons button — always show if any cons have ended
+    const pastCons = (conventions || []).filter(c => new Date((c.end||c.start)+'T23:59:59') < now);
+    if (pastCons.length) {
+      evEl.innerHTML += `<div onclick="openPastConsPage()" style="margin-top:8px;padding:8px 12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+        <div style="font-size:12px;font-weight:700;color:var(--text-dim);">📁 Past Cons (${pastCons.length})</div>
+        <div style="font-size:12px;color:var(--text-dim);">→</div>
+      </div>`;
+    }
   }
 
   // Repairs & Care
@@ -4811,6 +4829,46 @@ async function deleteConfirmation(conId, type) {
   save(); _renderConBudgetPage();
 }
 
+// ── PAST CONS PAGE ──
+function openPastConsPage() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-past-cons').classList.add('active');
+  renderPastConsPage();
+}
+
+function closePastConsPage() {
+  showPage('home');
+}
+
+function renderPastConsPage() {
+  const el = document.getElementById('past-cons-content');
+  if (!el) return;
+  const now = new Date();
+  const past = (conventions || [])
+    .filter(c => new Date((c.end||c.start)+'T23:59:59') < now)
+    .sort((a,b) => (b.end||b.start).localeCompare(a.end||a.start));
+
+  if (!past.length) {
+    el.innerHTML = `<div style="padding:40px 0;text-align:center;color:var(--text-dim);font-size:13px;">No past cons yet 🌿</div>`;
+    return;
+  }
+
+  el.innerHTML = past.map(con => {
+    const startFmt = new Date(con.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const endFmt   = con.end ? new Date(con.end+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : null;
+    const dateStr  = endFmt && endFmt !== startFmt ? `${startFmt} – ${endFmt}` : startFmt;
+    return `<div style="margin-bottom:12px;padding:14px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:14px;">
+      <div style="font-size:15px;font-weight:800;color:var(--cream);margin-bottom:2px;">${con.name}</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">📅 ${dateStr}${con.location?' · 📍'+con.location:''}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button onclick="openPackingPage('${con.id}','con','home')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🎒 Packing Plan</button>
+        <button onclick="openConBudgetPage('${con.id}','home')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">💰 Budget</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 // ── UNPACK SYSTEM ──
 let _unpackConId = null;
 
@@ -4976,7 +5034,8 @@ Object.assign(window, {
   deleteQuickPurchase,
   triggerConfirmationUpload, viewConfirmation, deleteConfirmation, closeConfirmView,
   setDayType,
-  openUnpackPage, closeUnpackPage, renderUnpackPage, setUnpackCondition, completeUnpack
+  openUnpackPage, closeUnpackPage, renderUnpackPage, setUnpackCondition, completeUnpack,
+  openPastConsPage, closePastConsPage, renderPastConsPage
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
