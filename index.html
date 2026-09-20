@@ -565,6 +565,7 @@ select option{background:#1a2f1c;}
       </div>
       <div id="urgentBannerHome"></div>
       <div id="unpackNudge"></div>
+      <div id="notifBanner"></div>
 
       <!-- Active Quests -->
       <div class="home-sec-header section-header-row collapsed" id="hheader-quests" onclick="toggleHomeSection('quests')">
@@ -2189,6 +2190,9 @@ function backFromCostume() {
 // ── HOME ──────────────────────────────────────────────────────
 function renderHome() {
   const now = new Date();
+
+  // Run notification check once per session
+  if (!_notifChecked) { _notifChecked = true; checkNotifications(); }
 
   // Hero stats
   const activeQuests = cosplays.filter(c=>c.status!=='done');
@@ -5098,6 +5102,119 @@ function setDayType(conId, dateStr, type) {
 }
 
 // ── EXPOSE FUNCTIONS TO WINDOW (required for ES module onclick handlers) ──
+// ── NOTIFICATION SYSTEM ─────────────────────────────────────────
+let _notifQueue   = [];
+let _notifIdx     = 0;
+let _notifChecked = false;
+
+function checkNotifications() {
+  try {
+    const now = new Date();
+    const dismissed = JSON.parse(localStorage.getItem('cf_notif_v1') || '[]');
+    const notes = [];
+
+    // Con: 7d, 3d, 1d before start
+    (conventions||[]).forEach(c => {
+      if (!c.start) return;
+      const daysUntil = Math.ceil((new Date(c.start+'T00:00:00') - now) / 86400000);
+      const ck = (c.id||c.name||'').replace(/'/g,'');
+      [
+        { days:7, key:`con_${ck}_7d`, icon:'🗓️', title:`${c.name} is in one week!`,   body:'A great time to start planning what you\'re wearing each day.', action:c.id?`openPackingPage('${ck}','con','home')`:null, label:'🎒 Start Packing Plan' },
+        { days:3, key:`con_${ck}_3d`, icon:'🎒', title:`${c.name} is in 3 days!`,     body:'Time to finalize your packing list and check your costumes.',   action:c.id?`openPackingPage('${ck}','con','home')`:null, label:'🎒 Packing List' },
+        { days:1, key:`con_${ck}_1d`, icon:'🎉', title:`${c.name} is TOMORROW!`,      body:'Finish packing and get excited — it\'s almost time! ✦',         action:c.id?`openPackingPage('${ck}','con','home')`:null, label:'🎒 View Packing Plan' },
+      ].forEach(w => { if (daysUntil === w.days && !dismissed.includes(w.key)) notes.push(w); });
+    });
+
+    // Photoshoot: 3d, 1d before
+    (photoshoots||[]).forEach(p => {
+      if (!p.date) return;
+      const daysUntil = Math.ceil((new Date(p.date+'T00:00:00') - now) / 86400000);
+      const pk = (p.id||p.name||'').replace(/'/g,'');
+      [
+        { days:3, key:`photo_${pk}_3d`, icon:'📸', title:`${p.name} is in 3 days!`,   body:'Check your outfit plan and make sure everything is set.',          action:p.id?`openPackingPage('${pk}','photo','home')`:null, label:'🎒 Check Outfits' },
+        { days:1, key:`photo_${pk}_1d`, icon:'📸', title:`${p.name} is TOMORROW!`,    body:'You\'re going to slay — make sure your looks are ready! ✦',        action:p.id?`openPackingPage('${pk}','photo','home')`:null, label:'🎒 View Outfit Plan' },
+      ].forEach(w => { if (daysUntil === w.days && !dismissed.includes(w.key)) notes.push(w); });
+    });
+
+    // Craft day: 1d before
+    (craftDays||[]).forEach(c => {
+      if (!c.date) return;
+      const daysUntil = Math.ceil((new Date(c.date+'T00:00:00') - now) / 86400000);
+      if (daysUntil === 1) {
+        const key = `craft_${c.date}_1d`;
+        if (!dismissed.includes(key)) {
+          notes.push({ key, icon:'🪡', title:'Craft day tomorrow!', body:`${c.costumeName||'Your costume'} — get your supplies ready. ✦`, action:null, label:null });
+        }
+      }
+    });
+
+    // Deadlines: 3d, 1d
+    (cosplays||[]).forEach(c => {
+      if (!c.deadline) return;
+      const daysUntil = Math.ceil((new Date(c.deadline+'T00:00:00') - now) / 86400000);
+      [3,1].forEach(w => {
+        if (daysUntil === w) {
+          const key = `deadline_${(c.id||c.name||'').replace(/'/g,'')}_${w}d`;
+          if (!dismissed.includes(key)) {
+            notes.push({ key, icon:'⏰', title:'Deadline alert!', body:`${c.name} deadline is ${w===1?'TOMORROW':`in ${w} days`}.`, action:null, label:null });
+          }
+        }
+      });
+    });
+
+    _notifQueue = notes;
+    _notifIdx   = 0;
+  } catch(e) {
+    _notifQueue = [];
+  }
+  _renderNotifBanner();
+}
+
+function _renderNotifBanner() {
+  const el = document.getElementById('notifBanner');
+  if (!el) return;
+  if (!_notifQueue.length) { el.innerHTML = ''; return; }
+  const n = _notifQueue[_notifIdx];
+  const safeAction = n.action ? `${n.action};dismissCurrentNotif()` : '';
+  const actionBtn  = (n.action && n.label)
+    ? `<button onclick="${safeAction}" style="background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.4);color:var(--sage);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">${n.label}</button>`
+    : '';
+  const counter = _notifQueue.length > 1
+    ? `<button onclick="nextNotif()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;">${_notifIdx+1} of ${_notifQueue.length} ›</button>`
+    : '';
+  el.innerHTML = `
+    <div style="margin:0 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(30,60,35,0.92),rgba(40,35,65,0.92));border:1px solid rgba(143,188,143,.5);border-radius:14px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+      <div style="font-size:26px;line-height:1;flex-shrink:0;">${n.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:2px;">${n.title}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">${n.body}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          ${actionBtn}
+          ${counter}
+          <button onclick="dismissCurrentNotif()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;">✕ Dismiss</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function dismissCurrentNotif() {
+  if (!_notifQueue.length) return;
+  const key = _notifQueue[_notifIdx].key;
+  try {
+    const dismissed = JSON.parse(localStorage.getItem('cf_notif_v1') || '[]');
+    if (!dismissed.includes(key)) dismissed.push(key);
+    localStorage.setItem('cf_notif_v1', JSON.stringify(dismissed));
+  } catch(e) {}
+  _notifQueue.splice(_notifIdx, 1);
+  if (_notifIdx >= _notifQueue.length) _notifIdx = Math.max(0, _notifQueue.length - 1);
+  _renderNotifBanner();
+}
+
+function nextNotif() {
+  _notifIdx = (_notifIdx + 1) % _notifQueue.length;
+  _renderNotifBanner();
+}
+
 Object.assign(window, {
   showPage, openCostumePage, backFromCostume,
   renderHome, renderAllQuests, setFilter,
@@ -5141,7 +5258,8 @@ Object.assign(window, {
   triggerConfirmationUpload, viewConfirmation, deleteConfirmation, closeConfirmView,
   setDayType,
   openUnpackPage, closeUnpackPage, renderUnpackPage, setUnpackCondition, completeUnpack,
-  openPastEventsPage, closePastEventsPage, renderPastEventsPage
+  openPastEventsPage, closePastEventsPage, renderPastEventsPage,
+  dismissCurrentNotif, nextNotif
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
