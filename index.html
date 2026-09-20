@@ -2371,15 +2371,15 @@ function renderCostumePage() {
   const photosList = c.photos || [];
   const atFreePhotoLimit = photosList.length >= FREE_PROGRESS_PHOTO_LIMIT;
   const photosSection=`<div class="cs-block">
-    <div class="cs-block-header" onclick="toggleBlock('progress-photos')">
+    <div class="cs-block-header" onclick="toggleBlock('char-refs')">
       <div class="cs-block-header-left"><span class="cs-block-icon">📸</span>
-      <div><div class="cs-block-title">Progress Photos</div>
+      <div><div class="cs-block-title">Character References</div>
       <div class="cs-block-subtitle">${photosList.length} photo${photosList.length!==1?'s':''}</div></div></div>
-      <div class="cs-block-toggle open" id="progress-photos-chevron">▾</div>
+      <div class="cs-block-toggle open" id="char-refs-chevron">▾</div>
     </div>
-    <div class="cs-block-body" id="progress-photos-body">
+    <div class="cs-block-body" id="char-refs-body">
       <div style="padding-top:14px;">
-        ${photosList.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;">No progress photos yet — tap + to add one.</div>':''}
+        ${photosList.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;">No reference photos yet — tap + to add one.</div>':''}
         <div class="photo-grid">
           ${photosList.map((ph,i)=>`<div class="photo-thumb"><img src="${ph.url}" loading="lazy" onerror="this.style.display='none'"><button class="photo-thumb-del" onclick="deleteProgressPhoto(${i})">×</button></div>`).join('')}
           ${!atFreePhotoLimit?`<div class="photo-add-cell" onclick="triggerProgressPhotoUpload()">+</div>`:''}
@@ -3459,15 +3459,15 @@ function openClosetDetail(id, source) {
   const closetPhotos = c.photos || [];
   const atClosetPhotoLimit = closetPhotos.length >= FREE_PROGRESS_PHOTO_LIMIT;
   const closetPhotosSection = `<div class="cs-block" style="margin-top:20px;">
-    <div class="cs-block-header" onclick="toggleBlock('closet-progress-photos')">
+    <div class="cs-block-header" onclick="toggleBlock('closet-photos')">
       <div class="cs-block-header-left"><span class="cs-block-icon">📸</span>
-      <div><div class="cs-block-title">Progress Photos</div>
+      <div><div class="cs-block-title">Photos</div>
       <div class="cs-block-subtitle">${closetPhotos.length} photo${closetPhotos.length!==1?'s':''}</div></div></div>
-      <div class="cs-block-toggle open" id="closet-progress-photos-chevron">▾</div>
+      <div class="cs-block-toggle open" id="closet-photos-chevron">▾</div>
     </div>
-    <div class="cs-block-body" id="closet-progress-photos-body">
+    <div class="cs-block-body" id="closet-photos-body">
       <div style="padding-top:14px;">
-        ${closetPhotos.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;">No progress photos yet — tap + to add one.</div>':''}
+        ${closetPhotos.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;">No photos yet — tap + to add one.</div>':''}
         <div class="photo-grid">
           ${closetPhotos.map((ph,i)=>`<div class="photo-thumb"><img src="${ph.url}" loading="lazy" onerror="this.style.display='none'"><button class="photo-thumb-del" onclick="deleteClosetProgressPhoto(${i})">×</button></div>`).join('')}
           ${!atClosetPhotoLimit?`<div class="photo-add-cell" onclick="triggerClosetProgressPhotoUpload()">+</div>`:''}
