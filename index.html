@@ -2208,7 +2208,7 @@ function renderCostumePage() {
   const c=getCostume(viewingId); if(!c) return;
   const p=calcProgress(c);
   const now=new Date();
-  const img=c.imgurl?`<img src="${c.imgurl}" onerror="this.style.display='none'">`:c.emoji||'🧙';
+  const img=c.imgurl?`<img src="${c.imgurl}" onerror="this.style.display='none'">`:`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:3px;background:rgba(255,255,255,.06);border-radius:14px;border:1.5px dashed var(--border);"><span style="font-size:18px;">📷</span><span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span></div>`;
   const sClass=c.status==='done'?'b-done':c.status==='wip'?'b-wip':'b-planned';
   const sLabel=c.status==='done'?'✓ Done':c.status==='wip'?'⚙ Active':'◇ Planned';
   let dlBadge='';
@@ -3405,7 +3405,7 @@ function openClosetDetail(id, source) {
   }).join('');
   const closetImg = c.imgurl
     ? `<img src="${c.imgurl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;" onerror="this.style.display='none'">`
-    : `<span style="font-size:52px;line-height:1;">👗</span>`;
+    : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:3px;background:rgba(255,255,255,.06);border-radius:14px;border:1.5px dashed var(--border);"><span style="font-size:18px;">📷</span><span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span></div>`;
   const closetPhotos = c.photos || [];
   const atClosetPhotoLimit = closetPhotos.length >= FREE_PROGRESS_PHOTO_LIMIT;
   const closetPhotosSection = `<div class="cs-block" style="margin-top:20px;">
