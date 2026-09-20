@@ -1424,6 +1424,8 @@ let photoshoots = [];
 let closet        = []; // { id, name, character, fandom, status, tags[], notes, pieces[], makeupRef, contactsRef, favorite, archivedAt? }
 let packingPlans  = []; // { conId, slots:{ 'YYYY-MM-DD_am|pm|full': closetId }, checked:{ key: bool } }
 let editingId = null, viewingId = null, selectedEmoji = '🧙';
+let viewingClosetId = null;
+function getClosetItem(id) { return (closet||[]).find(c => c.id === id); }
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
 
 function save() {
@@ -2783,6 +2785,75 @@ async function deleteProgressPhoto(idx) {
   save(); renderCostumePage();
 }
 
+// ── CLOSET PHOTO UPLOADS ──────────────────────────────────────
+function triggerClosetProfilePhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleClosetProfilePhotoUpload;
+  input.click();
+}
+
+async function handleClosetProfilePhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const c = getClosetItem(viewingClosetId); if (!c) return;
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/closet/${c.id}/profile`;
+    if (c._profileStoragePath) {
+      try { await deleteObject(storageRef(storage, c._profileStoragePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    c.imgurl = url;
+    c._profileStoragePath = path;
+    save(); openClosetDetail(viewingClosetId);
+    _showUploadToast('Profile photo saved ✿');
+  } catch(err) {
+    console.error('Closet profile upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
+
+function triggerClosetProgressPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  const c = getClosetItem(viewingClosetId); if (!c) return;
+  if ((c.photos||[]).length >= FREE_PROGRESS_PHOTO_LIMIT) {
+    _showUploadToast('3 photo limit on free builds — Forge Pro coming soon ✨');
+    return;
+  }
+  const input = document.getElementById('progressPhotoInput');
+  input.onchange = handleClosetProgressPhotoUpload;
+  input.click();
+}
+
+async function handleClosetProgressPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const c = getClosetItem(viewingClosetId); if (!c) return;
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/closet/${c.id}/photos/${Date.now()}`;
+    const url = await _uploadToStorage(file, path);
+    if (!c.photos) c.photos = [];
+    c.photos.push({ url, storagePath: path });
+    save(); openClosetDetail(viewingClosetId);
+    _showUploadToast('Photo added ✿');
+  } catch(err) {
+    console.error('Closet progress photo upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
+
+async function deleteClosetProgressPhoto(idx) {
+  const c = getClosetItem(viewingClosetId); if (!c) return;
+  const photo = (c.photos||[])[idx]; if (!photo) return;
+  if (photo.storagePath) {
+    try { await deleteObject(storageRef(storage, photo.storagePath)); } catch(_) {}
+  }
+  c.photos.splice(idx, 1);
+  save(); openClosetDetail(viewingClosetId);
+}
+
 // ── NOTES ─────────────────────────────────────────────────────
 function saveNotes(){
   const c=getCostume(viewingId);if(!c)return;
@@ -3323,6 +3394,7 @@ function renderClosetList() {
 let _closetDetailSource = 'closet'; // 'closet' | 'home'
 function openClosetDetail(id, source) {
   _closetDetailSource = source || 'closet';
+  viewingClosetId = id;
   const c = (closet||[]).find(x=>x.id===id);
   if (!c) return;
   const statusClass = 'status-' + (c.status||'complete');
@@ -3331,6 +3403,29 @@ function openClosetDetail(id, source) {
     const t = CLOSET_TAGS.find(x=>x.id===tid);
     return t ? `<span class="tag-chip selected" style="cursor:default;">${t.label}</span>` : '';
   }).join('');
+  const closetImg = c.imgurl
+    ? `<img src="${c.imgurl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;" onerror="this.style.display='none'">`
+    : `<span style="font-size:52px;line-height:1;">👗</span>`;
+  const closetPhotos = c.photos || [];
+  const atClosetPhotoLimit = closetPhotos.length >= FREE_PROGRESS_PHOTO_LIMIT;
+  const closetPhotosSection = `<div class="cs-block" style="margin-top:20px;">
+    <div class="cs-block-header" onclick="toggleBlock('closet-progress-photos')">
+      <div class="cs-block-header-left"><span class="cs-block-icon">📸</span>
+      <div><div class="cs-block-title">Progress Photos</div>
+      <div class="cs-block-subtitle">${closetPhotos.length} photo${closetPhotos.length!==1?'s':''}</div></div></div>
+      <div class="cs-block-toggle open" id="closet-progress-photos-chevron">▾</div>
+    </div>
+    <div class="cs-block-body" id="closet-progress-photos-body">
+      <div style="padding-top:14px;">
+        ${closetPhotos.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;">No progress photos yet — tap + to add one.</div>':''}
+        <div class="photo-grid">
+          ${closetPhotos.map((ph,i)=>`<div class="photo-thumb"><img src="${ph.url}" loading="lazy" onerror="this.style.display='none'"><button class="photo-thumb-del" onclick="deleteClosetProgressPhoto(${i})">×</button></div>`).join('')}
+          ${!atClosetPhotoLimit?`<div class="photo-add-cell" onclick="triggerClosetProgressPhotoUpload()">+</div>`:''}
+        </div>
+        ${atClosetPhotoLimit?`<div style="margin-top:10px;text-align:center;font-size:12px;color:var(--lavender);font-weight:700;">3-photo limit on free builds — Forge Pro coming soon ✨</div>`:''}
+      </div>
+    </div>
+  </div>`;
 
   document.getElementById('closetDetailContent').innerHTML = `
     <div class="p-header" style="justify-content:space-between;align-items:center;">
@@ -3341,6 +3436,12 @@ function openClosetDetail(id, source) {
       </div>
     </div>
     <div style="padding:0 16px 80px;">
+      <div style="display:flex;justify-content:center;margin:16px 0 12px;">
+        <div class="costume-hero-avatar photo-avatar-wrap" onclick="triggerClosetProfilePhotoUpload()" title="Tap to change photo" style="width:100px;height:100px;">
+          ${closetImg}
+          <div class="photo-cam-overlay">📷</div>
+        </div>
+      </div>
       <div style="font-family:'Lora',serif;font-size:24px;font-weight:700;color:var(--cream);margin-bottom:4px;">${c.name}</div>
       <div style="color:var(--text-dim);font-size:14px;margin-bottom:10px;">${c.character||''}${c.fandom?' · '+c.fandom:''}</div>
       <span class="status-pill ${statusClass}" style="font-size:13px;padding:5px 14px;">${statusLabel}</span>
@@ -3354,6 +3455,8 @@ function openClosetDetail(id, source) {
       ${c.contactsRef ? `<div style="margin-top:16px;"><div style="font-size:11px;font-weight:800;color:var(--text-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">👁 Contact Lenses</div><div style="color:var(--text);font-size:14px;">${c.contactsRef}</div></div>` : ''}
 
       ${c.repairNotes ? `<div style="margin-top:16px;background:rgba(220,100,80,.1);border:1px solid rgba(220,100,80,.25);border-radius:12px;padding:12px 14px;"><div style="font-size:11px;font-weight:800;color:#e88;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">🔧 Repair Notes</div><div style="color:var(--text);font-size:14px;white-space:pre-wrap;">${c.repairNotes}</div></div>` : ''}
+
+      ${closetPhotosSection}
 
       <!-- PIECES & PARTS -->
       <div style="margin-top:24px;">
@@ -4181,6 +4284,8 @@ Object.assign(window, {
   saveMaterial, deleteMaterial, saveHours, deleteHour,
   triggerProfilePhotoUpload, handleProfilePhotoUpload,
   triggerProgressPhotoUpload, handleProgressPhotoUpload, deleteProgressPhoto,
+  triggerClosetProfilePhotoUpload, handleClosetProfilePhotoUpload,
+  triggerClosetProgressPhotoUpload, handleClosetProgressPhotoUpload, deleteClosetProgressPhoto,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
