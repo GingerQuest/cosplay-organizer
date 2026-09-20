@@ -4093,7 +4093,7 @@ let _packingSource  = 'home';  // 'home' | 'calendar'
 function _getPackPlan(conId) {
   let plan = (packingPlans || []).find(p => p.conId === conId);
   if (!plan) {
-    plan = { conId, slots: {}, checked: {} };
+    plan = { conId, slots: {}, checked: {}, dayTypes: {} };
     packingPlans.push(plan);
   }
   return plan;
@@ -4190,13 +4190,27 @@ function renderPackingPage() {
   html += `<div style="font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Costume Schedule</div>`;
 
   days.forEach(dateStr => {
-    const dayLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
-    const amVal   = plan.slots[dateStr + '_am']   || '';
-    const pmVal   = plan.slots[dateStr + '_pm']   || '';
-    const fullVal = plan.slots[dateStr + '_full'] || '';
+    const dayLabel  = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    const dayType   = (plan.dayTypes || {})[dateStr] || 'cosplay';
+    const isTravel  = dayType === 'travel';
+    const amVal     = plan.slots[dateStr + '_am']   || '';
+    const pmVal     = plan.slots[dateStr + '_pm']   || '';
+    const fullVal   = plan.slots[dateStr + '_full'] || '';
 
-    html += `<div style="margin-bottom:14px;padding:14px 14px 10px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:14px;">
-      <div style="font-size:13px;font-weight:800;color:var(--sage);margin-bottom:12px;">📅 ${dayLabel}</div>
+    const travelActive  = `background:rgba(212,168,85,.2);border-color:rgba(212,168,85,.6);color:var(--gold);font-weight:800;`;
+    const travelInactive= `background:transparent;border-color:rgba(255,255,255,.1);color:var(--text-dim);font-weight:700;`;
+    const cosplayActive = `background:rgba(143,188,143,.2);border-color:rgba(143,188,143,.5);color:var(--sage);font-weight:800;`;
+    const cosplayInactive=`background:transparent;border-color:rgba(255,255,255,.1);color:var(--text-dim);font-weight:700;`;
+
+    html += `<div style="margin-bottom:14px;padding:14px 14px 10px;background:rgba(10,24,12,0.55);border:1px solid ${isTravel?'rgba(212,168,85,.25)':'var(--border)'};border-radius:14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${isTravel?'0':'12px'};">
+        <div style="font-size:13px;font-weight:800;color:${isTravel?'var(--gold)':'var(--sage)'};">${isTravel?'✈️':'📅'} ${dayLabel}</div>
+        <div style="display:flex;gap:5px;">
+          <button onclick="setDayType('${con.id}','${dateStr}','travel')" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;${isTravel?travelActive:travelInactive}">✈️ Travel</button>
+          <button onclick="setDayType('${con.id}','${dateStr}','cosplay')" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;${!isTravel?cosplayActive:cosplayInactive}">👗 Cosplay</button>
+        </div>
+      </div>
+      ${isTravel ? `<div style="margin-top:10px;font-size:12px;color:var(--text-dim);font-style:italic;">No costumes needed — travel day!</div>` : `
       <div style="margin-bottom:10px;">
         <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🌅 Morning / AM</div>
         ${_costumeSelect(activeCloset, amVal, con.id, dateStr, 'am')}
@@ -4208,7 +4222,7 @@ function renderPackingPage() {
       <div>
         <div style="font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">🌞 Full Day</div>
         ${_costumeSelect(activeCloset, fullVal, con.id, dateStr, 'full')}
-      </div>
+      </div>`}
     </div>`;
   });
 
@@ -4291,6 +4305,8 @@ function _buildPackingChecklist(con, plan, activeCloset) {
     const lastUnder = key.lastIndexOf('_');
     const dateStr   = key.slice(0, lastUnder);
     const slot      = key.slice(lastUnder + 1);
+    // Skip travel days
+    if ((plan.dayTypes || {})[dateStr] === 'travel') return;
     const dedupeKey = costumeId;
     if (!seen.has(dedupeKey)) {
       seen.add(dedupeKey);
@@ -4786,6 +4802,14 @@ async function deleteConfirmation(conId, type) {
   save(); _renderConBudgetPage();
 }
 
+function setDayType(conId, dateStr, type) {
+  const plan = _getPackPlan(conId);
+  if (!plan.dayTypes) plan.dayTypes = {};
+  plan.dayTypes[dateStr] = type;
+  save();
+  renderPackingPage();
+}
+
 // ── EXPOSE FUNCTIONS TO WINDOW (required for ES module onclick handlers) ──
 Object.assign(window, {
   showPage, openCostumePage, backFromCostume,
@@ -4827,7 +4851,8 @@ Object.assign(window, {
   updateFixedExpense, deleteFixedExpense,
   updateVarBudget, deleteVarItem, deleteVarCat,
   deleteQuickPurchase,
-  triggerConfirmationUpload, viewConfirmation, deleteConfirmation, closeConfirmView
+  triggerConfirmationUpload, viewConfirmation, deleteConfirmation, closeConfirmView,
+  setDayType
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
