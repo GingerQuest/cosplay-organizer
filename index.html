@@ -1213,12 +1213,7 @@ select option{background:#1a2f1c;}
       <label style="margin-top:6px;">Or Image URL</label>
       <input type="url" id="f-imgurl" placeholder="https://…">
     </div>
-    <div class="flex-row">
-      <div class="form-group"><label>Status</label>
-        <select id="f-status"><option value="planned">Planned</option><option value="wip" selected>In Progress</option><option value="done">Completed</option></select>
-      </div>
-      <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
-    </div>
+    <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
     <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="General notes, ideas…"></textarea></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;">
       <div>
@@ -2326,7 +2321,7 @@ function openEdit(id) {
   document.getElementById('f-name').value=c.name||'';
   document.getElementById('f-series').value=c.series||'';
   document.getElementById('f-imgurl').value=c.imgurl||'';
-  document.getElementById('f-status').value=c.status||'wip';
+  // status preserved from existing data — no UI field
   document.getElementById('f-deadline').value=c.deadline||'';
   document.getElementById('f-notes').value=c.notes||'';
   selectedEmoji=c.emoji||'🧙';
@@ -2335,8 +2330,7 @@ function openEdit(id) {
   openModal('cosplayModal');
 }
 function clearForm() {
-  ['f-name','f-series','f-imgurl','f-deadline','f-notes','f-target-con'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('f-status').value='wip';
+  ['f-name','f-series','f-imgurl','f-deadline','f-notes','f-target-con'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';})
   selectedEmoji='🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
   if (_commissionOn) toggleCommissionSwitch(); // reset to off
@@ -2372,8 +2366,8 @@ function toggleCommissionSwitch() {
 function saveCosplay() {
   const name=document.getElementById('f-name').value.trim();
   if(!name){alert('Please enter a character name!');return;}
-  const newStatus=document.getElementById('f-status').value;
   const prevStatus=editingId?(cosplays.find(c=>c.id===editingId)?.status||'wip'):'wip';
+  const newStatus=editingId?prevStatus:'wip';
   const data={name,series:document.getElementById('f-series').value.trim(),imgurl:document.getElementById('f-imgurl').value.trim(),
     emoji:selectedEmoji,status:newStatus,deadline:document.getElementById('f-deadline').value,
     notes:document.getElementById('f-notes').value.trim(),isCommission:_commissionOn,
