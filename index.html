@@ -4393,18 +4393,14 @@ renderHome();
 renderCalendar();
 
 // ── CON BUDGET PAGE ───────────────────────────────────────────
-let _budgetConId       = null;
-let _budgetSource      = 'home';
-let _addExpenseOpen    = false;
-let _addExpenseCat     = null;
-let _budgetTopCollapsed = false;
-let _budgetCatCollapsed = {};
+let _budgetConId    = null;
+let _budgetSource   = 'home';
+let _addExpenseOpen = false;
+let _addExpenseCat  = null;
 
 function openConBudgetPage(conId, source) {
-  _budgetConId        = conId;
-  _budgetSource       = source || 'home';
-  _budgetTopCollapsed = false;
-  _budgetCatCollapsed = {};
+  _budgetConId  = conId;
+  _budgetSource = source || 'home';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
   document.getElementById('page-con-budget').classList.add('active');
@@ -4488,24 +4484,6 @@ function submitAddExpense(conId) {
   _renderConBudgetPage();
 }
 
-function updateConBudget(conId, value) {
-  const idx = conventions.findIndex(c => c.id === conId);
-  if (idx === -1) return;
-  conventions[idx].budget = parseFloat(value) || 0;
-  save();
-  _renderConBudgetPage();
-}
-
-function toggleBudgetTop() {
-  _budgetTopCollapsed = !_budgetTopCollapsed;
-  _renderConBudgetPage();
-}
-
-function toggleCatBudget(catType) {
-  _budgetCatCollapsed[catType] = !_budgetCatCollapsed[catType];
-  _renderConBudgetPage();
-}
-
 function updateFixedExpense(conId, type, value) {
   const idx = conventions.findIndex(c => c.id === conId);
   if (idx === -1) return;
@@ -4513,7 +4491,6 @@ function updateFixedExpense(conId, type, value) {
   if (!exp) return;
   exp.paid = parseFloat(value) || 0;
   save();
-  _renderConBudgetPage();
 }
 
 function deleteFixedExpense(conId, type) {
@@ -4531,7 +4508,6 @@ function updateVarBudget(conId, catType, value) {
   if (!cat) return;
   cat.budget = parseFloat(value) || 0;
   save();
-  _renderConBudgetPage();
 }
 
 function deleteVarItem(conId, catType, itemId) {
@@ -4563,68 +4539,6 @@ function deleteQuickPurchase(conId, purchaseId) {
   _renderConBudgetPage();
 }
 
-// ── CONFIRMATION SCREENSHOT UPLOAD ────────────────────────────
-let _confirmUploadConId = null;
-let _confirmUploadType  = null;
-
-function triggerConfirmationUpload(conId, type) {
-  if (!currentUser) { _showUploadToast('Sign in to upload confirmations'); return; }
-  _confirmUploadConId = conId;
-  _confirmUploadType  = type;
-  const input = document.getElementById('confirmationPhotoInput');
-  input.onchange = handleConfirmationUpload;
-  input.click();
-}
-
-async function handleConfirmationUpload(e) {
-  const file = e.target.files[0]; if (!file) return;
-  if (!_confirmUploadConId || !_confirmUploadType) return;
-  _showUploadToast('Uploading…');
-  try {
-    const path = `users/${currentUser.uid}/conventions/${_confirmUploadConId}/confirmations/${_confirmUploadType}`;
-    const url  = await _uploadToStorage(file, path);
-    const idx  = conventions.findIndex(c => c.id === _confirmUploadConId);
-    if (idx !== -1) {
-      const exp = (conventions[idx].fixedExpenses||[]).find(ex => ex.type === _confirmUploadType);
-      if (exp) {
-        if (exp._confirmStoragePath && exp._confirmStoragePath !== path) {
-          try { await deleteObject(storageRef(storage, exp._confirmStoragePath)); } catch(_) {}
-        }
-        exp.confirmationUrl    = url;
-        exp._confirmStoragePath = path;
-        save();
-        _renderConBudgetPage();
-      }
-    }
-    _showUploadToast('Confirmation saved ✿');
-  } catch(err) {
-    console.error('Confirmation upload error', err);
-    _showUploadToast('Upload failed — try again');
-  }
-  e.target.value = '';
-}
-
-function viewConfirmation(url) {
-  const img = document.getElementById('confirmationViewImg');
-  if (img) img.src = url;
-  openModal('confirmationViewModal');
-}
-
-async function deleteConfirmation(conId, type) {
-  const idx = conventions.findIndex(c => c.id === conId);
-  if (idx === -1) return;
-  const exp = (conventions[idx].fixedExpenses||[]).find(e => e.type === type);
-  if (!exp) return;
-  if (exp._confirmStoragePath) {
-    try { await deleteObject(storageRef(storage, exp._confirmStoragePath)); } catch(_) {}
-  }
-  delete exp.confirmationUrl;
-  delete exp._confirmStoragePath;
-  save();
-  _renderConBudgetPage();
-  _showUploadToast('Confirmation removed');
-}
-
 function _renderConBudgetPage() {
   const con  = (conventions||[]).find(c => c.id === _budgetConId);
   const wrap = document.getElementById('con-budget-content');
@@ -4638,40 +4552,34 @@ function _renderConBudgetPage() {
   const varExpenses   = con.varExpenses     || [];
   const quickPurchases = con.quickPurchases || [];
 
-  const fixedTotal   = fixedExpenses.reduce((a,e) => a + (e.paid||0), 0);
-  const varSpent     = varExpenses.reduce((a,cat) => a + cat.items.reduce((b,i) => b + (i.amount||0), 0), 0);
-  const qpTotal      = quickPurchases.reduce((a,p) => a + (p.amount||0), 0);
-  const totalSpent   = fixedTotal + varSpent + qpTotal;
-  const totalBudget  = con.budget || 0;
-  const remaining    = totalBudget - totalSpent;
+  const fixedTotal = fixedExpenses.reduce((a,e) => a + (e.paid||0), 0);
+  const varSpent   = varExpenses.reduce((a,cat) => a + cat.items.reduce((b,i) => b + (i.amount||0), 0), 0);
+  const varBudget  = varExpenses.reduce((a,cat) => a + (cat.budget||0), 0);
+  const qpTotal    = quickPurchases.reduce((a,p) => a + (p.amount||0), 0);
+
+  const totalBudgeted = fixedTotal + varBudget;
+  const totalSpent    = fixedTotal + varSpent + qpTotal;
+  const remaining     = totalBudgeted - totalSpent;
 
   let html = `
     <div style="margin-bottom:16px;padding:16px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(212,168,85,.25);">
       <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);margin-bottom:4px;">${con.name}</div>
-      <div style="font-size:13px;font-weight:600;color:var(--text-soft);margin-bottom:12px;">📅 ${dateRange}${con.location?' · 📍'+con.location:''}</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);">Total Budget</div>
-        <button onclick="toggleBudgetTop()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 6px;font-size:14px;line-height:1;transition:transform .2s;${_budgetTopCollapsed?'transform:rotate(-90deg);':''}">▾</button>
-      </div>
-      ${!_budgetTopCollapsed ? `<div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-top:6px;">
-        <span style="color:var(--text-dim);font-size:15px;margin-right:4px;">$</span>
-        <input type="number" min="0" step="1" value="${totalBudget||''}" placeholder="0.00" onchange="updateConBudget('${con.id}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:18px;font-weight:800;width:100%;outline:none;" />
-      </div>` : ''}
+      <div style="font-size:13px;font-weight:600;color:var(--text-soft);">📅 ${dateRange}${con.location?' · 📍'+con.location:''}</div>
     </div>`;
 
   // Summary tiles — Budgeted → Remaining → Spent
   html += `<div class="budget-summary" style="margin-bottom:14px;">
-    <div class="budget-tile"><div class="budget-tile-val peach">${fmt(totalBudget)}</div><div class="budget-tile-label">Budgeted</div></div>
+    <div class="budget-tile"><div class="budget-tile-val peach">${fmt(totalBudgeted)}</div><div class="budget-tile-label">Budgeted</div></div>
     <div class="budget-tile"><div class="budget-tile-val ${remaining<0?'rose':'green'}">${fmt(Math.abs(remaining))}</div><div class="budget-tile-label">${remaining<0?'Over':'Remaining'}</div></div>
     <div class="budget-tile"><div class="budget-tile-val gold">${fmt(totalSpent)}</div><div class="budget-tile-label">Spent</div></div>
   </div>`;
 
-  // Overall progress bar
-  if (totalBudget > 0) {
-    const pct  = Math.min(100, Math.round(totalSpent / totalBudget * 100));
-    const over = totalSpent > totalBudget;
+  // Variable budget progress bar
+  if (varBudget > 0) {
+    const pct  = Math.min(100, Math.round(varSpent / varBudget * 100));
+    const over = varSpent > varBudget;
     html += `<div class="budget-bar-wrap" style="margin-bottom:18px;">
-      <div class="budget-bar-label"><span>Total used</span><span>${pct}%</span></div>
+      <div class="budget-bar-label"><span>Variable budget used</span><span>${pct}%</span></div>
       <div class="budget-bar"><div class="budget-bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
     </div>`;
   }
@@ -4723,26 +4631,18 @@ function _renderConBudgetPage() {
     if (fixedExpenses.length > 0) {
       html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;">📌 Set Costs</div>`;
       fixedExpenses.forEach(exp => {
-        const hasConfirm = !!exp.confirmationUrl;
         html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(212,168,85,.2);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div style="font-size:14px;font-weight:800;color:var(--cream);">${exp.label}</div>
             <button onclick="deleteFixedExpense('${con.id}','${exp.type}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;">×</button>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <div style="display:flex;align-items:center;gap:10px;">
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);white-space:nowrap;">Paid</div>
             <div style="display:flex;align-items:center;flex:1;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
               <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
               <input type="number" min="0" value="${exp.paid||''}" placeholder="0.00" onchange="updateFixedExpense('${con.id}','${exp.type}',this.value)" style="background:transparent;border:none;color:var(--gold);font-size:14px;font-weight:700;width:100%;outline:none;" />
             </div>
           </div>
-          ${hasConfirm
-            ? `<div style="display:flex;gap:8px;">
-                <button onclick="viewConfirmation('${exp.confirmationUrl}')" style="flex:1;padding:8px;background:rgba(212,168,85,.1);border:1px solid rgba(212,168,85,.3);border-radius:var(--r-sm);color:var(--gold);font-size:12px;font-weight:700;cursor:pointer;">📋 View Confirmation</button>
-                <button onclick="deleteConfirmation('${con.id}','${exp.type}')" style="padding:8px 10px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-dim);font-size:12px;font-weight:700;cursor:pointer;">Remove</button>
-              </div>`
-            : `<button onclick="triggerConfirmationUpload('${con.id}','${exp.type}')" style="width:100%;padding:8px;background:rgba(255,255,255,.04);border:1.5px dashed rgba(255,255,255,.15);border-radius:var(--r-sm);color:var(--text-dim);font-size:12px;font-weight:700;cursor:pointer;">📎 Add Confirmation Screenshot</button>`
-          }
         </div>`;
       });
     }
@@ -4751,24 +4651,25 @@ function _renderConBudgetPage() {
     if (varExpenses.length > 0) {
       html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;${fixedExpenses.length?'margin-top:14px;':''}">💳 Variable Expenses</div>`;
       varExpenses.forEach(cat => {
-        const catSpent     = cat.items.reduce((a,i) => a + (i.amount||0), 0);
-        const catBudget    = cat.budget || 0;
-        const catOver      = catBudget > 0 && catSpent > catBudget;
-        const catPct       = catBudget > 0 ? Math.min(100, Math.round(catSpent / catBudget * 100)) : 0;
-        const catCollapsed = !!_budgetCatCollapsed[cat.type];
+        const catSpent  = cat.items.reduce((a,i) => a + (i.amount||0), 0);
+        const catBudget = cat.budget || 0;
+        const catOver   = catBudget > 0 && catSpent > catBudget;
+        const catPct    = catBudget > 0 ? Math.min(100, Math.round(catSpent / catBudget * 100)) : 0;
         html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(100,160,80,.2);">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
             <div style="font-size:14px;font-weight:800;color:var(--cream);">${cat.label}</div>
             <button onclick="deleteVarCat('${con.id}','${cat.type}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;">×</button>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${!catCollapsed?'8px':'${cat.items.length?'10px':'0'}'};">
-            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);">Ideal Budget</div>
-            <button onclick="toggleCatBudget('${cat.type}')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;padding:2px 4px;font-size:12px;line-height:1;transition:transform .2s;${catCollapsed?'transform:rotate(-90deg);':''}">▾</button>
-          </div>
-          ${!catCollapsed ? `<div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:5px 10px;margin-bottom:${catBudget>0?'8px':'10px'};">
-            <span style="color:var(--text-dim);font-size:12px;margin-right:4px;">$</span>
-            <input type="number" min="0" value="${catBudget||''}" placeholder="optional" onchange="updateVarBudget('${con.id}','${cat.type}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:13px;font-weight:700;width:100%;outline:none;" />
-          </div>${catBudget>0?`<div class="budget-bar" style="margin-bottom:10px;"><div class="budget-bar-fill ${catOver?'over':''}" style="width:${catPct}%"></div></div>`:''}` : ''}`;
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:${catBudget||cat.items.length?'10px':'0'};">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);white-space:nowrap;">Ceiling</div>
+            <div style="display:flex;align-items:center;flex:1;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:5px 10px;">
+              <span style="color:var(--text-dim);font-size:12px;margin-right:4px;">$</span>
+              <input type="number" min="0" value="${catBudget||''}" placeholder="optional" onchange="updateVarBudget('${con.id}','${cat.type}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:13px;font-weight:700;width:100%;outline:none;" />
+            </div>
+          </div>`;
+        if (catBudget > 0) {
+          html += `<div class="budget-bar" style="margin-bottom:10px;"><div class="budget-bar-fill ${catOver?'over':''}" style="width:${catPct}%"></div></div>`;
+        }
         if (cat.items.length > 0) {
           html += `<div style="border-top:1px solid rgba(255,255,255,.06);padding-top:8px;">`;
           cat.items.forEach((item, i) => {
@@ -4852,26 +4753,14 @@ Object.assign(window, {
   openPackingPage, closePackingPage, renderPackingPage, savePackingSlot, togglePackItem,
   openConBudgetPage, closeConBudgetPage,
   openAddExpense, selectExpenseCat, submitAddExpense,
-  updateConBudget,
-  toggleBudgetTop, toggleCatBudget,
   updateFixedExpense, deleteFixedExpense,
   updateVarBudget, deleteVarItem, deleteVarCat,
-  deleteQuickPurchase,
-  triggerConfirmationUpload, viewConfirmation, deleteConfirmation
+  deleteQuickPurchase
 });
 </script>
-<!-- Confirmation photo viewer modal -->
-<div class="modal-overlay" id="confirmationViewModal" onclick="closeAllModals()" style="background:rgba(0,0,0,.88);align-items:center;justify-content:center;">
-  <div onclick="event.stopPropagation()" style="width:calc(100% - 32px);max-width:480px;padding:16px;">
-    <img id="confirmationViewImg" src="" alt="Confirmation" style="width:100%;border-radius:12px;display:block;max-height:70vh;object-fit:contain;" />
-    <button onclick="closeAllModals()" style="margin-top:12px;width:100%;padding:11px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--cream);font-size:14px;font-weight:700;cursor:pointer;">Close</button>
-  </div>
-</div>
-
 <!-- Hidden file inputs for photo uploads -->
 <input type="file" id="profilePhotoInput" accept="image/*" capture="environment" style="display:none;">
 <input type="file" id="progressPhotoInput" accept="image/*" capture="environment" style="display:none;">
-<input type="file" id="confirmationPhotoInput" accept="image/*" style="display:none;">
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/cosplay-organizer/sw.js');
