@@ -506,7 +506,7 @@ select option{background:#1a2f1c;}
 .closet-card{background:#1e3324;border-radius:var(--r-md);border:1px solid rgba(100,160,100,0.35);
   padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s;box-shadow:0 2px 8px rgba(0,0,0,.25);}
 .closet-card:active{border-color:var(--sage);}
-.closet-card-emoji{font-size:32px;flex-shrink:0;}
+.closet-card-emoji{width:52px;height:52px;border-radius:10px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;background:rgba(255,255,255,.05);border:1px solid var(--border);}
 .closet-card-body{flex:1;min-width:0;}
 .closet-card-name{font-family:'Lora',serif;font-size:16px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .closet-card-sub{font-size:12px;color:var(--text-dim);margin-top:2px;}
@@ -2090,7 +2090,7 @@ function questCard(c) {
   // next craft day for this costume
   const nextCraft = craftDays.filter(cr=>cr.costumeId===c.id && new Date(cr.date+'T00:00:00')>=now).sort((a,b)=>a.date.localeCompare(b.date))[0];
   const craftHtml = nextCraft ? `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:700;color:var(--gold);">🪡 Next craft: ${new Date(nextCraft.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}</div>` : '';
-  const img=c.imgurl?`<img src="${c.imgurl}" onerror="this.style.display='none'">`:c.emoji||'🧙';
+  const img=c.imgurl?`<img src="${c.imgurl}" onerror="this.style.display='none'">`:`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:2px;"><span style="font-size:16px;">📷</span><span style="font-size:7px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;">Add Photo</span></div>`;
   const totalSpent=(c.supplies||[]).filter(s=>s.status==='bought').reduce((a,s)=>a+(s.cost||0),0);
   return `<div class="quest-card" onclick="openCostumePage('${c.id}')">
     <div class="quest-card-inner">
@@ -2854,6 +2854,53 @@ async function deleteClosetProgressPhoto(idx) {
   save(); openClosetDetail(viewingClosetId);
 }
 
+// ── COS-PLAN PHOTOS & PROMOTE ─────────────────────────────────
+let _cosPlanPhotoTargetId = null;
+
+function triggerCosPlanPhotoUpload(id, event) {
+  if (event) event.stopPropagation();
+  _cosPlanPhotoTargetId = id;
+  const inp = document.getElementById('profilePhotoInput');
+  if (inp) { inp.onchange = handleCosPlanPhotoUpload; inp.value = ''; inp.click(); }
+}
+
+async function handleCosPlanPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const user = auth.currentUser; if (!user) return;
+  const id = _cosPlanPhotoTargetId; if (!id) return;
+  const cp = (cosPlans||[]).find(p => p.id === id); if (!cp) return;
+  try {
+    const path = `users/${user.uid}/cosplans/${id}/profile`;
+    const ref = storageRef(storage, path);
+    await uploadBytes(ref, file);
+    cp.imgurl = await getDownloadURL(ref);
+    save();
+    renderQuestCosPlanList();
+  } catch(err) { console.error('CosPlan photo upload failed:', err); }
+}
+
+async function promoteCosPlanToQuest(id) {
+  const cp = (cosPlans||[]).find(p => p.id === id); if (!cp) return;
+  if (!confirm(`Move "${cp.name}" to your active quests?`)) return;
+  const newCosplay = {
+    id: uid(),
+    name: cp.name || '',
+    character: cp.character || '',
+    fandom: cp.fandom || '',
+    status: 'wip',
+    emoji: cp.emoji || '🧙',
+    imgurl: cp.imgurl || '',
+    notes: cp.notes || '',
+    tasks: [], supplies: [], materials: [], hours: [], links: [], photos: [],
+    pieces: [], createdAt: Date.now()
+  };
+  cosplays.push(newCosplay);
+  cosPlans = cosPlans.filter(p => p.id !== id);
+  save();
+  renderQuestCosPlanList();
+  showPage('home');
+}
+
 // ── NOTES ─────────────────────────────────────────────────────
 function saveNotes(){
   const c=getCostume(viewingId);if(!c)return;
@@ -3121,13 +3168,16 @@ function renderQuestCosPlanList() {
   empty.classList.add('hidden');
   list.innerHTML = (cosPlans||[]).map(cp=>`
     <div style="margin:0 16px 8px;padding:12px 14px;background:rgba(28,44,30,0.78);border:1px solid rgba(160,154,200,0.2);border-radius:var(--r);display:flex;align-items:center;gap:12px;">
-      <div style="font-size:24px;width:44px;height:44px;border-radius:10px;background:rgba(160,154,200,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">✨</div>
+      <div onclick="triggerCosPlanPhotoUpload('${cp.id}',event)" style="width:44px;height:44px;border-radius:10px;background:rgba(160,154,200,0.1);border:1px solid rgba(160,154,200,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;cursor:pointer;">
+        ${cp.imgurl?`<img src="${cp.imgurl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:`<div style="display:flex;flex-direction:column;align-items:center;gap:1px;"><span style="font-size:14px;">📷</span><span style="font-size:6px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;">Add</span></div>`}
+      </div>
       <div style="flex:1;min-width:0;">
         <div style="font-size:15px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cp.name}</div>
         <div style="font-size:12px;color:var(--text-soft);font-weight:600;margin-top:2px;">${cp.series||'—'}</div>
         ${cp.notes?`<div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:600;">${cp.notes}</div>`:''}
+        <button onclick="promoteCosPlanToQuest('${cp.id}')" style="margin-top:8px;background:linear-gradient(135deg,rgba(42,90,50,.7),rgba(60,120,70,.7));border:1px solid rgba(100,180,110,.35);color:var(--sage);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">⚔️ Start Quest</button>
       </div>
-      <span style="color:var(--text-dim);cursor:pointer;font-size:18px;padding:4px;" onclick="deleteCosPlan('${cp.id}')">×</span>
+      <span style="color:var(--text-dim);cursor:pointer;font-size:18px;padding:4px;align-self:flex-start;" onclick="deleteCosPlan('${cp.id}')">×</span>
     </div>`).join('');
 }
 
@@ -3376,7 +3426,7 @@ function renderClosetList() {
       return t ? `<span style="font-size:11px;color:var(--text-dim);">${t.label}</span>` : '';
     }).join(' ');
     return `<div class="closet-card" onclick="openClosetDetail('${c.id}')">
-      <div class="closet-card-emoji">👗</div>
+      <div class="closet-card-emoji">${c.imgurl?`<img src="${c.imgurl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`:`<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:2px;"><span style="font-size:14px;">📷</span><span style="font-size:6px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;">Add Photo</span></div>`}</div>
       <div class="closet-card-body">
         <div class="closet-card-name">${fave} ${c.name}</div>
         <div class="closet-card-sub">${c.character||''}${c.fandom?' · '+c.fandom:''}</div>
@@ -4286,6 +4336,7 @@ Object.assign(window, {
   triggerProgressPhotoUpload, handleProgressPhotoUpload, deleteProgressPhoto,
   triggerClosetProfilePhotoUpload, handleClosetProfilePhotoUpload,
   triggerClosetProgressPhotoUpload, handleClosetProgressPhotoUpload, deleteClosetProgressPhoto,
+  triggerCosPlanPhotoUpload, handleCosPlanPhotoUpload, promoteCosPlanToQuest,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
