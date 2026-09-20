@@ -1289,6 +1289,7 @@ select option{background:#1a2f1c;}
       <div class="form-group"><label>Category Name</label><input type="text" id="cat-name" placeholder="Chest Plate, Pants, Wig…"></div>
     </div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveTask()">Add ✿</button>
+    <button class="btn" style="width:100%;margin-top:7px;font-size:13px;font-weight:700;" onclick="closeAllModals()">Done ✓</button>
   </div>
 </div>
 
@@ -1299,6 +1300,7 @@ select option{background:#1a2f1c;}
     <div class="modal-title" id="catTaskModalTitle">📋 Add Step</div>
     <div class="form-group"><label>Step</label><input type="text" id="cat-task-text" placeholder="Cut fabric, sand edges…" onkeydown="if(event.key==='Enter')saveCatTask()"></div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCatTask()">Add Step ✿</button>
+    <button class="btn" style="width:100%;margin-top:7px;font-size:13px;font-weight:700;" onclick="closeAllModals()">Done ✓</button>
   </div>
 </div>
 
@@ -2778,7 +2780,12 @@ function saveTask(){
   if(window._taskType==='category'){
     const name=document.getElementById('cat-name').value.trim();if(!name)return;
     c.checklist.push({type:'category',name,steps:[],open:true});
-    document.getElementById('cat-name').value='';
+    save();renderCostumePage();
+    // Immediately open the catTaskModal so steps can be added right away
+    const newIdx=c.checklist.length-1;
+    document.getElementById('taskModal').classList.remove('open');
+    openCatTaskModal(newIdx);
+    return;
   } else {
     const text=document.getElementById('task-text').value.trim();if(!text)return;
     c.checklist.push({text,done:false});
