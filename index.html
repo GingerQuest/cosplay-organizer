@@ -521,6 +521,26 @@ select option{background:#1a2f1c;}
   background:rgba(143,188,143,.15);border:1px solid rgba(143,188,143,.3);color:var(--sage);cursor:pointer;transition:all .15s;}
 .tag-chip.selected{background:var(--sage);color:#fff;border-color:var(--sage);}
 .sage-btn{background:var(--sage)!important;color:#fff!important;}
+
+/* ── ONBOARDING OVERLAY ── */
+#onboardingOverlay{position:fixed;inset:0;z-index:9000;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;}
+#onboardingOverlay.hidden{display:none;}
+.ob-slides-wrap{flex:1;position:relative;overflow:hidden;}
+.ob-slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 32px 24px;text-align:center;gap:14px;transform:translateX(100%);transition:transform .38s cubic-bezier(.4,0,.2,1);}
+.ob-slide.ob-active{transform:translateX(0);}
+.ob-slide.ob-prev{transform:translateX(-100%);}
+.ob-icon{font-size:60px;line-height:1;margin-bottom:4px;}
+.ob-title{font-size:24px;font-weight:900;color:var(--cream);line-height:1.2;letter-spacing:-.3px;}
+.ob-body{font-size:14px;color:var(--text-soft);line-height:1.65;max-width:280px;}
+.ob-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-top:6px;}
+.ob-chip{font-size:11px;font-weight:800;color:var(--sage);background:rgba(100,160,80,.12);border:1px solid rgba(100,160,80,.28);border-radius:20px;padding:4px 11px;}
+.ob-skip{position:absolute;top:14px;right:14px;z-index:10;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.1);border:none;color:var(--text-dim);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s;}
+.ob-skip:hover{background:rgba(255,255,255,.18);}
+.ob-dots{display:flex;gap:7px;justify-content:center;padding:14px 0 10px;}
+.ob-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.18);transition:all .3s;}
+.ob-dot.ob-dot-active{background:var(--sage);width:22px;border-radius:4px;}
+.ob-footer{padding:8px 24px 44px;display:flex;flex-direction:column;gap:10px;}
+.ob-closer-icon{font-size:72px;margin-bottom:8px;}
 </style>
 </head>
 <body>
@@ -1007,6 +1027,18 @@ select option{background:#1a2f1c;}
           </div>
         </div>
 
+        <!-- Help -->
+        <div class="setting-section">
+          <div class="setting-section-title">📖 Help</div>
+          <div class="setting-row">
+            <div class="setting-row-info">
+              <div class="setting-row-label">App Tour</div>
+              <div class="setting-row-sub">Replay the feature walkthrough</div>
+            </div>
+            <button class="btn sm" onclick="showOnboarding()">View Tour</button>
+          </div>
+        </div>
+
         <!-- Data -->
         <div class="setting-section">
           <div class="setting-section-title">🗂 Data</div>
@@ -1074,6 +1106,90 @@ select option{background:#1a2f1c;}
     <button class="tab-btn" data-page="calendar" onclick="showPage('calendar')"><span class="t-icon">🗓</span><span class="t-label">Calendar</span></button>
     <button class="tab-btn" data-page="stats" onclick="showPage('stats')"><span class="t-icon">✦</span><span class="t-label">Profile</span></button>
   </nav>
+</div>
+
+<!-- ══ ONBOARDING ══ -->
+<div id="onboardingOverlay" class="hidden">
+  <button class="ob-skip" onclick="skipOnboarding()" aria-label="Skip">✕</button>
+
+  <div class="ob-slides-wrap" id="obSlidesWrap">
+
+    <!-- Slide 1: Welcome -->
+    <div class="ob-slide ob-active" id="ob-slide-0">
+      <div class="ob-icon">⚒️</div>
+      <div class="ob-title">Your forge is ready</div>
+      <div class="ob-body">Cosplay Forge is your all-in-one build tracker — from first sketch to finished costume, everything in one place.</div>
+    </div>
+
+    <!-- Slide 2: Active Quests -->
+    <div class="ob-slide" id="ob-slide-1">
+      <div class="ob-icon">⚔️</div>
+      <div class="ob-title">Track your active quests</div>
+      <div class="ob-body">Each build is a quest. Break it into tasks, track your budget and materials, log your hours, and watch your progress bar fill.</div>
+      <div class="ob-chips">
+        <span class="ob-chip">✅ Tasks & categories</span>
+        <span class="ob-chip">💰 Budget & materials</span>
+        <span class="ob-chip">⏱ Time tracking</span>
+        <span class="ob-chip">📸 Character references</span>
+      </div>
+    </div>
+
+    <!-- Slide 3: Cosplay Closet -->
+    <div class="ob-slide" id="ob-slide-2">
+      <div class="ob-icon">👗</div>
+      <div class="ob-title">Log your finished builds</div>
+      <div class="ob-body">Your Closet is where completed costumes live. Track every piece, add photos, mark favorites, and plan what to pack for cons.</div>
+      <div class="ob-chips">
+        <span class="ob-chip">🧵 Piece inventory</span>
+        <span class="ob-chip">📸 Photo gallery</span>
+        <span class="ob-chip">🎒 Packing planner</span>
+      </div>
+    </div>
+
+    <!-- Slide 4: Calendar -->
+    <div class="ob-slide" id="ob-slide-3">
+      <div class="ob-icon">📅</div>
+      <div class="ob-title">Never miss a deadline</div>
+      <div class="ob-body">Add conventions, craft days, and photoshoots. See everything on one calendar so con crunch never sneaks up on you.</div>
+      <div class="ob-chips">
+        <span class="ob-chip">🎪 Conventions</span>
+        <span class="ob-chip">🔨 Craft days</span>
+        <span class="ob-chip">📷 Photoshoots</span>
+      </div>
+    </div>
+
+    <!-- Slide 5: Cos-Plans -->
+    <div class="ob-slide" id="ob-slide-4">
+      <div class="ob-icon">✨</div>
+      <div class="ob-title">Save your dream builds</div>
+      <div class="ob-body">Got a costume idea you're not ready to start yet? Drop it in Cos-Plans. Add inspo photos, and when you're ready — promote it to an active quest.</div>
+      <div class="ob-chips">
+        <span class="ob-chip">💡 Save ideas</span>
+        <span class="ob-chip">🖼 Inspo photos</span>
+        <span class="ob-chip">⚔️ Start Quest when ready</span>
+      </div>
+    </div>
+
+    <!-- Closer -->
+    <div class="ob-slide" id="ob-slide-5">
+      <div class="ob-closer-icon">🌿</div>
+      <div class="ob-title">You're all set!</div>
+      <div class="ob-body">Ready to start forging? Add your first quest now, or take a look around first — it's all here waiting for you.</div>
+    </div>
+
+  </div>
+
+  <div class="ob-dots" id="obDots">
+    <div class="ob-dot ob-dot-active"></div>
+    <div class="ob-dot"></div>
+    <div class="ob-dot"></div>
+    <div class="ob-dot"></div>
+    <div class="ob-dot"></div>
+  </div>
+
+  <div class="ob-footer" id="obFooter">
+    <button class="btn primary" id="obNextBtn" onclick="obNext()">Next →</button>
+  </div>
 </div>
 
 <!-- ══ MODALS ══ -->
@@ -1329,6 +1445,85 @@ function loadLocal() {
   packingPlans  = JSON.parse(localStorage.getItem('cf_packingplans')  || '[]');
 }
 
+// ── ONBOARDING ───────────────────────────────────────────────
+const OB_SLIDES = 5; // 0–4 are feature slides; 5 is the closer
+let _obSlide = 0;
+
+function showOnboarding() {
+  _obSlide = 0;
+  _obRender();
+  document.getElementById('onboardingOverlay').classList.remove('hidden');
+}
+
+function skipOnboarding() {
+  document.getElementById('onboardingOverlay').classList.add('hidden');
+  try { localStorage.setItem('cf_onboarding_seen','1'); } catch(_) {}
+}
+
+function obNext() {
+  if (_obSlide < OB_SLIDES) {
+    const prev = _obSlide;
+    _obSlide++;
+    _obAnimate(prev, _obSlide);
+    _obRender();
+  } else {
+    skipOnboarding();
+  }
+}
+
+function obStartQuest() {
+  skipOnboarding();
+  openAddCostume();
+}
+
+function _obAnimate(from, to) {
+  const fromEl = document.getElementById(`ob-slide-${from}`);
+  const toEl   = document.getElementById(`ob-slide-${to}`);
+  if (!fromEl || !toEl) return;
+  fromEl.classList.remove('ob-active');
+  fromEl.classList.add('ob-prev');
+  toEl.classList.add('ob-active');
+}
+
+function _obRender() {
+  // Dots (only show for slides 0–4, not closer)
+  const dots = document.querySelectorAll('.ob-dot');
+  dots.forEach((d,i) => d.classList.toggle('ob-dot-active', i === _obSlide));
+  const dotsEl = document.getElementById('obDots');
+  dotsEl.style.visibility = _obSlide <= OB_SLIDES - 1 ? 'visible' : 'hidden';
+
+  // Footer button(s)
+  const footer = document.getElementById('obFooter');
+  if (_obSlide === OB_SLIDES) {
+    // Closer screen
+    footer.innerHTML = `
+      <button class="btn primary" onclick="obStartQuest()">⚔️ Add My First Quest</button>
+      <button class="btn" style="background:transparent;color:var(--text-soft);font-size:13px;" onclick="skipOnboarding()">Take me to the app</button>`;
+  } else {
+    footer.innerHTML = `<button class="btn primary" id="obNextBtn" onclick="obNext()">Next →</button>`;
+  }
+}
+
+// Touch swipe support
+(function(){
+  let startX = 0;
+  const wrap = document.getElementById('obSlidesWrap');
+  if (!wrap) return;
+  wrap.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+  wrap.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - startX;
+    if (Math.abs(dx) > 50) {
+      if (dx < 0) obNext(); // swipe left = next
+    }
+  }, {passive:true});
+})();
+
+function checkOnboarding() {
+  try {
+    if (!localStorage.getItem('cf_onboarding_seen')) showOnboarding();
+  } catch(_) { /* localStorage unavailable */ }
+}
+
 // ── AUTH STATE LISTENER ───────────────────────────────────────
 onAuthStateChanged(auth, async (user) => {
   currentUser = user;
@@ -1339,6 +1534,7 @@ onAuthStateChanged(auth, async (user) => {
     loadLocal();
     renderHome(); renderCalendar();
   }
+  checkOnboarding();
 });
 
 // ── AUTH FUNCTIONS ────────────────────────────────────────────
@@ -4344,6 +4540,7 @@ Object.assign(window, {
   openAddCosPlanModal, saveCosPlan, deleteCosPlan,
   switchQuestTab, renderQuestCosPlanList, toggleHomeSection, openFabChoice,
   renderStats, switchInnerTab, toggleDayNight,
+  showOnboarding, skipOnboarding, obNext, obStartQuest,
   exportData, confirmClearData, showSignedIn,
   renderClosetList, openClosetDetail, closeClosetDetail,
   openAddCostume, openEditCostume, closeCostumeModal, saveCostume,
