@@ -279,6 +279,16 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
   border-radius:20px;padding:20px;border:1px solid rgba(143,188,143,.18);
   position:relative;overflow:hidden;backdrop-filter:blur(12px);}
 .costume-hero-top{display:flex;gap:14px;align-items:center;}
+/* ── PHOTO UPLOAD ── */
+.photo-avatar-wrap{position:relative;cursor:pointer;}
+.photo-avatar-wrap .photo-cam-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);border-radius:14px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;font-size:20px;}
+.photo-avatar-wrap:active .photo-cam-overlay{opacity:1;}
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px;}
+.photo-thumb{aspect-ratio:1;border-radius:10px;overflow:hidden;position:relative;background:rgba(0,0,0,.2);}
+.photo-thumb img{width:100%;height:100%;object-fit:cover;}
+.photo-thumb-del{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;}
+.photo-add-cell{aspect-ratio:1;border-radius:10px;border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--text-dim);cursor:pointer;background:rgba(0,0,0,.1);}
+.photo-add-cell:active{border-color:var(--sage);color:var(--sage);}
 .costume-hero-avatar{width:72px;height:72px;border-radius:14px;flex-shrink:0;
   background:rgba(30,50,30,.8);border:1px solid var(--border);
   display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;}
@@ -1250,6 +1260,7 @@ select option{background:#1a2f1c;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyADg71GKyS3IPTPFFOC3fvNsWlppYfTJw8",
@@ -1264,6 +1275,7 @@ const firebaseConfig = {
 const app      = initializeApp(firebaseConfig);
 const auth     = getAuth(app);
 const db       = getFirestore(app);
+const storage  = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 let currentUser = null;
@@ -2354,6 +2366,27 @@ function renderCostumePage() {
     </div>
   </div>`;
 
+  const photosList = c.photos || [];
+  const atFreePhotoLimit = photosList.length >= FREE_PROGRESS_PHOTO_LIMIT;
+  const photosSection=`<div class="cs-block">
+    <div class="cs-block-header" onclick="toggleBlock('progress-photos')">
+      <div class="cs-block-header-left"><span class="cs-block-icon">📸</span>
+      <div><div class="cs-block-title">Progress Photos</div>
+      <div class="cs-block-subtitle">${photosList.length} photo${photosList.length!==1?'s':''}</div></div></div>
+      <div class="cs-block-toggle open" id="progress-photos-chevron">▾</div>
+    </div>
+    <div class="cs-block-body" id="progress-photos-body">
+      <div style="padding-top:14px;">
+        ${photosList.length===0?'<div style="color:var(--text-dim);font-size:13px;font-weight:600;margin-bottom:8px;">No progress photos yet — tap + to add one.</div>':''}
+        <div class="photo-grid">
+          ${photosList.map((ph,i)=>`<div class="photo-thumb"><img src="${ph.url}" loading="lazy" onerror="this.style.display='none'"><button class="photo-thumb-del" onclick="deleteProgressPhoto(${i})">×</button></div>`).join('')}
+          ${!atFreePhotoLimit?`<div class="photo-add-cell" onclick="triggerProgressPhotoUpload()">+</div>`:''}
+        </div>
+        ${atFreePhotoLimit?`<div style="margin-top:10px;text-align:center;font-size:12px;color:var(--lavender);font-weight:700;">3-photo limit on free builds — Forge Pro coming soon ✨</div>`:''}
+      </div>
+    </div>
+  </div>`;
+
   const linksSection=`<div class="cs-block">
     <div class="cs-block-header" onclick="toggleBlock('links')">
       <div class="cs-block-header-left"><span class="cs-block-icon">🔗</span>
@@ -2391,7 +2424,10 @@ function renderCostumePage() {
       </div>
       <div class="costume-hero">
         <div class="costume-hero-top">
-          <div class="costume-hero-avatar">${img}</div>
+          <div class="costume-hero-avatar photo-avatar-wrap" onclick="triggerProfilePhotoUpload()" title="Tap to change photo">
+            ${img}
+            <div class="photo-cam-overlay">📷</div>
+          </div>
           <div class="costume-hero-info">
             <div class="costume-hero-name">${c.name}</div>
             <div class="costume-hero-series">${c.series||'No series'}</div>
@@ -2403,7 +2439,7 @@ function renderCostumePage() {
           <div class="prog-track"><div class="prog-fill ${p===100?'full':''}" style="width:${p}%"></div></div>
         </div>
       </div>
-      ${craftSection}${budgetSection}${tasksSection}${suppliesSection}${hoursSection}${linksSection}${notesSection}
+      ${craftSection}${budgetSection}${tasksSection}${suppliesSection}${hoursSection}${photosSection}${linksSection}${notesSection}
       <div style="height:8px;"></div>
     </div>`;
 }
@@ -2655,6 +2691,97 @@ function saveLink(){
   save();closeAllModals();document.getElementById('lnk-name').value='';document.getElementById('lnk-url').value='';renderCostumePage();
 }
 function deleteLink(i){const c=getCostume(viewingId);if(!c)return;c.links.splice(i,1);save();renderCostumePage();}
+
+// ── PHOTO UPLOADS ─────────────────────────────────────────────
+const FREE_PROGRESS_PHOTO_LIMIT = 3;
+
+function _showUploadToast(msg) {
+  let t = document.getElementById('uploadToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'uploadToast';
+    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(28,42,32,.96);color:var(--cream);padding:10px 20px;border-radius:20px;font-size:13px;font-weight:700;z-index:9999;border:1px solid var(--border);white-space:nowrap;pointer-events:none;transition:opacity .3s;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => { t.style.opacity = '0'; }, 2500);
+}
+
+async function _uploadToStorage(file, path) {
+  const sRef = storageRef(storage, path);
+  const snap = await uploadBytes(sRef, file);
+  return await getDownloadURL(snap.ref);
+}
+
+function triggerProfilePhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleProfilePhotoUpload;
+  input.click();
+}
+
+async function handleProfilePhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const c = getCostume(viewingId); if (!c) return;
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/cosplays/${c.id}/profile`;
+    if (c._profileStoragePath) {
+      try { await deleteObject(storageRef(storage, c._profileStoragePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    c.imgurl = url;
+    c._profileStoragePath = path;
+    save(); renderCostumePage();
+    _showUploadToast('Profile photo saved ✿');
+  } catch(err) {
+    console.error('Profile upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
+
+function triggerProgressPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  const c = getCostume(viewingId); if (!c) return;
+  if ((c.photos||[]).length >= FREE_PROGRESS_PHOTO_LIMIT) {
+    _showUploadToast('3 photo limit on free builds — Forge Pro coming soon ✨');
+    return;
+  }
+  const input = document.getElementById('progressPhotoInput');
+  input.onchange = handleProgressPhotoUpload;
+  input.click();
+}
+
+async function handleProgressPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const c = getCostume(viewingId); if (!c) return;
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/cosplays/${c.id}/photos/${Date.now()}`;
+    const url = await _uploadToStorage(file, path);
+    if (!c.photos) c.photos = [];
+    c.photos.push({ url, storagePath: path });
+    save(); renderCostumePage();
+    _showUploadToast('Photo added ✿');
+  } catch(err) {
+    console.error('Progress photo upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
+
+async function deleteProgressPhoto(idx) {
+  const c = getCostume(viewingId); if (!c) return;
+  const photo = (c.photos||[])[idx]; if (!photo) return;
+  if (photo.storagePath) {
+    try { await deleteObject(storageRef(storage, photo.storagePath)); } catch(_) {}
+  }
+  c.photos.splice(idx, 1);
+  save(); renderCostumePage();
+}
 
 // ── NOTES ─────────────────────────────────────────────────────
 function saveNotes(){
@@ -4052,6 +4179,8 @@ Object.assign(window, {
   toggleCatStep, deleteCatStep, moveCatStep, switchTaskType,
   saveSupply, toggleSupplyStatus, deleteSupply, openSupplyModal, switchSupplyStatus,
   saveMaterial, deleteMaterial, saveHours, deleteHour,
+  triggerProfilePhotoUpload, handleProfilePhotoUpload,
+  triggerProgressPhotoUpload, handleProgressPhotoUpload, deleteProgressPhoto,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
@@ -4073,6 +4202,9 @@ Object.assign(window, {
   addConExpense, updateConExpense, updateConExpenseLabel, deleteConExpense
 });
 </script>
+<!-- Hidden file inputs for photo uploads -->
+<input type="file" id="profilePhotoInput" accept="image/*" capture="environment" style="display:none;">
+<input type="file" id="progressPhotoInput" accept="image/*" capture="environment" style="display:none;">
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/cosplay-organizer/sw.js');
