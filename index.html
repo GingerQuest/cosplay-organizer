@@ -2155,26 +2155,29 @@ function renderHome() {
   document.getElementById('urgentBannerHome').innerHTML = urgent.length
     ? `<div class="urgent-banner"><div class="u-icon">⏰</div><div><div class="u-text">${urgent.length} deadline${urgent.length>1?'s':''} soon!</div><div class="u-sub">${urgent.map(c=>c.name).join(', ')}</div></div></div>` : '';
 
-  // "I'm home!" unpack nudge — shows for up to 3 days after a con ends
+  // "I'm home!" unpack nudge — shows for up to 3 days after a con or photoshoot ends
   const dismissed = JSON.parse(localStorage.getItem('cf_dismissed_unpack') || '[]');
-  const recentCon = (conventions || []).find(c => {
-    const endDate = new Date((c.end || c.start) + 'T23:59:59');
-    const daysAgo = (now - endDate) / 86400000;
-    return daysAgo >= 0 && daysAgo <= 3 && !dismissed.includes(c.id || c.name);
-  });
+  const recentEvents = [
+    ...(conventions||[]).map(c => ({ name: c.name, endDate: c.end||c.start, planKey: c.id||c.name, icon: '🏠', sub: 'Time to check your pieces — any repairs or washes needed?' })),
+    ...(photoshoots||[]).map(p => ({ name: p.name, endDate: p.date, planKey: 'photo_'+p.id, icon: '📸', sub: 'Great shoot! Time to check your pieces — any repairs or washes needed?' })),
+  ].filter(e => {
+    const daysAgo = (now - new Date(e.endDate+'T23:59:59')) / 86400000;
+    return daysAgo >= 0 && daysAgo <= 3 && !dismissed.includes(e.planKey);
+  }).sort((a,b) => b.endDate.localeCompare(a.endDate));
+  const recentEvent = recentEvents[0] || null;
   const nudgeEl = document.getElementById('unpackNudge');
   if (nudgeEl) {
-    if (recentCon) {
-      const conKey = recentCon.id || recentCon.name;
+    if (recentEvent) {
+      const safeKey = recentEvent.planKey.replace(/'/g,"\\'");
       nudgeEl.innerHTML = `
         <div style="margin:0 16px 12px;padding:14px 16px;background:linear-gradient(135deg,rgba(30,60,35,0.92),rgba(40,35,65,0.92));border:1px solid rgba(143,188,143,.5);border-radius:14px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 4px 20px rgba(0,0,0,0.4);">
-          <div style="font-size:26px;line-height:1;flex-shrink:0;">🏠</div>
+          <div style="font-size:26px;line-height:1;flex-shrink:0;">${recentEvent.icon}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:2px;">Welcome home from ${recentCon.name}!</div>
-            <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Time to check your pieces — any repairs or washes needed?</div>
+            <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:2px;">Welcome home from ${recentEvent.name}!</div>
+            <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">${recentEvent.sub}</div>
             <div style="display:flex;gap:8px;">
-              <button onclick="openUnpackPage('${conKey.replace(/'/g,"\\'")}');" style="background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.4);color:var(--sage);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">🏠 Start Unpacking</button>
-              <button onclick="dismissUnpackNudge('${conKey.replace(/'/g,"\\'")}');renderHome()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;">✓ All good!</button>
+              <button onclick="openUnpackPage('${safeKey}');" style="background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.4);color:var(--sage);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">🏠 Start Unpacking</button>
+              <button onclick="dismissUnpackNudge('${safeKey}');renderHome()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;">✓ All good!</button>
             </div>
           </div>
         </div>`;
@@ -4917,8 +4920,15 @@ function renderUnpackPage() {
   const el = document.getElementById('unpack-page-content');
   if (!el) return;
 
-  const con = (conventions || []).find(c => c.id === _unpackConId);
-  const conName = con ? con.name : 'Your Convention';
+  let eventName = 'Your Event';
+  if (_unpackConId && _unpackConId.startsWith('photo_')) {
+    const photo = (photoshoots||[]).find(p => p.id === _unpackConId.slice(6));
+    eventName = photo ? photo.name : 'Your Photoshoot';
+  } else {
+    const con = (conventions||[]).find(c => c.id === _unpackConId);
+    eventName = con ? con.name : 'Your Convention';
+  }
+  const conName = eventName;
 
   // Gather costumes worn — from packing plan, skip travel days
   const plan = _getPackPlan(_unpackConId);
