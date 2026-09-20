@@ -4642,7 +4642,20 @@ function _renderConBudgetPage() {
               <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
               <input type="number" min="0" value="${exp.paid||''}" placeholder="0.00" onchange="updateFixedExpense('${con.id}','${exp.type}',this.value)" style="background:transparent;border:none;color:var(--gold);font-size:14px;font-weight:700;width:100%;outline:none;" />
             </div>
-          </div>
+          </div>`;
+        const conf = ((con.confirmations || {})[exp.type]);
+        html += `<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);">
+          <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);margin-bottom:6px;">Confirmation</div>`;
+        if (conf && conf.url) {
+          html += `<div style="display:flex;align-items:center;gap:10px;">
+            <img src="${conf.url}" style="width:48px;height:48px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.12);cursor:pointer;flex-shrink:0;" onclick="viewConfirmation('${conf.url}')">
+            <button onclick="viewConfirmation('${conf.url}')" style="background:none;border:none;color:var(--sky);font-size:13px;font-weight:700;cursor:pointer;padding:0;">View</button>
+            <button onclick="deleteConfirmation('${con.id}','${exp.type}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 2px;margin-left:auto;">×</button>
+          </div>`;
+        } else {
+          html += `<button onclick="triggerConfirmationUpload('${con.id}','${exp.type}')" style="background:none;border:none;color:var(--sky);font-size:13px;font-weight:700;cursor:pointer;padding:0;">📎 Upload screenshot</button>`;
+        }
+        html += `</div>
         </div>`;
       });
     }
@@ -4715,6 +4728,60 @@ function _renderConBudgetPage() {
   wrap.innerHTML = html;
 }
 
+// ── CONFIRMATION SCREENSHOTS ───────────────────────────────────────────────
+function triggerConfirmationUpload(conId, type) {
+  if (!currentUser) { _showUploadToast('Sign in to upload confirmations'); return; }
+  const input = document.getElementById('confirmPhotoInput');
+  if (!input) return;
+  input.onchange = e => handleConfirmationUpload(e, conId, type);
+  input.click();
+}
+
+async function handleConfirmationUpload(e, conId, type) {
+  const file = e.target.files[0]; if (!file) return;
+  const idx = conventions.findIndex(c => c.id === conId); if (idx < 0) return;
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/cons/${conId}/confirmations/${type}`;
+    if (!conventions[idx].confirmations) conventions[idx].confirmations = {};
+    const old = conventions[idx].confirmations[type];
+    if (old && old.storagePath) {
+      try { await deleteObject(storageRef(storage, old.storagePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    conventions[idx].confirmations[type] = { url, storagePath: path };
+    save(); _renderConBudgetPage();
+    _showUploadToast('Confirmation saved ✿');
+  } catch(err) {
+    console.error('Confirmation upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
+
+function viewConfirmation(url) {
+  const img = document.getElementById('confirmViewImg');
+  const overlay = document.getElementById('confirmViewModal');
+  if (!img || !overlay) return;
+  img.src = url;
+  overlay.classList.add('open');
+}
+
+function closeConfirmView() {
+  const overlay = document.getElementById('confirmViewModal');
+  if (overlay) overlay.classList.remove('open');
+}
+
+async function deleteConfirmation(conId, type) {
+  const idx = conventions.findIndex(c => c.id === conId); if (idx < 0) return;
+  const conf = (conventions[idx].confirmations || {})[type]; if (!conf) return;
+  if (conf.storagePath) {
+    try { await deleteObject(storageRef(storage, conf.storagePath)); } catch(_) {}
+  }
+  if (conventions[idx].confirmations) delete conventions[idx].confirmations[type];
+  save(); _renderConBudgetPage();
+}
+
 // ── EXPOSE FUNCTIONS TO WINDOW (required for ES module onclick handlers) ──
 Object.assign(window, {
   showPage, openCostumePage, backFromCostume,
@@ -4755,12 +4822,21 @@ Object.assign(window, {
   openAddExpense, selectExpenseCat, submitAddExpense,
   updateFixedExpense, deleteFixedExpense,
   updateVarBudget, deleteVarItem, deleteVarCat,
-  deleteQuickPurchase
+  deleteQuickPurchase,
+  triggerConfirmationUpload, viewConfirmation, deleteConfirmation, closeConfirmView
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
 <input type="file" id="profilePhotoInput" accept="image/*" capture="environment" style="display:none;">
 <input type="file" id="progressPhotoInput" accept="image/*" capture="environment" style="display:none;">
+<input type="file" id="confirmPhotoInput" accept="image/*" style="display:none;">
+<!-- Confirmation screenshot viewer -->
+<div class="modal-overlay" id="confirmViewModal" onclick="closeConfirmView()" style="display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div onclick="event.stopPropagation()" style="max-width:540px;width:100%;text-align:center;">
+    <img id="confirmViewImg" src="" style="max-width:100%;max-height:75vh;border-radius:14px;box-shadow:0 8px 40px rgba(0,0,0,.7);display:block;margin:0 auto;">
+    <button onclick="closeConfirmView()" style="margin-top:14px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:10px;padding:9px 24px;font-size:14px;font-family:'Nunito',sans-serif;font-weight:700;cursor:pointer;">Close</button>
+  </div>
+</div>
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/cosplay-organizer/sw.js');
