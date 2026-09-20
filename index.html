@@ -783,6 +783,15 @@ select option{background:#1a2f1c;}
       <div id="con-budget-content" style="padding:0 16px 100px;"></div>
     </div>
 
+    <!-- UNPACK PAGE -->
+    <div class="page slide-in" id="page-unpack">
+      <div class="p-header" style="align-items:center;gap:10px;">
+        <button class="back-btn" onclick="closeUnpackPage()">← Back</button>
+        <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);">🏠 Unpacking</div>
+      </div>
+      <div id="unpack-page-content" style="padding:0 16px 100px;"></div>
+    </div>
+
     <!-- MOVE TO CLOSET PROMPT -->
     <div class="modal-overlay hidden" id="closet-prompt-overlay" onclick="dismissClosetPrompt()">
       <div class="modal-sheet" onclick="event.stopPropagation()" style="text-align:center;padding:28px 24px 36px;">
@@ -2151,7 +2160,7 @@ function renderHome() {
             <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:2px;">Welcome home from ${recentCon.name}!</div>
             <div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">Time to check your pieces — any repairs or washes needed?</div>
             <div style="display:flex;gap:8px;">
-              <button onclick="showPage('quests');switchQuestTab('closet')" style="background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.4);color:var(--sage);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">👗 Open Closet</button>
+              <button onclick="openUnpackPage('${conKey.replace(/'/g,"\\'")}');" style="background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.4);color:var(--sage);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">🏠 Start Unpacking</button>
               <button onclick="dismissUnpackNudge('${conKey.replace(/'/g,"\\'")}');renderHome()" style="background:none;border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:6px 14px;font-size:12px;cursor:pointer;">✓ All good!</button>
             </div>
           </div>
@@ -4802,6 +4811,120 @@ async function deleteConfirmation(conId, type) {
   save(); _renderConBudgetPage();
 }
 
+// ── UNPACK SYSTEM ──
+let _unpackConId = null;
+
+function openUnpackPage(conId) {
+  _unpackConId = conId;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-unpack').classList.add('active');
+  renderUnpackPage();
+}
+
+function closeUnpackPage() {
+  showPage('home');
+}
+
+function renderUnpackPage() {
+  const el = document.getElementById('unpack-page-content');
+  if (!el) return;
+
+  const con = (conventions || []).find(c => c.id === _unpackConId);
+  const conName = con ? con.name : 'Your Convention';
+
+  // Gather costumes worn — from packing plan, skip travel days
+  const plan = _getPackPlan(_unpackConId);
+  const seenIds = new Set();
+  const wornCostumes = [];
+  Object.entries(plan.slots).forEach(([key, costumeId]) => {
+    if (!costumeId) return;
+    const lastUnder = key.lastIndexOf('_');
+    const dateStr = key.slice(0, lastUnder);
+    if ((plan.dayTypes || {})[dateStr] === 'travel') return;
+    if (seenIds.has(costumeId)) return;
+    seenIds.add(costumeId);
+    const isQuest = costumeId.startsWith('quest_');
+    const realId = isQuest ? costumeId.slice(6) : costumeId;
+    const costume = isQuest ? null : (closet || []).find(c => c.id === realId);
+    if (costume) wornCostumes.push(costume);
+  });
+
+  const conditionBtn = (costumeId, pieceId, val, label, icon, activeColor, activeBg) => {
+    const piece = (closet || []).find(c => c.id === costumeId)?.pieces?.find(p => p.id === pieceId);
+    const isActive = (piece?.condition || 'good') === val;
+    return `<button onclick="setUnpackCondition('${costumeId}','${pieceId}','${val}')"
+      style="flex:1;padding:6px 4px;border-radius:20px;border:1px solid ${isActive ? activeColor : 'rgba(255,255,255,.1)'};
+      background:${isActive ? activeBg : 'transparent'};color:${isActive ? activeColor : 'var(--text-dim)'};
+      font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:all .15s;white-space:nowrap;">
+      ${icon} ${label}</button>`;
+  };
+
+  let html = `
+    <div style="padding:6px 0 18px;">
+      <div style="font-size:13px;color:var(--text-dim);line-height:1.5;margin-bottom:20px;">
+        Welcome home from <strong style="color:var(--cream);">${conName}</strong>! Check each piece as you unpack — flag anything that needs a wash or repair so nothing gets forgotten.
+      </div>`;
+
+  if (!wornCostumes.length) {
+    html += `<div style="padding:20px;background:rgba(10,24,12,0.4);border:1px dashed var(--border);border-radius:14px;text-align:center;">
+      <div style="font-size:24px;margin-bottom:8px;">🎒</div>
+      <div style="font-size:13px;color:var(--text-dim);">No closet costumes were assigned to this con's packing plan.</div>
+    </div>`;
+  } else {
+    wornCostumes.forEach(costume => {
+      const pieces = costume.pieces || [];
+      html += `<div style="margin-bottom:16px;padding:14px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-radius:14px;">
+        <div style="font-size:14px;font-weight:800;color:var(--cream);margin-bottom:${pieces.length ? '12px' : '0'};">👗 ${costume.name}</div>`;
+
+      if (!pieces.length) {
+        html += `<div style="font-size:12px;color:var(--text-dim);font-style:italic;">No pieces tracked for this costume.</div>`;
+      } else {
+        pieces.forEach(piece => {
+          html += `<div style="margin-bottom:8px;padding:10px 0;border-bottom:1px solid rgba(100,140,100,0.08);">
+            <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">${piece.name}${piece.storage ? `<span style="font-size:11px;color:var(--text-dim);font-weight:600;"> · ${piece.storage}</span>` : ''}</div>
+            <div style="display:flex;gap:6px;">
+              ${conditionBtn(costume.id, piece.id, 'good',   'Good',   '✓',  '#8fbc8f', 'rgba(143,188,143,.2)')}
+              ${conditionBtn(costume.id, piece.id, 'wash',   'Wash',   '🧺', '#c9a84c', 'rgba(201,168,76,.2)')}
+              ${conditionBtn(costume.id, piece.id, 'repair', 'Repair', '🔧', '#e08888', 'rgba(220,100,80,.2)')}
+            </div>
+          </div>`;
+        });
+      }
+      html += `</div>`;
+    });
+  }
+
+  html += `<div style="margin-top:24px;display:flex;gap:10px;">
+    <button onclick="completeUnpack('${(_unpackConId||'').replace(/'/g,"\\'")}');"
+      style="flex:1;padding:14px;background:rgba(143,188,143,.2);border:1px solid rgba(143,188,143,.45);color:var(--sage);border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">
+      🎉 All Done — Everything's Put Away!
+    </button>
+  </div>
+  </div>`;
+
+  el.innerHTML = html;
+}
+
+function setUnpackCondition(costumeId, pieceId, condition) {
+  const costume = (closet || []).find(c => c.id === costumeId);
+  if (!costume || !costume.pieces) return;
+  const piece = costume.pieces.find(p => p.id === pieceId);
+  if (!piece) return;
+  piece.condition = condition;
+  save();
+  renderUnpackPage();
+}
+
+function completeUnpack(conKey) {
+  try {
+    const dismissed = JSON.parse(localStorage.getItem('cf_dismissed_unpack') || '[]');
+    if (!dismissed.includes(conKey)) dismissed.push(conKey);
+    localStorage.setItem('cf_dismissed_unpack', JSON.stringify(dismissed));
+  } catch(_) {}
+  closeUnpackPage();
+}
+
 function setDayType(conId, dateStr, type) {
   const plan = _getPackPlan(conId);
   if (!plan.dayTypes) plan.dayTypes = {};
@@ -4852,7 +4975,8 @@ Object.assign(window, {
   updateVarBudget, deleteVarItem, deleteVarCat,
   deleteQuickPurchase,
   triggerConfirmationUpload, viewConfirmation, deleteConfirmation, closeConfirmView,
-  setDayType
+  setDayType,
+  openUnpackPage, closeUnpackPage, renderUnpackPage, setUnpackCondition, completeUnpack
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
