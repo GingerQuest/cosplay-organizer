@@ -325,7 +325,7 @@ body{background:#2d4a35;color:var(--text);font-family:'Nunito',sans-serif;font-s
 
 /* budget */
 .budget-summary{display:flex;gap:10px;margin-bottom:14px;}
-.budget-tile{flex:1;background:rgba(0,0,0,.2);border-radius:var(--r-sm);padding:12px;text-align:center;border:1px solid var(--border);}
+.budget-tile{flex:1;background:rgba(10,20,12,.75);border-radius:var(--r-sm);padding:12px;text-align:center;border:1px solid var(--border);}
 .budget-tile-val{font-size:20px;font-weight:900;}
 .budget-tile-val.gold{color:var(--gold);}
 .budget-tile-val.peach{color:var(--peach);}
@@ -567,14 +567,14 @@ select option{background:#1a2f1c;}
       <div id="unpackNudge"></div>
 
       <!-- Active Quests -->
-      <div class="home-sec-header section-header-row" id="hheader-quests" onclick="toggleHomeSection('quests')">
+      <div class="home-sec-header section-header-row collapsed" id="hheader-quests" onclick="toggleHomeSection('quests')">
         <div class="section-label sage" id="hlabel-quests" style="margin-bottom:0;transition:font-size .2s;">Active Quests</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;font-weight:700;color:var(--sage);" onclick="event.stopPropagation();showPage('quests')">See all →</div>
-          <span class="home-sec-chev" id="hchev-quests" style="color:var(--sage);transition:transform .2s;">▾</span>
+          <span class="home-sec-chev" id="hchev-quests" style="color:var(--sage);transition:transform .2s;transform:rotate(-90deg);">▾</span>
         </div>
       </div>
-      <div id="hsec-quests" style="display:block;">
+      <div id="hsec-quests" style="display:none;">
         <div id="homeQuestList"></div>
         <div id="homeEmpty" class="empty-state hidden">
           <span class="e-emoji">🧵</span>
@@ -583,41 +583,41 @@ select option{background:#1a2f1c;}
         </div>
       </div>
 
-      <!-- Cos-Plans -->
-      <div id="homeCosPlanSection">
-        <div class="home-sec-header section-header-row" id="hheader-cosplans" style="margin-top:8px;" onclick="toggleHomeSection('cosplans')">
-          <div class="section-label lavender" id="hlabel-cosplans" style="margin-bottom:0;color:var(--lavender);transition:font-size .2s;">✨ Cos-Plans</div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div style="font-size:12px;font-weight:700;color:var(--lavender);" onclick="event.stopPropagation();openAddCosPlanModal()">+ Add</div>
-            <span class="home-sec-chev" id="hchev-cosplans" style="color:var(--lavender);transition:transform .2s;">▾</span>
-          </div>
-        </div>
-        <div id="hsec-cosplans" style="display:block;">
-          <div id="homeCosPlanList"></div>
-        </div>
-      </div>
-
       <!-- Repairs & Care -->
       <div id="homeRepairsSection" class="hidden">
-        <div class="home-sec-header section-header-row" id="hheader-repairs" style="margin-top:8px;" onclick="toggleHomeSection('repairs')">
+        <div class="home-sec-header section-header-row collapsed" id="hheader-repairs" style="margin-top:8px;" onclick="toggleHomeSection('repairs')">
           <div class="section-label" id="hlabel-repairs" style="margin-bottom:0;color:#e88;transition:font-size .2s;">🔧 Repairs & Care</div>
-          <span class="home-sec-chev" id="hchev-repairs" style="color:#e88;transition:transform .2s;">▾</span>
+          <span class="home-sec-chev" id="hchev-repairs" style="color:#e88;transition:transform .2s;transform:rotate(-90deg);">▾</span>
         </div>
-        <div id="hsec-repairs" style="display:block;">
+        <div id="hsec-repairs" style="display:none;">
           <div id="homeRepairsList" style="padding:0 16px 8px;"></div>
         </div>
       </div>
 
       <!-- Upcoming Events -->
-      <div class="home-sec-header section-header-row" id="hheader-events" style="margin-top:8px;" onclick="toggleHomeSection('events')">
+      <div class="home-sec-header section-header-row collapsed" id="hheader-events" style="margin-top:8px;" onclick="toggleHomeSection('events')">
         <div class="section-label sky" id="hlabel-events" style="margin-bottom:0;color:var(--sky);transition:font-size .2s;">📅 Coming Up</div>
         <div style="display:flex;align-items:center;gap:8px;">
           <div style="font-size:12px;font-weight:700;color:var(--sky);" onclick="event.stopPropagation();showPage('calendar')">See all →</div>
-          <span class="home-sec-chev" id="hchev-events" style="color:var(--sky);transition:transform .2s;">▾</span>
+          <span class="home-sec-chev" id="hchev-events" style="color:var(--sky);transition:transform .2s;transform:rotate(-90deg);">▾</span>
         </div>
       </div>
-      <div id="hsec-events" style="display:block;">
+      <div id="hsec-events" style="display:none;">
         <div id="homeEventPreview" style="padding:0 16px 8px;"></div>
+      </div>
+
+      <!-- Cos-Plans (bottom) -->
+      <div id="homeCosPlanSection">
+        <div class="home-sec-header section-header-row collapsed" id="hheader-cosplans" style="margin-top:8px;" onclick="toggleHomeSection('cosplans')">
+          <div class="section-label lavender" id="hlabel-cosplans" style="margin-bottom:0;color:var(--lavender);transition:font-size .2s;">✨ Cos-Plans</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div style="font-size:12px;font-weight:700;color:var(--lavender);" onclick="event.stopPropagation();openAddCosPlanModal()">+ Add</div>
+            <span class="home-sec-chev" id="hchev-cosplans" style="color:var(--lavender);transition:transform .2s;transform:rotate(-90deg);">▾</span>
+          </div>
+        </div>
+        <div id="hsec-cosplans" style="display:none;">
+          <div id="homeCosPlanList"></div>
+        </div>
       </div>
     </div>
 
@@ -3435,7 +3435,7 @@ function openFabChoice() {
 }
 
 // ── HOME SECTION TOGGLE ───────────────────────────────────────
-const _homeSectionState = { quests: true, cosplans: true, repairs: true, events: true };
+const _homeSectionState = { quests: false, cosplans: false, repairs: false, events: false };
 function toggleHomeSection(section) {
   _homeSectionState[section] = !_homeSectionState[section];
   const expanded = _homeSectionState[section];
@@ -4395,6 +4395,7 @@ renderCalendar();
 // ── CON BUDGET PAGE ───────────────────────────────────────────
 let _budgetConId  = null;
 let _budgetSource = 'home';
+let _qpFormOpen   = false;
 
 function openConBudgetPage(conId, source) {
   _budgetConId  = conId;
@@ -4461,6 +4462,33 @@ function deleteConExpense(conId, expId) {
   _renderConBudgetPage();
 }
 
+function toggleQPForm() {
+  _qpFormOpen = !_qpFormOpen;
+  _renderConBudgetPage();
+  if (_qpFormOpen) setTimeout(() => { const el = document.getElementById('qp-amount'); if (el) el.focus(); }, 50);
+}
+
+function submitQPForm(conId) {
+  const amount = parseFloat(document.getElementById('qp-amount')?.value) || 0;
+  const note   = document.getElementById('qp-note')?.value.trim() || '';
+  if (!amount) return;
+  const idx = conventions.findIndex(c => c.id === conId);
+  if (idx === -1) return;
+  if (!conventions[idx].quickPurchases) conventions[idx].quickPurchases = [];
+  conventions[idx].quickPurchases.unshift({ id: uid(), amount, note, ts: Date.now() });
+  _qpFormOpen = false;
+  save();
+  _renderConBudgetPage();
+}
+
+function deleteQuickPurchase(conId, purchaseId) {
+  const idx = conventions.findIndex(c => c.id === conId);
+  if (idx === -1) return;
+  conventions[idx].quickPurchases = (conventions[idx].quickPurchases||[]).filter(p => p.id !== purchaseId);
+  save();
+  _renderConBudgetPage();
+}
+
 function _renderConBudgetPage() {
   const con = (conventions||[]).find(c => c.id === _budgetConId);
   const wrap = document.getElementById('con-budget-content');
@@ -4471,8 +4499,10 @@ function _renderConBudgetPage() {
   const dateRange = con.start === con.end || !con.end ? fmtDate(con.start) : fmtDate(con.start) + ' – ' + fmtDate(con.end);
 
   const expenses = con.conExpenses || [];
+  const quickPurchases = con.quickPurchases || [];
+  const qpTotal       = quickPurchases.reduce((a,p)=>a+(p.amount||0),0);
   const totalBudgeted = expenses.reduce((a,e)=>a+(e.budgeted||0),0);
-  const totalSpent    = expenses.reduce((a,e)=>a+(e.actual||0),0);
+  const totalSpent    = expenses.reduce((a,e)=>a+(e.actual||0),0) + qpTotal;
   const remaining     = totalBudgeted - totalSpent;
   const hasBudget     = totalBudgeted > 0;
   const existLabels   = expenses.map(e=>e.label);
@@ -4481,16 +4511,16 @@ function _renderConBudgetPage() {
   const availPresets = CON_EXPENSE_PRESETS.filter(p => !existLabels.includes(p.label));
 
   let html = `
-    <div style="margin-bottom:16px;padding:16px;background:rgba(0,0,0,.25);border-radius:var(--r);border:1px solid rgba(212,168,85,.2);">
+    <div style="margin-bottom:16px;padding:16px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(212,168,85,.25);">
       <div style="font-family:'Lora',serif;font-size:18px;font-weight:700;color:var(--cream);margin-bottom:4px;">${con.name}</div>
       <div style="font-size:13px;font-weight:600;color:var(--text-soft);">📅 ${dateRange}${con.location?' · 📍'+con.location:''}</div>
     </div>`;
 
-  // Summary tiles (always show)
+  // Summary tiles — order: Budgeted → Remaining → Spent
   html += `<div class="budget-summary" style="margin-bottom:14px;">
-    <div class="budget-tile"><div class="budget-tile-val gold">${fmt(totalSpent)}</div><div class="budget-tile-label">Spent</div></div>
     <div class="budget-tile"><div class="budget-tile-val peach">${fmt(totalBudgeted)}</div><div class="budget-tile-label">Budgeted</div></div>
     <div class="budget-tile"><div class="budget-tile-val ${remaining<0?'rose':'green'}">${fmt(Math.abs(remaining))}</div><div class="budget-tile-label">${remaining<0?'Over':'Remaining'}</div></div>
+    <div class="budget-tile"><div class="budget-tile-val gold">${fmt(totalSpent)}</div><div class="budget-tile-label">Spent</div></div>
   </div>`;
 
   // Overall progress bar
@@ -4503,6 +4533,25 @@ function _renderConBudgetPage() {
     </div>`;
   }
 
+  // Quick Purchase button + inline form
+  html += `<div style="margin-bottom:14px;">
+    <button onclick="toggleQPForm()" style="width:100%;padding:10px;background:rgba(100,160,80,.12);border:1.5px dashed rgba(100,160,80,.35);border-radius:var(--r-sm);color:var(--sage);font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">⚡ Quick Add Purchase</button>`;
+  if (_qpFormOpen) {
+    html += `<div style="margin-top:10px;padding:14px;background:rgba(10,20,12,.82);border:1px solid rgba(100,160,80,.25);border-radius:var(--r-sm);">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">Quick Purchase</div>
+      <div style="display:flex;align-items:center;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+        <span style="color:var(--text-dim);font-size:14px;margin-right:4px;">$</span>
+        <input id="qp-amount" type="number" min="0" step="0.01" placeholder="0.00" style="background:transparent;border:none;color:var(--gold);font-size:15px;font-weight:700;width:100%;outline:none;" />
+      </div>
+      <input id="qp-note" type="text" placeholder="What did you buy? (optional)" style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--cream);font-size:13px;outline:none;margin-bottom:10px;" />
+      <div style="display:flex;gap:8px;">
+        <button onclick="submitQPForm('${con.id}')" style="flex:1;padding:9px;background:var(--moss);border:none;border-radius:var(--r-sm);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">Add ✿</button>
+        <button onclick="toggleQPForm()" style="padding:9px 14px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-soft);font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+
   // Add category chips
   html += `<div style="margin-bottom:14px;">
     <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;">Quick Add Category</div>
@@ -4514,41 +4563,60 @@ function _renderConBudgetPage() {
   html += `</div></div>`;
 
   // Expense line items
-  if (expenses.length === 0) {
+  if (expenses.length === 0 && quickPurchases.length === 0) {
     html += `<div style="text-align:center;padding:32px 20px;">
       <div style="font-size:36px;margin-bottom:10px;">💸</div>
       <div style="font-size:14px;font-weight:700;color:var(--cream);margin-bottom:6px;">No expenses yet</div>
-      <div style="font-size:13px;color:var(--text-dim);">Tap a category above to start tracking your con costs.</div>
+      <div style="font-size:13px;color:var(--text-dim);">Use Quick Add Purchase or tap a category above to start tracking.</div>
     </div>`;
   } else {
-    html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">Expense Breakdown</div>`;
-    expenses.forEach(exp => {
-      const bpct = exp.budgeted ? Math.min(100, Math.round((exp.actual||0)/exp.budgeted*100)) : 0;
-      const bover = exp.budgeted && (exp.actual||0) > exp.budgeted;
-      html += `<div style="margin-bottom:10px;padding:14px;background:rgba(0,0,0,.2);border-radius:var(--r);border:1px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-          <input value="${exp.label.replace(/"/g,'&quot;')}" onchange="updateConExpenseLabel('${con.id}','${exp.id}',this.value)" style="flex:1;background:transparent;border:none;font-size:14px;font-weight:700;color:var(--cream);outline:none;min-width:0;" />
-          <button onclick="deleteConExpense('${con.id}','${exp.id}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:${exp.budgeted?'10px':'0'};">
-          <div>
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px;">Budgeted</div>
-            <div style="display:flex;align-items:center;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
-              <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
-              <input type="number" min="0" value="${exp.budgeted||''}" placeholder="0" onchange="updateConExpense('${con.id}','${exp.id}','budgeted',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:14px;font-weight:700;width:100%;outline:none;" />
+    if (expenses.length > 0) {
+      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">Expense Breakdown</div>`;
+      expenses.forEach(exp => {
+        const bpct = exp.budgeted ? Math.min(100, Math.round((exp.actual||0)/exp.budgeted*100)) : 0;
+        const bover = exp.budgeted && (exp.actual||0) > exp.budgeted;
+        html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid var(--border);">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <input value="${exp.label.replace(/"/g,'&quot;')}" onchange="updateConExpenseLabel('${con.id}','${exp.id}',this.value)" style="flex:1;background:transparent;border:none;font-size:14px;font-weight:700;color:var(--cream);outline:none;min-width:0;" />
+            <button onclick="deleteConExpense('${con.id}','${exp.id}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:${exp.budgeted?'10px':'0'};">
+            <div>
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px;">Budgeted</div>
+              <div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
+                <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
+                <input type="number" min="0" value="${exp.budgeted||''}" placeholder="0" onchange="updateConExpense('${con.id}','${exp.id}','budgeted',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:14px;font-weight:700;width:100%;outline:none;" />
+              </div>
+            </div>
+            <div>
+              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px;">Actual Spent</div>
+              <div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
+                <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
+                <input type="number" min="0" value="${exp.actual||''}" placeholder="0" onchange="updateConExpense('${con.id}','${exp.id}','actual',this.value)" style="background:transparent;border:none;color:var(--gold);font-size:14px;font-weight:700;width:100%;outline:none;" />
+              </div>
             </div>
           </div>
-          <div>
-            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px;">Actual Spent</div>
-            <div style="display:flex;align-items:center;background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
-              <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
-              <input type="number" min="0" value="${exp.actual||''}" placeholder="0" onchange="updateConExpense('${con.id}','${exp.id}','actual',this.value)" style="background:transparent;border:none;color:var(--gold);font-size:14px;font-weight:700;width:100%;outline:none;" />
-            </div>
+          ${exp.budgeted?`<div class="budget-bar"><div class="budget-bar-fill ${bover?'over':''}" style="width:${bpct}%"></div></div>`:''}
+        </div>`;
+      });
+    }
+    // Quick purchases list
+    if (quickPurchases.length > 0) {
+      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;margin-top:${expenses.length?'16px':'0'};">⚡ Quick Purchases — Sort Later</div>`;
+      html += `<div style="background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(100,160,80,.2);overflow:hidden;margin-bottom:10px;">`;
+      quickPurchases.forEach((p,i) => {
+        const d = new Date(p.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;${i>0?'border-top:1px solid rgba(255,255,255,.05);':''}">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.note||'Uncategorized'}</div>
+            <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">${d}</div>
           </div>
-        </div>
-        ${exp.budgeted?`<div class="budget-bar"><div class="budget-bar-fill ${bover?'over':''}" style="width:${bpct}%"></div></div>`:''}
-      </div>`;
-    });
+          <div style="font-size:15px;font-weight:900;color:var(--gold);flex-shrink:0;">$${(p.amount||0).toFixed(2)}</div>
+          <button onclick="deleteQuickPurchase('${con.id}','${p.id}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 2px;flex-shrink:0;">×</button>
+        </div>`;
+      });
+      html += `</div>`;
+    }
   }
 
   wrap.innerHTML = html;
@@ -4591,7 +4659,8 @@ Object.assign(window, {
   dismissUnpackNudge,
   openPackingPage, closePackingPage, renderPackingPage, savePackingSlot, togglePackItem,
   openConBudgetPage, closeConBudgetPage,
-  addConExpense, updateConExpense, updateConExpenseLabel, deleteConExpense
+  addConExpense, updateConExpense, updateConExpenseLabel, deleteConExpense,
+  toggleQPForm, submitQPForm, deleteQuickPurchase
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
