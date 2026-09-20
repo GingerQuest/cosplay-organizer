@@ -4393,9 +4393,10 @@ renderHome();
 renderCalendar();
 
 // ── CON BUDGET PAGE ───────────────────────────────────────────
-let _budgetConId  = null;
-let _budgetSource = 'home';
-let _qpFormOpen   = false;
+let _budgetConId    = null;
+let _budgetSource   = 'home';
+let _addExpenseOpen = false;
+let _addExpenseCat  = null;
 
 function openConBudgetPage(conId, source) {
   _budgetConId  = conId;
@@ -4411,72 +4412,121 @@ function closeConBudgetPage() {
   else showPage('home');
 }
 
-// ── CON BUDGET — TRAVEL / EVENT EXPENSE TRACKER ───────────────
+// ── CON BUDGET — REDESIGNED EXPENSE TRACKER ───────────────────
 
-const CON_EXPENSE_PRESETS = [
-  { label:'🏨 Hotel',       key:'hotel' },
-  { label:'🎫 Badge',       key:'badge' },
-  { label:'✈️ Travel',      key:'travel' },
-  { label:'🎨 Artist Alley',key:'aa' },
-  { label:'🍜 Food',        key:'food' },
+const FIXED_CAT_DEFS = [
+  { type:'hotel', label:'🏨 Hotel' },
+  { type:'badge', label:'🎫 Badge' },
+];
+const VAR_CAT_DEFS = [
+  { type:'travel',    label:'✈️ Travel'        },
+  { type:'food',      label:'🍜 Food'          },
+  { type:'aa',        label:'🎨 Artist Alley'  },
+  { type:'expo',      label:'🛍️ Expo Hall'     },
+  { type:'entertain', label:'🎮 Entertainment' },
+  { type:'other',     label:'🎲 Other'         },
 ];
 
-function addConExpense(conId, label) {
+function openAddExpense() {
+  _addExpenseOpen = !_addExpenseOpen;
+  _addExpenseCat  = null;
+  _renderConBudgetPage();
+  if (_addExpenseOpen) setTimeout(() => {
+    const el = document.getElementById('ae-cat-grid');
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 50);
+}
+
+function selectExpenseCat(type, label, isFixed, el) {
+  _addExpenseCat = { type, label, isFixed };
+  document.querySelectorAll('.ae-cat-btn').forEach(b => {
+    b.style.background  = 'rgba(0,0,0,.25)';
+    b.style.borderColor = 'rgba(255,255,255,.12)';
+    b.style.color       = 'var(--text-soft)';
+  });
+  el.style.background  = isFixed ? 'rgba(212,168,85,.18)' : 'rgba(100,160,80,.18)';
+  el.style.borderColor = isFixed ? 'rgba(212,168,85,.5)'  : 'rgba(100,160,80,.5)';
+  el.style.color       = isFixed ? 'var(--gold)' : 'var(--sage)';
+  const inp  = document.getElementById('ae-input-area');
+  const desc = document.getElementById('ae-desc-wrap');
+  const lbl  = document.getElementById('ae-amount-label');
+  if (inp)  { inp.style.display  = 'block'; }
+  if (desc) { desc.style.display = isFixed ? 'none' : 'block'; }
+  if (lbl)  { lbl.textContent    = isFixed ? 'Amount Paid' : 'Amount'; }
+  setTimeout(() => { const a = document.getElementById('ae-amount'); if (a) a.focus(); }, 50);
+}
+
+function submitAddExpense(conId) {
+  if (!_addExpenseCat) return;
+  const amount = parseFloat(document.getElementById('ae-amount')?.value) || 0;
+  const desc   = document.getElementById('ae-desc')?.value.trim() || '';
+  if (!amount) return;
   const idx = conventions.findIndex(c => c.id === conId);
   if (idx === -1) return;
-  if (!conventions[idx].conExpenses) conventions[idx].conExpenses = [];
-  // Don't add duplicate preset (by label)
-  if (conventions[idx].conExpenses.some(e => e.label === label)) {
-    // Just focus the existing one visually — re-render will handle it
+  const con = conventions[idx];
+  if (_addExpenseCat.isFixed) {
+    if (!con.fixedExpenses) con.fixedExpenses = [];
+    const existing = con.fixedExpenses.find(e => e.type === _addExpenseCat.type);
+    if (existing) { existing.paid = amount; }
+    else { con.fixedExpenses.push({ id: uid(), type: _addExpenseCat.type, label: _addExpenseCat.label, paid: amount }); }
   } else {
-    conventions[idx].conExpenses.push({ id: uid(), label, budgeted: 0, actual: 0 });
+    if (!con.varExpenses) con.varExpenses = [];
+    let cat = con.varExpenses.find(e => e.type === _addExpenseCat.type);
+    if (!cat) {
+      cat = { id: uid(), type: _addExpenseCat.type, label: _addExpenseCat.label, budget: 0, items: [] };
+      con.varExpenses.push(cat);
+    }
+    cat.items.push({ id: uid(), amount, desc, ts: Date.now() });
+  }
+  _addExpenseOpen = false;
+  _addExpenseCat  = null;
+  save();
+  _renderConBudgetPage();
+}
+
+function updateFixedExpense(conId, type, value) {
+  const idx = conventions.findIndex(c => c.id === conId);
+  if (idx === -1) return;
+  const exp = (conventions[idx].fixedExpenses||[]).find(e => e.type === type);
+  if (!exp) return;
+  exp.paid = parseFloat(value) || 0;
+  save();
+}
+
+function deleteFixedExpense(conId, type) {
+  const idx = conventions.findIndex(c => c.id === conId);
+  if (idx === -1) return;
+  conventions[idx].fixedExpenses = (conventions[idx].fixedExpenses||[]).filter(e => e.type !== type);
+  save();
+  _renderConBudgetPage();
+}
+
+function updateVarBudget(conId, catType, value) {
+  const idx = conventions.findIndex(c => c.id === conId);
+  if (idx === -1) return;
+  const cat = (conventions[idx].varExpenses||[]).find(e => e.type === catType);
+  if (!cat) return;
+  cat.budget = parseFloat(value) || 0;
+  save();
+}
+
+function deleteVarItem(conId, catType, itemId) {
+  const idx = conventions.findIndex(c => c.id === conId);
+  if (idx === -1) return;
+  const cat = (conventions[idx].varExpenses||[]).find(e => e.type === catType);
+  if (!cat) return;
+  cat.items = cat.items.filter(i => i.id !== itemId);
+  if (cat.items.length === 0 && !cat.budget) {
+    conventions[idx].varExpenses = conventions[idx].varExpenses.filter(e => e.type !== catType);
   }
   save();
   _renderConBudgetPage();
 }
 
-function updateConExpense(conId, expId, field, value) {
+function deleteVarCat(conId, catType) {
   const idx = conventions.findIndex(c => c.id === conId);
   if (idx === -1) return;
-  const exp = (conventions[idx].conExpenses||[]).find(e => e.id === expId);
-  if (!exp) return;
-  exp[field] = parseFloat(value) || 0;
-  save();
-  _renderConBudgetPage();
-}
-
-function updateConExpenseLabel(conId, expId, value) {
-  const idx = conventions.findIndex(c => c.id === conId);
-  if (idx === -1) return;
-  const exp = (conventions[idx].conExpenses||[]).find(e => e.id === expId);
-  if (!exp) return;
-  exp.label = value;
-  save();
-}
-
-function deleteConExpense(conId, expId) {
-  const idx = conventions.findIndex(c => c.id === conId);
-  if (idx === -1) return;
-  conventions[idx].conExpenses = (conventions[idx].conExpenses||[]).filter(e => e.id !== expId);
-  save();
-  _renderConBudgetPage();
-}
-
-function toggleQPForm() {
-  _qpFormOpen = !_qpFormOpen;
-  _renderConBudgetPage();
-  if (_qpFormOpen) setTimeout(() => { const el = document.getElementById('qp-amount'); if (el) el.focus(); }, 50);
-}
-
-function submitQPForm(conId) {
-  const amount = parseFloat(document.getElementById('qp-amount')?.value) || 0;
-  const note   = document.getElementById('qp-note')?.value.trim() || '';
-  if (!amount) return;
-  const idx = conventions.findIndex(c => c.id === conId);
-  if (idx === -1) return;
-  if (!conventions[idx].quickPurchases) conventions[idx].quickPurchases = [];
-  conventions[idx].quickPurchases.unshift({ id: uid(), amount, note, ts: Date.now() });
-  _qpFormOpen = false;
+  conventions[idx].varExpenses = (conventions[idx].varExpenses||[]).filter(e => e.type !== catType);
   save();
   _renderConBudgetPage();
 }
@@ -4490,7 +4540,7 @@ function deleteQuickPurchase(conId, purchaseId) {
 }
 
 function _renderConBudgetPage() {
-  const con = (conventions||[]).find(c => c.id === _budgetConId);
+  const con  = (conventions||[]).find(c => c.id === _budgetConId);
   const wrap = document.getElementById('con-budget-content');
   if (!con || !wrap) return;
 
@@ -4498,17 +4548,18 @@ function _renderConBudgetPage() {
   const fmtDate = d => d ? new Date(d+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
   const dateRange = con.start === con.end || !con.end ? fmtDate(con.start) : fmtDate(con.start) + ' – ' + fmtDate(con.end);
 
-  const expenses = con.conExpenses || [];
+  const fixedExpenses = con.fixedExpenses   || [];
+  const varExpenses   = con.varExpenses     || [];
   const quickPurchases = con.quickPurchases || [];
-  const qpTotal       = quickPurchases.reduce((a,p)=>a+(p.amount||0),0);
-  const totalBudgeted = expenses.reduce((a,e)=>a+(e.budgeted||0),0);
-  const totalSpent    = expenses.reduce((a,e)=>a+(e.actual||0),0) + qpTotal;
-  const remaining     = totalBudgeted - totalSpent;
-  const hasBudget     = totalBudgeted > 0;
-  const existLabels   = expenses.map(e=>e.label);
 
-  // Which preset chips to show (ones not yet added)
-  const availPresets = CON_EXPENSE_PRESETS.filter(p => !existLabels.includes(p.label));
+  const fixedTotal = fixedExpenses.reduce((a,e) => a + (e.paid||0), 0);
+  const varSpent   = varExpenses.reduce((a,cat) => a + cat.items.reduce((b,i) => b + (i.amount||0), 0), 0);
+  const varBudget  = varExpenses.reduce((a,cat) => a + (cat.budget||0), 0);
+  const qpTotal    = quickPurchases.reduce((a,p) => a + (p.amount||0), 0);
+
+  const totalBudgeted = fixedTotal + varBudget;
+  const totalSpent    = fixedTotal + varSpent + qpTotal;
+  const remaining     = totalBudgeted - totalSpent;
 
   let html = `
     <div style="margin-bottom:16px;padding:16px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(212,168,85,.25);">
@@ -4516,102 +4567,144 @@ function _renderConBudgetPage() {
       <div style="font-size:13px;font-weight:600;color:var(--text-soft);">📅 ${dateRange}${con.location?' · 📍'+con.location:''}</div>
     </div>`;
 
-  // Summary tiles — order: Budgeted → Remaining → Spent
+  // Summary tiles — Budgeted → Remaining → Spent
   html += `<div class="budget-summary" style="margin-bottom:14px;">
     <div class="budget-tile"><div class="budget-tile-val peach">${fmt(totalBudgeted)}</div><div class="budget-tile-label">Budgeted</div></div>
     <div class="budget-tile"><div class="budget-tile-val ${remaining<0?'rose':'green'}">${fmt(Math.abs(remaining))}</div><div class="budget-tile-label">${remaining<0?'Over':'Remaining'}</div></div>
     <div class="budget-tile"><div class="budget-tile-val gold">${fmt(totalSpent)}</div><div class="budget-tile-label">Spent</div></div>
   </div>`;
 
-  // Overall progress bar
-  if (hasBudget) {
-    const pct = Math.min(100, Math.round(totalSpent/totalBudgeted*100));
-    const over = totalSpent > totalBudgeted;
+  // Variable budget progress bar
+  if (varBudget > 0) {
+    const pct  = Math.min(100, Math.round(varSpent / varBudget * 100));
+    const over = varSpent > varBudget;
     html += `<div class="budget-bar-wrap" style="margin-bottom:18px;">
-      <div class="budget-bar-label"><span>Total used</span><span>${pct}%</span></div>
+      <div class="budget-bar-label"><span>Variable budget used</span><span>${pct}%</span></div>
       <div class="budget-bar"><div class="budget-bar-fill ${over?'over':''}" style="width:${pct}%"></div></div>
     </div>`;
   }
 
-  // Quick Purchase button + inline form
-  html += `<div style="margin-bottom:14px;">
-    <button onclick="toggleQPForm()" style="width:100%;padding:10px;background:rgba(100,160,80,.12);border:1.5px dashed rgba(100,160,80,.35);border-radius:var(--r-sm);color:var(--sage);font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">⚡ Quick Add Purchase</button>`;
-  if (_qpFormOpen) {
-    html += `<div style="margin-top:10px;padding:14px;background:rgba(10,20,12,.82);border:1px solid rgba(100,160,80,.25);border-radius:var(--r-sm);">
-      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">Quick Purchase</div>
-      <div style="display:flex;align-items:center;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:8px;">
-        <span style="color:var(--text-dim);font-size:14px;margin-right:4px;">$</span>
-        <input id="qp-amount" type="number" min="0" step="0.01" placeholder="0.00" style="background:transparent;border:none;color:var(--gold);font-size:15px;font-weight:700;width:100%;outline:none;" />
-      </div>
-      <input id="qp-note" type="text" placeholder="What did you buy? (optional)" style="width:100%;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--cream);font-size:13px;outline:none;margin-bottom:10px;" />
-      <div style="display:flex;gap:8px;">
-        <button onclick="submitQPForm('${con.id}')" style="flex:1;padding:9px;background:var(--moss);border:none;border-radius:var(--r-sm);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">Add ✿</button>
-        <button onclick="toggleQPForm()" style="padding:9px 14px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-soft);font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+  // ── Add Expense button + inline form ──────────────────────────
+  html += `<div style="margin-bottom:16px;">
+    <button onclick="openAddExpense()" style="width:100%;padding:10px;background:rgba(100,160,80,.12);border:1.5px dashed rgba(100,160,80,.35);border-radius:var(--r-sm);color:var(--sage);font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">＋ Add Expense</button>`;
+
+  if (_addExpenseOpen) {
+    html += `<div style="margin-top:10px;padding:16px;background:rgba(10,20,12,.82);border:1px solid rgba(100,160,80,.25);border-radius:var(--r-sm);">
+      <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:12px;">Select Category</div>
+      <div id="ae-cat-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;">`;
+    FIXED_CAT_DEFS.forEach(f => {
+      html += `<button class="ae-cat-btn" onclick="selectExpenseCat('${f.type}','${f.label}',true,this)" style="padding:9px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text-soft);font-size:12px;font-weight:700;cursor:pointer;text-align:center;">${f.label}</button>`;
+    });
+    VAR_CAT_DEFS.forEach(v => {
+      html += `<button class="ae-cat-btn" onclick="selectExpenseCat('${v.type}','${v.label}',false,this)" style="padding:9px 8px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text-soft);font-size:12px;font-weight:700;cursor:pointer;text-align:center;">${v.label}</button>`;
+    });
+    html += `</div>
+      <div id="ae-input-area" style="display:none;">
+        <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:5px;" id="ae-amount-label">Amount</div>
+        <div style="display:flex;align-items:center;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;margin-bottom:8px;">
+          <span style="color:var(--text-dim);font-size:14px;margin-right:4px;">$</span>
+          <input id="ae-amount" type="number" min="0" step="0.01" placeholder="0.00" style="background:transparent;border:none;color:var(--gold);font-size:15px;font-weight:700;width:100%;outline:none;" />
+        </div>
+        <div id="ae-desc-wrap" style="display:none;">
+          <input id="ae-desc" type="text" placeholder="What's this for?" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--cream);font-size:13px;outline:none;margin-bottom:8px;" />
+        </div>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <button onclick="submitAddExpense('${con.id}')" style="flex:1;padding:9px;background:var(--moss);border:none;border-radius:var(--r-sm);color:#fff;font-size:13px;font-weight:800;cursor:pointer;">Add ✿</button>
+          <button onclick="openAddExpense()" style="padding:9px 14px;background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:var(--r-sm);color:var(--text-soft);font-size:13px;font-weight:700;cursor:pointer;">Cancel</button>
+        </div>
       </div>
     </div>`;
   }
   html += `</div>`;
 
-  // Add category chips
-  html += `<div style="margin-bottom:14px;">
-    <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;">Quick Add Category</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">`;
-  availPresets.forEach(p => {
-    html += `<button onclick="addConExpense('${con.id}','${p.label}')" style="background:rgba(212,168,85,.1);border:1px solid rgba(212,168,85,.3);color:var(--gold);border-radius:20px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;">${p.label}</button>`;
-  });
-  html += `<button onclick="addConExpense('${con.id}','✏️ Custom')" style="background:rgba(160,154,200,.1);border:1px solid rgba(160,154,200,.3);color:var(--lavender);border-radius:20px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer;">➕ Custom</button>`;
-  html += `</div></div>`;
+  const hasAny = fixedExpenses.length > 0 || varExpenses.length > 0 || quickPurchases.length > 0;
 
-  // Expense line items
-  if (expenses.length === 0 && quickPurchases.length === 0) {
+  if (!hasAny) {
     html += `<div style="text-align:center;padding:32px 20px;">
       <div style="font-size:36px;margin-bottom:10px;">💸</div>
       <div style="font-size:14px;font-weight:700;color:var(--cream);margin-bottom:6px;">No expenses yet</div>
-      <div style="font-size:13px;color:var(--text-dim);">Use Quick Add Purchase or tap a category above to start tracking.</div>
+      <div style="font-size:13px;color:var(--text-dim);">Tap ＋ Add Expense to start tracking your convention budget.</div>
     </div>`;
   } else {
-    if (expenses.length > 0) {
-      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;">Expense Breakdown</div>`;
-      expenses.forEach(exp => {
-        const bpct = exp.budgeted ? Math.min(100, Math.round((exp.actual||0)/exp.budgeted*100)) : 0;
-        const bover = exp.budgeted && (exp.actual||0) > exp.budgeted;
-        html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid var(--border);">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-            <input value="${exp.label.replace(/"/g,'&quot;')}" onchange="updateConExpenseLabel('${con.id}','${exp.id}',this.value)" style="flex:1;background:transparent;border:none;font-size:14px;font-weight:700;color:var(--cream);outline:none;min-width:0;" />
-            <button onclick="deleteConExpense('${con.id}','${exp.id}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;flex-shrink:0;">×</button>
+
+    // ── Fixed expenses (Hotel, Badge) ────────────────────────────
+    if (fixedExpenses.length > 0) {
+      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;">📌 Set Costs</div>`;
+      fixedExpenses.forEach(exp => {
+        html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(212,168,85,.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:14px;font-weight:800;color:var(--cream);">${exp.label}</div>
+            <button onclick="deleteFixedExpense('${con.id}','${exp.type}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;">×</button>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:${exp.budgeted?'10px':'0'};">
-            <div>
-              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px;">Budgeted</div>
-              <div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
-                <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
-                <input type="number" min="0" value="${exp.budgeted||''}" placeholder="0" onchange="updateConExpense('${con.id}','${exp.id}','budgeted',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:14px;font-weight:700;width:100%;outline:none;" />
-              </div>
-            </div>
-            <div>
-              <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px;">Actual Spent</div>
-              <div style="display:flex;align-items:center;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
-                <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
-                <input type="number" min="0" value="${exp.actual||''}" placeholder="0" onchange="updateConExpense('${con.id}','${exp.id}','actual',this.value)" style="background:transparent;border:none;color:var(--gold);font-size:14px;font-weight:700;width:100%;outline:none;" />
-              </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);white-space:nowrap;">Paid</div>
+            <div style="display:flex;align-items:center;flex:1;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:6px 10px;">
+              <span style="color:var(--text-dim);font-size:13px;margin-right:4px;">$</span>
+              <input type="number" min="0" value="${exp.paid||''}" placeholder="0.00" onchange="updateFixedExpense('${con.id}','${exp.type}',this.value)" style="background:transparent;border:none;color:var(--gold);font-size:14px;font-weight:700;width:100%;outline:none;" />
             </div>
           </div>
-          ${exp.budgeted?`<div class="budget-bar"><div class="budget-bar-fill ${bover?'over':''}" style="width:${bpct}%"></div></div>`:''}
         </div>`;
       });
     }
-    // Quick purchases list
+
+    // ── Variable expenses ────────────────────────────────────────
+    if (varExpenses.length > 0) {
+      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;${fixedExpenses.length?'margin-top:14px;':''}">💳 Variable Expenses</div>`;
+      varExpenses.forEach(cat => {
+        const catSpent  = cat.items.reduce((a,i) => a + (i.amount||0), 0);
+        const catBudget = cat.budget || 0;
+        const catOver   = catBudget > 0 && catSpent > catBudget;
+        const catPct    = catBudget > 0 ? Math.min(100, Math.round(catSpent / catBudget * 100)) : 0;
+        html += `<div style="margin-bottom:10px;padding:14px;background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(100,160,80,.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div style="font-size:14px;font-weight:800;color:var(--cream);">${cat.label}</div>
+            <button onclick="deleteVarCat('${con.id}','${cat.type}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 4px;">×</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:${catBudget||cat.items.length?'10px':'0'};">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--text-dim);white-space:nowrap;">Ceiling</div>
+            <div style="display:flex;align-items:center;flex:1;background:rgba(0,0,0,.35);border:1px solid var(--border);border-radius:8px;padding:5px 10px;">
+              <span style="color:var(--text-dim);font-size:12px;margin-right:4px;">$</span>
+              <input type="number" min="0" value="${catBudget||''}" placeholder="optional" onchange="updateVarBudget('${con.id}','${cat.type}',this.value)" style="background:transparent;border:none;color:var(--peach);font-size:13px;font-weight:700;width:100%;outline:none;" />
+            </div>
+          </div>`;
+        if (catBudget > 0) {
+          html += `<div class="budget-bar" style="margin-bottom:10px;"><div class="budget-bar-fill ${catOver?'over':''}" style="width:${catPct}%"></div></div>`;
+        }
+        if (cat.items.length > 0) {
+          html += `<div style="border-top:1px solid rgba(255,255,255,.06);padding-top:8px;">`;
+          cat.items.forEach((item, i) => {
+            const d = new Date(item.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+            html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;${i>0?'border-top:1px solid rgba(255,255,255,.04);':''}">
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.desc||'—'}</div>
+                <div style="font-size:11px;color:var(--text-dim);">${d}</div>
+              </div>
+              <div style="font-size:14px;font-weight:800;color:var(--gold);flex-shrink:0;">${fmt(item.amount)}</div>
+              <button onclick="deleteVarItem('${con.id}','${cat.type}','${item.id}')" style="background:none;border:none;color:var(--text-dim);font-size:15px;cursor:pointer;padding:0 2px;flex-shrink:0;">×</button>
+            </div>`;
+          });
+          html += `<div style="display:flex;justify-content:flex-end;padding-top:6px;border-top:1px solid rgba(255,255,255,.06);margin-top:4px;">
+            <div style="font-size:12px;font-weight:800;color:var(--sage);">Total: ${fmt(catSpent)}</div>
+          </div></div>`;
+        } else {
+          html += `<div style="font-size:12px;color:var(--text-dim);text-align:center;padding:6px 0;">No items yet</div>`;
+        }
+        html += `</div>`;
+      });
+    }
+
+    // ── Legacy quick purchases (display-only) ────────────────────
     if (quickPurchases.length > 0) {
-      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:10px;margin-top:${expenses.length?'16px':'0'};">⚡ Quick Purchases — Sort Later</div>`;
+      html += `<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);margin-bottom:8px;margin-top:14px;">⚡ Unsorted Purchases</div>`;
       html += `<div style="background:rgba(10,20,12,.82);border-radius:var(--r);border:1px solid rgba(100,160,80,.2);overflow:hidden;margin-bottom:10px;">`;
       quickPurchases.forEach((p,i) => {
         const d = new Date(p.ts).toLocaleDateString('en-US',{month:'short',day:'numeric'});
         html += `<div style="display:flex;align-items:center;gap:10px;padding:11px 14px;${i>0?'border-top:1px solid rgba(255,255,255,.05);':''}">
           <div style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.note||'Uncategorized'}</div>
-            <div style="font-size:11px;color:var(--text-dim);margin-top:1px;">${d}</div>
+            <div style="font-size:11px;color:var(--text-dim);">${d}</div>
           </div>
-          <div style="font-size:15px;font-weight:900;color:var(--gold);flex-shrink:0;">$${(p.amount||0).toFixed(2)}</div>
+          <div style="font-size:15px;font-weight:900;color:var(--gold);flex-shrink:0;">${fmt(p.amount)}</div>
           <button onclick="deleteQuickPurchase('${con.id}','${p.id}')" style="background:none;border:none;color:var(--text-dim);font-size:16px;cursor:pointer;padding:0 2px;flex-shrink:0;">×</button>
         </div>`;
       });
@@ -4659,8 +4752,10 @@ Object.assign(window, {
   dismissUnpackNudge,
   openPackingPage, closePackingPage, renderPackingPage, savePackingSlot, togglePackItem,
   openConBudgetPage, closeConBudgetPage,
-  addConExpense, updateConExpense, updateConExpenseLabel, deleteConExpense,
-  toggleQPForm, submitQPForm, deleteQuickPurchase
+  openAddExpense, selectExpenseCat, submitAddExpense,
+  updateFixedExpense, deleteFixedExpense,
+  updateVarBudget, deleteVarItem, deleteVarCat,
+  deleteQuickPurchase
 });
 </script>
 <!-- Hidden file inputs for photo uploads -->
