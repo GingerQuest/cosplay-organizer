@@ -1266,20 +1266,24 @@ select option{background:#1a2f1c;}
 <!-- Forge Pro Gate -->
 <div class="modal-overlay" id="forgeProGateModal">
   <div class="modal" style="text-align:center;padding:28px 22px 30px;">
-    <div style="font-size:52px;line-height:1;margin-bottom:10px;">⚔️</div>
-    <div class="modal-title" style="font-size:20px;margin-bottom:8px;">Quest Limit Reached</div>
-    <div style="font-size:13px;color:var(--text-soft);line-height:1.65;margin-bottom:20px;">
-      Free Forge lets you track <strong style="color:var(--cream);">3 active quests</strong>.<br>
-      Upgrade to build without limits.
+    <div style="font-size:46px;line-height:1;margin-bottom:10px;" id="proGateIcon">⚔️</div>
+    <div class="modal-title" style="font-size:19px;margin-bottom:8px;" id="proGateTitle">This is a Forge Pro feature</div>
+    <div style="font-size:13px;color:var(--text-soft);line-height:1.65;margin-bottom:20px;" id="proGateMsg">
+      Upgrade to unlock this and all Pro features.
     </div>
     <div style="background:rgba(100,160,80,.07);border:1.5px solid rgba(100,160,80,.22);border-radius:16px;padding:16px 18px;margin-bottom:20px;text-align:left;">
       <div style="font-size:11px;font-weight:900;color:var(--sage);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">✦ Forge Pro includes</div>
       <div style="display:flex;flex-direction:column;gap:9px;">
         <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>⚔️</span><span><strong>Unlimited</strong> active quests</span></div>
-        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>🔔</span><span>Con &amp; deadline reminders</span></div>
-        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>📸</span><span>Unlimited photo uploads</span></div>
-        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>✨</span><span>Early access to new features</span></div>
+        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>🎒</span><span>Full con planning &amp; packing tools</span></div>
+        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>👗</span><span>Closet care &amp; piece tracking</span></div>
+        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>💰</span><span>Con budget tracker</span></div>
+        <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>☁️</span><span>Export &amp; backup your data</span></div>
       </div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;">
+      <div style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$2.99 / mo</div>
+      <div style="background:rgba(212,168,85,.18);border:1px solid rgba(212,168,85,.4);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$24.99 / yr <span style="font-weight:600;opacity:.75;">· save 30%</span></div>
     </div>
     <button onclick="upgradeForgePro()" style="width:100%;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px;letter-spacing:-.2px;">Upgrade to Forge Pro ⚔️</button>
     <button onclick="closeAllModals()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Maybe Later</button>
@@ -2124,6 +2128,7 @@ function showSignedIn(email) {
 
 // ── DATA EXPORT ───────────────────────────────────────────────
 function exportData() {
+  if (!isPro) { showForgeProGate('Export & Backup', 'Back up your Forge data anytime — a Forge Pro feature.', '☁️'); return; }
   const data = { cosplays, conventions, craftDays };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -2757,7 +2762,12 @@ function openModal(id){document.getElementById(id).classList.add('open');}
 function closeAllModals(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open')); editingId=null;}
 
 // ── FORGE PRO GATE ─────────────────────────────────────────────
-function showForgeProGate() { openModal('forgeProGateModal'); }
+function showForgeProGate(title, msg, icon) {
+  document.getElementById('proGateTitle').textContent = title || 'This is a Forge Pro feature';
+  document.getElementById('proGateMsg').textContent   = msg   || 'Upgrade to unlock this and all Pro features.';
+  document.getElementById('proGateIcon').textContent  = icon  || '⚔️';
+  openModal('forgeProGateModal');
+}
 function upgradeForgePro() {
   // TODO: Wire to Google Play Billing / Apple IAP in v2.0 billing sprint
   closeAllModals();
@@ -4103,6 +4113,7 @@ function renderPiecesList(c) {
 }
 
 function openAddPiece(costumeId) {
+  if (!isPro) { showForgeProGate('Piece Tracking', 'Track condition, repairs, and care for every costume piece — a Forge Pro feature.', '👗'); return; }
   _editingPieceInfo = { costumeId, pieceId: null };
   document.getElementById('piece-modal-title').textContent = 'Add Piece';
   document.getElementById('pm-name').value = '';
@@ -4233,6 +4244,7 @@ function _costumeSelect(activeCloset, selectedId, conId, dateStr, slot) {
 }
 
 function openPackingPage(eventId, type, source) {
+  if (!isPro) { showForgeProGate('Packing Planner', 'Plan costumes per day, build packing lists, and more — a Forge Pro feature.', '🎒'); return; }
   _packingConId  = eventId;
   _packingType   = type   || 'con';
   _packingSource = source || 'home';
@@ -4512,6 +4524,7 @@ let _addExpenseOpen = false;
 let _addExpenseCat  = null;
 
 function openConBudgetPage(conId, source) {
+  if (!isPro) { showForgeProGate('Con Budget Tracker', 'Track every con expense in one place — a Forge Pro feature.', '💰'); return; }
   _budgetConId  = conId;
   _budgetSource = source || 'home';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4851,6 +4864,7 @@ function triggerConfirmationUpload(conId, type) {
 }
 
 async function handleConfirmationUpload(e, conId, type) {
+  if (!isPro) { showForgeProGate('Ticket & Hotel Screenshots', 'Save your con confirmations in one place — a Forge Pro feature.', '🎟️'); return; }
   const file = e.target.files[0]; if (!file) return;
   const idx = conventions.findIndex(c => c.id === conId); if (idx < 0) return;
   _showUploadToast('Uploading…');
@@ -4972,6 +4986,7 @@ function renderPastEventsPage() {
 let _unpackConId = null;
 
 function openUnpackPage(conId) {
+  if (!isPro) { showForgeProGate('Unpack Flow', 'Check pieces after a con and log repairs or washes — a Forge Pro feature.', '🏠'); return; }
   _unpackConId = conId;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
