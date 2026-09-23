@@ -1319,6 +1319,11 @@ select option{background:#1a2f1c;}
       </div>
       <label style="margin-top:6px;">Or Image URL</label>
       <input type="url" id="f-imgurl" placeholder="https://…">
+      <button type="button" class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="triggerNewQuestPhotoUpload()">📷 Upload Photo</button>
+      <div id="f-photo-preview" style="display:none;margin-top:8px;align-items:center;gap:8px;">
+        <img id="f-photo-preview-img" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">
+        <span style="font-size:12px;color:var(--text-dim);font-weight:700;">Photo ready — saves with this quest</span>
+      </div>
     </div>
     <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
     <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="General notes, ideas…"></textarea></div>
@@ -1437,7 +1442,13 @@ select option{background:#1a2f1c;}
     <div class="modal-title" id="cosPlanModalTitle">✨ Add a Cos-Plan</div>
     <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
     <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
-    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
+    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…">
+      <button type="button" class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="triggerNewCosPlanPhotoUpload()">📷 Upload Photo</button>
+      <div id="cp-photo-preview" style="display:none;margin-top:8px;align-items:center;gap:8px;">
+        <img id="cp-photo-preview-img" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">
+        <span style="font-size:12px;color:var(--text-dim);font-weight:700;">Photo ready — saves with this Cos-Plan</span>
+      </div>
+    </div>
     <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
   </div>
@@ -2411,7 +2422,7 @@ function questCard(c) {
   return `<div class="quest-card" onclick="openCostumePage('${c.id}')">
     <div class="quest-card-inner">
       <div class="qc-top">
-        <div class="qc-avatar">${img}</div>
+        <div class="qc-avatar" onclick="triggerQuestCardPhotoUpload('${c.id}',event)">${img}</div>
         <div class="qc-meta">
           <div class="qc-name">${c.name}</div>
           <div class="qc-series">${c.series||'—'}</div>
@@ -2461,6 +2472,25 @@ function clearForm() {
   selectedEmoji='🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
   if (_commissionOn) toggleCommissionSwitch(); // reset to off
+  _pendingQuestPhotoFile = null;
+  const fpp = document.getElementById('f-photo-preview'); if (fpp) fpp.style.display = 'none';
+}
+
+let _pendingQuestPhotoFile = null;
+function triggerNewQuestPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleNewQuestPhotoSelected;
+  input.value = '';
+  input.click();
+}
+function handleNewQuestPhotoSelected(e) {
+  const file = e.target.files[0]; if (!file) return;
+  _pendingQuestPhotoFile = file;
+  const preview = document.getElementById('f-photo-preview');
+  const img = document.getElementById('f-photo-preview-img');
+  if (preview && img) { img.src = URL.createObjectURL(file); preview.style.display = 'flex'; }
+  e.target.value = '';
 }
 function _setCommissionSwitch(val) {
   if (!!val !== _commissionOn) toggleCommissionSwitch();
@@ -2509,6 +2539,23 @@ function saveCosplay() {
   // Prompt to move to Closet if newly marked done
   const savedId = editingId || cosplays[0]?.id;
   if(newStatus==='done' && prevStatus!=='done') showClosetPrompt(savedId);
+  // Upload a photo picked in the form, if any, now that the quest has an id
+  if (_pendingQuestPhotoFile && currentUser && savedId) {
+    const fileToUpload = _pendingQuestPhotoFile;
+    _pendingQuestPhotoFile = null;
+    (async () => {
+      try {
+        const path = `users/${currentUser.uid}/cosplays/${savedId}/profile`;
+        const url = await _uploadToStorage(fileToUpload, path);
+        const c = getCostume(savedId);
+        if (c) { c.imgurl = url; c._profileStoragePath = path; save(); }
+        if (viewingId===savedId) renderCostumePage();
+        const ap2=document.querySelector('.page.active')?.id;
+        if (ap2==='page-quests') renderAllQuests();
+        _showUploadToast('Photo saved ✿');
+      } catch(err) { console.error('New quest photo upload error', err); _showUploadToast('Photo upload failed — try again'); }
+    })();
+  }
 }
 function deleteCurrent() {
   if(!confirm('Delete this cosplay?')) return;
@@ -2862,10 +2909,7 @@ function _updateForgeProSettingsRow() {
 
 function purchaseForgePro() {
   if (!iapAvailable) {
-    const mh = window.webkit && window.webkit.messageHandlers;
-    const names = ['print','push-subscribe','push-permission-request','push-permission-state','push-token','billing-get-products','billing-purchase','billing-restore','billing-status'];
-    const lines = names.map(n => n + ': ' + !!(mh && mh[n]));
-    alert('DEBUG\n' + lines.join('\n'));
+    _showForgeToast('Forge Pro subscriptions are available in the Cosplay Forge iOS app.');
     return;
   }
   _setPaywallBusy(true);
@@ -3350,6 +3394,39 @@ async function handleCosPlanPhotoUpload(e) {
   } catch(err) { console.error('CosPlan photo upload failed:', err); }
 }
 
+let _questCardPhotoTargetId = null;
+function triggerQuestCardPhotoUpload(id, event) {
+  if (event) event.stopPropagation();
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  _questCardPhotoTargetId = id;
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleQuestCardPhotoUpload;
+  input.value = '';
+  input.click();
+}
+
+async function handleQuestCardPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const id = _questCardPhotoTargetId; if (!id) return;
+  const c = getCostume(id); if (!c) return;
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/cosplays/${c.id}/profile`;
+    if (c._profileStoragePath) {
+      try { await deleteObject(storageRef(storage, c._profileStoragePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    c.imgurl = url;
+    c._profileStoragePath = path;
+    save(); renderAllQuests();
+    _showUploadToast('Photo saved ✿');
+  } catch(err) {
+    console.error('Quest card photo upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
+
 async function promoteCosPlanToQuest(id) {
   const cp = (cosPlans||[]).find(p => p.id === id); if (!cp) return;
   if (!confirm(`Move "${cp.name}" to your active quests?`)) return;
@@ -3710,13 +3787,33 @@ function openAddCosPlanModal(prefillName) {
   document.getElementById('cp-series').value = '';
   document.getElementById('cp-imgurl').value = '';
   document.getElementById('cp-notes').value = '';
+  _pendingCosPlanPhotoFile = null;
+  const cpp = document.getElementById('cp-photo-preview'); if (cpp) cpp.style.display = 'none';
   openModal('cosPlanModal');
+}
+
+let _pendingCosPlanPhotoFile = null;
+function triggerNewCosPlanPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleNewCosPlanPhotoSelected;
+  input.value = '';
+  input.click();
+}
+function handleNewCosPlanPhotoSelected(e) {
+  const file = e.target.files[0]; if (!file) return;
+  _pendingCosPlanPhotoFile = file;
+  const preview = document.getElementById('cp-photo-preview');
+  const img = document.getElementById('cp-photo-preview-img');
+  if (preview && img) { img.src = URL.createObjectURL(file); preview.style.display = 'flex'; }
+  e.target.value = '';
 }
 
 function saveCosPlan() {
   const name = document.getElementById('cp-name').value.trim();
   if (!name) { alert('Please enter a character name!'); return; }
-  const item = { id: _editingCosPlanId || uid(), name,
+  const savedId = _editingCosPlanId || uid();
+  const item = { id: savedId, name,
     series: document.getElementById('cp-series').value.trim(),
     imgurl: document.getElementById('cp-imgurl').value.trim(),
     notes:  document.getElementById('cp-notes').value.trim() };
@@ -3726,6 +3823,21 @@ function saveCosPlan() {
   } else { cosPlans.unshift(item); }
   _editingCosPlanId = null;
   save(); closeAllModals(); renderHome();
+  // Upload a photo picked in the form, if any, now that the Cos-Plan has an id
+  if (_pendingCosPlanPhotoFile && currentUser) {
+    const fileToUpload = _pendingCosPlanPhotoFile;
+    _pendingCosPlanPhotoFile = null;
+    (async () => {
+      try {
+        const path = `users/${currentUser.uid}/cosplans/${savedId}/profile`;
+        const url = await _uploadToStorage(fileToUpload, path);
+        const cp = (cosPlans||[]).find(p => p.id === savedId);
+        if (cp) { cp.imgurl = url; save(); }
+        renderQuestCosPlanList();
+        _showUploadToast('Photo saved ✿');
+      } catch(err) { console.error('New Cos-Plan photo upload error', err); _showUploadToast('Photo upload failed — try again'); }
+    })();
+  }
 }
 
 function deleteCosPlan(id) {
@@ -5282,6 +5394,9 @@ Object.assign(window, {
   triggerClosetProfilePhotoUpload, handleClosetProfilePhotoUpload,
   triggerClosetProgressPhotoUpload, handleClosetProgressPhotoUpload, deleteClosetProgressPhoto,
   triggerCosPlanPhotoUpload, handleCosPlanPhotoUpload, promoteCosPlanToQuest,
+  triggerQuestCardPhotoUpload, handleQuestCardPhotoUpload,
+  triggerNewQuestPhotoUpload, handleNewQuestPhotoSelected,
+  triggerNewCosPlanPhotoUpload, handleNewCosPlanPhotoSelected,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
