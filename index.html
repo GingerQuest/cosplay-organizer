@@ -2797,7 +2797,7 @@ const IAP_PRODUCTS = {
 };
 let iapProductInfo = {};          // productId -> {id, displayName, displayPrice}
 let _selectedForgeProduct = IAP_PRODUCTS.annual;
-const iapAvailable = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['iap-status']);
+const iapAvailable = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['billing-status']);
 
 function _postIAP(handler, payload) {
   if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers[handler]) return false;
@@ -2863,13 +2863,13 @@ function _updateForgeProSettingsRow() {
 function purchaseForgePro() {
   if (!iapAvailable) {
     const mh = window.webkit && window.webkit.messageHandlers;
-    const names = ['print','push-subscribe','push-permission-request','push-permission-state','push-token','iap-get-products','iap-purchase','iap-restore','iap-status'];
+    const names = ['print','push-subscribe','push-permission-request','push-permission-state','push-token','billing-get-products','billing-purchase','billing-restore','billing-status'];
     const lines = names.map(n => n + ': ' + !!(mh && mh[n]));
     alert('DEBUG\n' + lines.join('\n'));
     return;
   }
   _setPaywallBusy(true);
-  _postIAP('iap-purchase', { productId: _selectedForgeProduct || IAP_PRODUCTS.annual });
+  _postIAP('billing-purchase', { productId: _selectedForgeProduct || IAP_PRODUCTS.annual });
 }
 
 function restoreForgePro() {
@@ -2878,7 +2878,7 @@ function restoreForgePro() {
     return;
   }
   _showForgeToast('Restoring your purchases…');
-  _postIAP('iap-restore');
+  _postIAP('billing-restore');
 }
 
 // Native → JS: current entitlement (fires on launch, after purchase/restore, on renewal)
@@ -2926,8 +2926,8 @@ window.addEventListener('iap-restore-result', (e) => {
 
 // Kick off an initial product + status fetch as soon as the bridge is ready.
 if (iapAvailable) {
-  _postIAP('iap-get-products');
-  _postIAP('iap-status');
+  _postIAP('billing-get-products');
+  _postIAP('billing-status');
 }
 
 // ── CRAFT DAYS ────────────────────────────────────────────────
