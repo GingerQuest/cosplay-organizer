@@ -1077,6 +1077,14 @@ select option{background:#1a2f1c;}
               </div>
               <span style="font-size:12px;font-weight:800;color:var(--sage);">On</span>
             </div>
+            <div class="setting-row" style="margin-bottom:8px;" id="forgeProStatusRow">
+              <div class="setting-row-info">
+                <div class="setting-row-label">⚔️ Forge Pro</div>
+                <div class="setting-row-sub" id="forgeProStatusSub">Free plan</div>
+              </div>
+              <button class="btn" style="font-size:12px;padding:8px 14px;" id="forgeProStatusBtn" onclick="showForgeProGate()">Upgrade</button>
+            </div>
+            <button class="btn" style="width:100%;margin-bottom:8px;font-size:12px;color:var(--text-dim);" onclick="restoreForgePro()">↻ Restore Purchases</button>
             <button class="btn rose-btn" style="width:100%;margin-top:8px;" onclick="handleSignOut()">Sign Out</button>
             <button class="btn" style="width:100%;margin-top:8px;font-size:12px;color:var(--text-dim);" onclick="handleDeleteAccount()">🗑 Delete My Account & Data</button>
           </div>
@@ -1281,12 +1289,15 @@ select option{background:#1a2f1c;}
         <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>☁️</span><span>Export &amp; backup your data</span></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;">
-      <div style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$2.99 / mo</div>
-      <div style="background:rgba(212,168,85,.18);border:1px solid rgba(212,168,85,.4);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$24.99 / yr <span style="font-weight:600;opacity:.75;">· save 30%</span></div>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;" id="proPlanPicker">
+      <button type="button" class="pro-plan-pill" id="proPillMonthly" data-product="com.gingerquest.cosplayforge.pro.monthl" onclick="selectForgePlan(this)" style="cursor:pointer;background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;font-family:'Nunito',sans-serif;">$2.99 / mo</button>
+      <button type="button" class="pro-plan-pill selected" id="proPillAnnual" data-product="com.gingerquest.cosplayforge.pro.annual" onclick="selectForgePlan(this)" style="cursor:pointer;background:rgba(212,168,85,.18);border:2px solid #d4a855;border-radius:99px;padding:6px 15px;font-size:12px;font-weight:800;color:#d4a855;font-family:'Nunito',sans-serif;">$24.99 / yr <span style="font-weight:600;opacity:.75;">· save 30%</span></button>
     </div>
-    <button onclick="upgradeForgePro()" style="width:100%;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px;letter-spacing:-.2px;">Upgrade to Forge Pro ⚔️</button>
+    <button onclick="purchaseForgePro()" id="proPurchaseBtn" style="width:100%;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px;letter-spacing:-.2px;">Upgrade to Forge Pro ⚔️</button>
     <button onclick="closeAllModals()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Maybe Later</button>
+    <div style="text-align:center;margin-top:10px;">
+      <a href="#" onclick="restoreForgePro();return false;" style="font-size:11px;color:var(--text-dim);text-decoration:underline;">Restore Purchases</a>
+    </div>
   </div>
 </div>
 
@@ -2132,6 +2143,7 @@ function showSignedIn(email) {
   document.getElementById('signedInEmail').textContent  = email;
   const name = email.split('@')[0];
   document.getElementById('signedInName').textContent   = name.charAt(0).toUpperCase() + name.slice(1);
+  _updateForgeProSettingsRow();
 }
 
 // ── DATA EXPORT ───────────────────────────────────────────────
@@ -2776,16 +2788,143 @@ function showForgeProGate(title, msg, icon) {
   document.getElementById('proGateIcon').textContent  = icon  || '⚔️';
   openModal('forgeProGateModal');
 }
-function upgradeForgePro() {
-  // TODO: Wire to Google Play Billing / Apple IAP in v2.0 billing sprint
-  closeAllModals();
-  setTimeout(() => {
-    const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1c2a20;border:1px solid var(--sage);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:var(--cream);z-index:9999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);';
-    t.textContent = '✨ Forge Pro subscriptions launching very soon!';
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  }, 100);
+// ── FORGE PRO / IN-APP PURCHASE BRIDGE ─────────────────────────
+// Talks to the native iOS layer (IAPManager.swift) over the same
+// WKScriptMessageHandler pattern used for push notifications.
+const IAP_PRODUCTS = {
+  monthly: 'com.gingerquest.cosplayforge.pro.monthl',
+  annual:  'com.gingerquest.cosplayforge.pro.annual'
+};
+let iapProductInfo = {};          // productId -> {id, displayName, displayPrice}
+let _selectedForgeProduct = IAP_PRODUCTS.annual;
+const iapAvailable = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['iap-status']);
+
+function _postIAP(handler, payload) {
+  if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers[handler]) return false;
+  window.webkit.messageHandlers[handler].postMessage(payload === undefined ? '' : JSON.stringify(payload));
+  return true;
+}
+
+function _showForgeToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1c2a20;border:1px solid var(--sage);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:var(--cream);z-index:9999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:88vw;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+function _setPaywallBusy(busy) {
+  const btn = document.getElementById('proPurchaseBtn');
+  if (!btn) return;
+  btn.disabled = busy;
+  btn.style.opacity = busy ? '.6' : '1';
+  btn.textContent = busy ? 'Processing…' : 'Upgrade to Forge Pro ⚔️';
+}
+
+function selectForgePlan(el) {
+  _selectedForgeProduct = el.dataset.product;
+  document.querySelectorAll('.pro-plan-pill').forEach(p => {
+    const selected = p === el;
+    p.classList.toggle('selected', selected);
+    p.style.border = selected ? '2px solid #d4a855' : '1px solid rgba(212,168,85,.3)';
+    p.style.padding = selected ? '6px 15px' : '7px 16px';
+  });
+}
+
+function _renderPaywallPricing() {
+  const monthly = iapProductInfo[IAP_PRODUCTS.monthly];
+  const annual  = iapProductInfo[IAP_PRODUCTS.annual];
+  const mEl = document.getElementById('proPillMonthly');
+  const aEl = document.getElementById('proPillAnnual');
+  if (mEl && monthly) mEl.textContent = `${monthly.displayPrice} / mo`;
+  if (aEl && annual)  aEl.innerHTML   = `${annual.displayPrice} / yr <span style="font-weight:600;opacity:.75;">· save 30%</span>`;
+}
+
+function _updateForgeProSettingsRow() {
+  const sub = document.getElementById('forgeProStatusSub');
+  const btn = document.getElementById('forgeProStatusBtn');
+  if (!sub || !btn) return;
+  if (isPro) {
+    let renewText = 'Active';
+    if (window._forgeProExpiresAt) {
+      const d = new Date(window._forgeProExpiresAt);
+      renewText = 'Renews ' + d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+    sub.textContent = renewText;
+    btn.textContent = 'Manage';
+    btn.onclick = () => { if (iapAvailable) window.open('https://apps.apple.com/account/subscriptions', '_blank'); else showForgeProGate(); };
+  } else {
+    sub.textContent = 'Free plan';
+    btn.textContent = 'Upgrade';
+    btn.onclick = () => showForgeProGate();
+  }
+}
+
+function purchaseForgePro() {
+  if (!iapAvailable) {
+    _showForgeToast('Forge Pro subscriptions are available in the Cosplay Forge iOS app.');
+    return;
+  }
+  _setPaywallBusy(true);
+  _postIAP('iap-purchase', { productId: _selectedForgeProduct || IAP_PRODUCTS.annual });
+}
+
+function restoreForgePro() {
+  if (!iapAvailable) {
+    _showForgeToast('Restore is available in the Cosplay Forge iOS app.');
+    return;
+  }
+  _showForgeToast('Restoring your purchases…');
+  _postIAP('iap-restore');
+}
+
+// Native → JS: current entitlement (fires on launch, after purchase/restore, on renewal)
+window.addEventListener('iap-status', async (e) => {
+  const detail = e.detail || {};
+  const proFromNative = !!detail.isPro;
+  if (proFromNative !== isPro) {
+    isPro = proFromNative;
+    renderHome();
+  }
+  window._forgeProExpiresAt = detail.expiresAt || null;
+  window._forgeProProductId = detail.productId || null;
+  _updateForgeProSettingsRow();
+  if (currentUser) { try { await saveToCloud(); } catch(_) {} }
+});
+
+// Native → JS: live App Store product list (prices, localized)
+window.addEventListener('iap-products', (e) => {
+  iapProductInfo = {};
+  (e.detail || []).forEach(p => { iapProductInfo[p.id] = p; });
+  _renderPaywallPricing();
+});
+
+// Native → JS: purchase attempt finished
+window.addEventListener('iap-purchase-result', (e) => {
+  _setPaywallBusy(false);
+  const detail = e.detail || {};
+  if (detail.success) {
+    closeAllModals();
+    _showForgeToast('✨ Welcome to Forge Pro!');
+  } else if (detail.error && detail.error !== 'cancelled') {
+    _showForgeToast('Purchase failed: ' + detail.error);
+  }
+});
+
+// Native → JS: restore attempt finished
+window.addEventListener('iap-restore-result', (e) => {
+  const detail = e.detail || {};
+  if (detail.success) {
+    _showForgeToast(isPro ? '✨ Forge Pro restored!' : 'No active subscription found on this Apple ID.');
+  } else {
+    _showForgeToast('Restore failed: ' + (detail.error || 'Unknown error'));
+  }
+});
+
+// Kick off an initial product + status fetch as soon as the bridge is ready.
+if (iapAvailable) {
+  _postIAP('iap-get-products');
+  _postIAP('iap-status');
 }
 
 // ── CRAFT DAYS ────────────────────────────────────────────────
@@ -5127,7 +5266,8 @@ Object.assign(window, {
   renderHome, renderAllQuests, setFilter,
   openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent, toggleCommissionSwitch, _setCommissionSwitch,
   renderCostumePage, toggleBlock, toggleBudget, saveBudget,
-  openModal, closeAllModals, showForgeProGate, upgradeForgePro,
+  openModal, closeAllModals, showForgeProGate,
+  purchaseForgePro, restoreForgePro, selectForgePlan,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
   saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
   moveTask, toggleCatGroup, openCatTaskModal, saveCatTask,
