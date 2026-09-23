@@ -1467,7 +1467,7 @@ select option{background:#1a2f1c;}
 <script type="module">
 // ── FIREBASE SETUP ────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1663,12 +1663,20 @@ window.handleSignIn = async function() {
   }
 };
 
-window.handleGoogleSignIn = async function() {
-  try {
-    const cred = await signInWithPopup(auth, provider);
+// Handle redirect result on app load (iOS WebView compatible)
+getRedirectResult(auth).then(async (cred) => {
+  if (cred && cred.user) {
     currentUser = cred.user;
     showSignedIn(cred.user.email);
     await loadFromCloud();
+  }
+}).catch((err) => {
+  console.warn('Redirect result error:', err);
+});
+
+window.handleGoogleSignIn = async function() {
+  try {
+    await signInWithRedirect(auth, provider);
   } catch(e) {
     alert('Google sign in failed: ' + e.message);
   }
