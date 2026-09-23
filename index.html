@@ -1306,6 +1306,15 @@ select option{background:#1a2f1c;}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle">🌿 New Quest</div>
+    <div style="display:flex;justify-content:center;margin-bottom:16px;">
+      <div class="costume-hero-avatar photo-avatar-wrap" onclick="triggerNewQuestPhotoUpload()" title="Tap to add a photo" style="width:90px;height:90px;">
+        <div id="f-photo-avatar-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:3px;background:rgba(255,255,255,.06);border-radius:14px;border:1.5px dashed var(--border);">
+          <span style="font-size:18px;">📷</span>
+          <span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span>
+        </div>
+        <div class="photo-cam-overlay">📷</div>
+      </div>
+    </div>
     <div class="form-group"><label>Character Name</label><input type="text" id="f-name" placeholder="Nausicaä, Sailor Moon…"></div>
     <div class="form-group"><label>Series / Fandom</label><input type="text" id="f-series" placeholder="Studio Ghibli, Sailor Moon…"></div>
     <div class="form-group">
@@ -1319,11 +1328,6 @@ select option{background:#1a2f1c;}
       </div>
       <label style="margin-top:6px;">Or Image URL</label>
       <input type="url" id="f-imgurl" placeholder="https://…">
-      <button type="button" class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="triggerNewQuestPhotoUpload()">📷 Upload Photo</button>
-      <div id="f-photo-preview" style="display:none;margin-top:8px;align-items:center;gap:8px;">
-        <img id="f-photo-preview-img" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">
-        <span style="font-size:12px;color:var(--text-dim);font-weight:700;">Photo ready — saves with this quest</span>
-      </div>
     </div>
     <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
     <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="General notes, ideas…"></textarea></div>
@@ -1440,15 +1444,18 @@ select option{background:#1a2f1c;}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cosPlanModalTitle">✨ Add a Cos-Plan</div>
-    <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
-    <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
-    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…">
-      <button type="button" class="btn sky-btn sm" style="width:100%;margin-top:8px;" onclick="triggerNewCosPlanPhotoUpload()">📷 Upload Photo</button>
-      <div id="cp-photo-preview" style="display:none;margin-top:8px;align-items:center;gap:8px;">
-        <img id="cp-photo-preview-img" style="width:48px;height:48px;border-radius:10px;object-fit:cover;">
-        <span style="font-size:12px;color:var(--text-dim);font-weight:700;">Photo ready — saves with this Cos-Plan</span>
+    <div style="display:flex;justify-content:center;margin-bottom:16px;">
+      <div class="costume-hero-avatar photo-avatar-wrap" onclick="triggerNewCosPlanPhotoUpload()" title="Tap to add a photo" style="width:90px;height:90px;">
+        <div id="cp-photo-avatar-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:3px;background:rgba(255,255,255,.06);border-radius:14px;border:1.5px dashed var(--border);">
+          <span style="font-size:18px;">📷</span>
+          <span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span>
+        </div>
+        <div class="photo-cam-overlay">📷</div>
       </div>
     </div>
+    <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
+    <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
+    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
     <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
   </div>
@@ -2465,6 +2472,9 @@ function openEdit(id) {
   selectedEmoji=c.emoji||'🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e===selectedEmoji));
   _setCommissionSwitch(!!c.isCommission);
+  _pendingQuestPhotoFile = null;
+  if (c.imgurl) _setPhotoAvatarPreview('f-photo-avatar-content', c.imgurl);
+  else _resetPhotoAvatarContent('f-photo-avatar-content');
   openModal('cosplayModal');
 }
 function clearForm() {
@@ -2473,7 +2483,16 @@ function clearForm() {
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
   if (_commissionOn) toggleCommissionSwitch(); // reset to off
   _pendingQuestPhotoFile = null;
-  const fpp = document.getElementById('f-photo-preview'); if (fpp) fpp.style.display = 'none';
+  _resetPhotoAvatarContent('f-photo-avatar-content');
+}
+
+function _resetPhotoAvatarContent(id) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = '<span style="font-size:18px;">📷</span><span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span>';
+}
+function _setPhotoAvatarPreview(id, url) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
 }
 
 let _pendingQuestPhotoFile = null;
@@ -2487,9 +2506,7 @@ function triggerNewQuestPhotoUpload() {
 function handleNewQuestPhotoSelected(e) {
   const file = e.target.files[0]; if (!file) return;
   _pendingQuestPhotoFile = file;
-  const preview = document.getElementById('f-photo-preview');
-  const img = document.getElementById('f-photo-preview-img');
-  if (preview && img) { img.src = URL.createObjectURL(file); preview.style.display = 'flex'; }
+  _setPhotoAvatarPreview('f-photo-avatar-content', URL.createObjectURL(file));
   e.target.value = '';
 }
 function _setCommissionSwitch(val) {
@@ -3788,7 +3805,7 @@ function openAddCosPlanModal(prefillName) {
   document.getElementById('cp-imgurl').value = '';
   document.getElementById('cp-notes').value = '';
   _pendingCosPlanPhotoFile = null;
-  const cpp = document.getElementById('cp-photo-preview'); if (cpp) cpp.style.display = 'none';
+  _resetPhotoAvatarContent('cp-photo-avatar-content');
   openModal('cosPlanModal');
 }
 
@@ -3803,9 +3820,7 @@ function triggerNewCosPlanPhotoUpload() {
 function handleNewCosPlanPhotoSelected(e) {
   const file = e.target.files[0]; if (!file) return;
   _pendingCosPlanPhotoFile = file;
-  const preview = document.getElementById('cp-photo-preview');
-  const img = document.getElementById('cp-photo-preview-img');
-  if (preview && img) { img.src = URL.createObjectURL(file); preview.style.display = 'flex'; }
+  _setPhotoAvatarPreview('cp-photo-avatar-content', URL.createObjectURL(file));
   e.target.value = '';
 }
 
