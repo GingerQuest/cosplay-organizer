@@ -2862,7 +2862,11 @@ function _updateForgeProSettingsRow() {
 
 function purchaseForgePro() {
   if (!iapAvailable) {
-    _showForgeToast('Forge Pro subscriptions are available in the Cosplay Forge iOS app.');
+    const hasWebkit = !!window.webkit;
+    const hasHandlers = !!(window.webkit && window.webkit.messageHandlers);
+    const hasPrint = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['print']);
+    const hasIapStatus = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['iap-status']);
+    alert('DEBUG\nwebkit: ' + hasWebkit + '\nmessageHandlers: ' + hasHandlers + '\nprint handler: ' + hasPrint + '\niap-status handler: ' + hasIapStatus);
     return;
   }
   _setPaywallBusy(true);
