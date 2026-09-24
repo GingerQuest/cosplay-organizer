@@ -1723,11 +1723,15 @@ window.handleForgotPassword = async function() {
 };
 
 // Handle redirect result on app load (iOS WebView compatible)
+console.log('Calling getRedirectResult, auth.currentUser=', auth.currentUser);
 getRedirectResult(auth).then(async (cred) => {
+  console.log('getRedirectResult resolved. cred=', cred, 'auth.currentUser=', auth.currentUser);
   if (cred && cred.user) {
     currentUser = cred.user;
     showSignedIn(cred.user.email);
     await loadFromCloud();
+  } else {
+    console.log('getRedirectResult returned no credential (cred is null/undefined).');
   }
 }).catch((err) => {
   console.warn('Redirect result error:', err);
