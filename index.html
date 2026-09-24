@@ -1048,6 +1048,9 @@ select option{background:#1a2f1c;}
             <div class="signin-card-sub">Sign in with your email to back up your quests, sync across devices, and never lose your cosplay data.</div>
             <input class="signin-input" type="email" id="signinEmail" placeholder="your@email.com" autocomplete="email">
             <input class="signin-input" type="password" id="signinPassword" placeholder="Password" autocomplete="current-password">
+            <div style="text-align:right;margin:-4px 0 10px;">
+              <a href="javascript:void(0)" onclick="handleForgotPassword()" style="font-size:12px;color:var(--sage);text-decoration:none;">Forgot password?</a>
+            </div>
             <button class="btn primary" style="width:100%;margin-bottom:8px;" onclick="handleSignIn()">✦ Sign In</button>
             <button class="btn" style="width:100%;font-size:13px;margin-bottom:8px;" onclick="handleSignUp()">Create Account</button>
             <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:8px;line-height:1.5;">By creating an account you agree to our <a href="https://gingerquest.github.io/cosplay-organizer/terms.html" target="_blank" style="color:var(--sage);">Terms</a> and <a href="https://gingerquest.github.io/cosplay-organizer/privacy.html" target="_blank" style="color:var(--sage);">Privacy Policy</a></div>
@@ -1496,7 +1499,7 @@ select option{background:#1a2f1c;}
 <script type="module">
 // ── FIREBASE SETUP ────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1687,8 +1690,24 @@ window.handleSignIn = async function() {
     showSignedIn(email);
     await loadFromCloud();
   } catch(e) {
-    if (e.code === 'auth/invalid-credential') alert('Incorrect email or password.');
+    if (e.code === 'auth/invalid-credential') alert("Incorrect email or password. If you originally signed up with 'Continue with Google,' use that button instead, or tap 'Forgot password?' to set one.");
     else alert('Sign in failed: ' + e.message);
+  }
+};
+
+window.handleForgotPassword = async function() {
+  const emailField = document.getElementById('signinEmail');
+  let email = emailField ? emailField.value.trim() : '';
+  if (!email) {
+    email = (prompt('Enter the email address for your account:') || '').trim();
+  }
+  if (!email) return;
+  try {
+    await sendPasswordResetEmail(auth, email);
+    alert('Password reset email sent to ' + email + '. Check your inbox (and spam folder).');
+  } catch(e) {
+    if (e.code === 'auth/invalid-email') alert('That email address looks invalid.');
+    else alert('Could not send reset email: ' + e.message);
   }
 };
 
