@@ -1510,7 +1510,7 @@ window.addEventListener('pageshow', function(event) {
   }
 });
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, signInWithCredential, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1738,9 +1738,35 @@ getRedirectResult(auth).then(async (cred) => {
   alert('Google sign-in redirect error: ' + (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err));
 });
 
+// The native iOS app handles Google Sign-In itself (via a system auth session)
+// and reports the result here, because Firebase's own redirect-based flow does
+// not reliably survive the round trip inside this app's WKWebView.
+window.addEventListener('google-signin-result', async (e) => {
+  const detail = e.detail || {};
+  if (detail.success && detail.idToken) {
+    try {
+      const credential = GoogleAuthProvider.credential(detail.idToken);
+      const result = await signInWithCredential(auth, credential);
+      currentUser = result.user;
+      showSignedIn(result.user.email);
+      await loadFromCloud();
+    } catch(err) {
+      alert('Google sign-in failed: ' + err.message);
+    }
+  } else if (detail.error && detail.error !== 'cancelled') {
+    alert('Google sign-in failed: ' + detail.error);
+  }
+});
+
 window.handleGoogleSignIn = async function() {
   try {
-    await signInWithRedirect(auth, provider);
+    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['google-signin']) {
+      // Native iOS app: hand off to the system sign-in session.
+      window.webkit.messageHandlers['google-signin'].postMessage('');
+    } else {
+      // Plain web browser (e.g. testing on desktop): fall back to Firebase's own flow.
+      await signInWithRedirect(auth, provider);
+    }
   } catch(e) {
     alert('Google sign in failed: ' + e.message);
   }
