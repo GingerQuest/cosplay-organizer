@@ -1720,6 +1720,7 @@ getRedirectResult(auth).then(async (cred) => {
   }
 }).catch((err) => {
   console.warn('Redirect result error:', err);
+  alert('Google sign-in redirect error: ' + (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err));
 });
 
 window.handleGoogleSignIn = async function() {
