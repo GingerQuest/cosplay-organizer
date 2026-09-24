@@ -1048,9 +1048,6 @@ select option{background:#1a2f1c;}
             <div class="signin-card-sub">Sign in with your email to back up your quests, sync across devices, and never lose your cosplay data.</div>
             <input class="signin-input" type="email" id="signinEmail" placeholder="your@email.com" autocomplete="email">
             <input class="signin-input" type="password" id="signinPassword" placeholder="Password" autocomplete="current-password">
-            <div style="text-align:right;margin:-4px 0 10px;">
-              <a href="javascript:void(0)" onclick="handleForgotPassword()" style="font-size:12px;color:var(--sage);text-decoration:none;">Forgot password?</a>
-            </div>
             <button class="btn primary" style="width:100%;margin-bottom:8px;" onclick="handleSignIn()">✦ Sign In</button>
             <button class="btn" style="width:100%;font-size:13px;margin-bottom:8px;" onclick="handleSignUp()">Create Account</button>
             <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:8px;line-height:1.5;">By creating an account you agree to our <a href="https://gingerquest.github.io/cosplay-organizer/terms.html" target="_blank" style="color:var(--sage);">Terms</a> and <a href="https://gingerquest.github.io/cosplay-organizer/privacy.html" target="_blank" style="color:var(--sage);">Privacy Policy</a></div>
@@ -1080,14 +1077,6 @@ select option{background:#1a2f1c;}
               </div>
               <span style="font-size:12px;font-weight:800;color:var(--sage);">On</span>
             </div>
-            <div class="setting-row" style="margin-bottom:8px;" id="forgeProStatusRow">
-              <div class="setting-row-info">
-                <div class="setting-row-label">⚔️ Forge Pro</div>
-                <div class="setting-row-sub" id="forgeProStatusSub">Free plan</div>
-              </div>
-              <button class="btn" style="font-size:12px;padding:8px 14px;" id="forgeProStatusBtn" onclick="showForgeProGate()">Upgrade</button>
-            </div>
-            <button class="btn" style="width:100%;margin-bottom:8px;font-size:12px;color:var(--text-dim);" onclick="restoreForgePro()">↻ Restore Purchases</button>
             <button class="btn rose-btn" style="width:100%;margin-top:8px;" onclick="handleSignOut()">Sign Out</button>
             <button class="btn" style="width:100%;margin-top:8px;font-size:12px;color:var(--text-dim);" onclick="handleDeleteAccount()">🗑 Delete My Account & Data</button>
           </div>
@@ -1292,15 +1281,12 @@ select option{background:#1a2f1c;}
         <div style="font-size:13px;color:var(--text);display:flex;gap:8px;align-items:center;"><span>☁️</span><span>Export &amp; backup your data</span></div>
       </div>
     </div>
-    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;" id="proPlanPicker">
-      <button type="button" class="pro-plan-pill" id="proPillMonthly" data-product="com.gingerquest.cosplayforge.pro.monthl" onclick="selectForgePlan(this)" style="cursor:pointer;background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;font-family:'Nunito',sans-serif;">$2.99 / mo</button>
-      <button type="button" class="pro-plan-pill selected" id="proPillAnnual" data-product="com.gingerquest.cosplayforge.pro.annual" onclick="selectForgePlan(this)" style="cursor:pointer;background:rgba(212,168,85,.18);border:2px solid #d4a855;border-radius:99px;padding:6px 15px;font-size:12px;font-weight:800;color:#d4a855;font-family:'Nunito',sans-serif;">$24.99 / yr <span style="font-weight:600;opacity:.75;">· save 30%</span></button>
+    <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;">
+      <div style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$2.99 / mo</div>
+      <div style="background:rgba(212,168,85,.18);border:1px solid rgba(212,168,85,.4);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$24.99 / yr <span style="font-weight:600;opacity:.75;">· save 30%</span></div>
     </div>
-    <button onclick="purchaseForgePro()" id="proPurchaseBtn" style="width:100%;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px;letter-spacing:-.2px;">Upgrade to Forge Pro ⚔️</button>
+    <button onclick="upgradeForgePro()" style="width:100%;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px;letter-spacing:-.2px;">Upgrade to Forge Pro ⚔️</button>
     <button onclick="closeAllModals()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Maybe Later</button>
-    <div style="text-align:center;margin-top:10px;">
-      <a href="#" onclick="restoreForgePro();return false;" style="font-size:11px;color:var(--text-dim);text-decoration:underline;">Restore Purchases</a>
-    </div>
   </div>
 </div>
 
@@ -1309,15 +1295,6 @@ select option{background:#1a2f1c;}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle">🌿 New Quest</div>
-    <div style="display:flex;justify-content:center;margin-bottom:16px;">
-      <div class="costume-hero-avatar photo-avatar-wrap" onclick="triggerNewQuestPhotoUpload()" title="Tap to add a photo" style="width:90px;height:90px;">
-        <div id="f-photo-avatar-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:3px;background:rgba(255,255,255,.06);border-radius:14px;border:1.5px dashed var(--border);">
-          <span style="font-size:18px;">📷</span>
-          <span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span>
-        </div>
-        <div class="photo-cam-overlay">📷</div>
-      </div>
-    </div>
     <div class="form-group"><label>Character Name</label><input type="text" id="f-name" placeholder="Nausicaä, Sailor Moon…"></div>
     <div class="form-group"><label>Series / Fandom</label><input type="text" id="f-series" placeholder="Studio Ghibli, Sailor Moon…"></div>
     <div class="form-group">
@@ -1447,15 +1424,6 @@ select option{background:#1a2f1c;}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cosPlanModalTitle">✨ Add a Cos-Plan</div>
-    <div style="display:flex;justify-content:center;margin-bottom:16px;">
-      <div class="costume-hero-avatar photo-avatar-wrap" onclick="triggerNewCosPlanPhotoUpload()" title="Tap to add a photo" style="width:90px;height:90px;">
-        <div id="cp-photo-avatar-content" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:3px;background:rgba(255,255,255,.06);border-radius:14px;border:1.5px dashed var(--border);">
-          <span style="font-size:18px;">📷</span>
-          <span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span>
-        </div>
-        <div class="photo-cam-overlay">📷</div>
-      </div>
-    </div>
     <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
     <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
     <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
@@ -1498,19 +1466,8 @@ select option{background:#1a2f1c;}
 
 <script type="module">
 // ── FIREBASE SETUP ────────────────────────────────────────────
-console.log('APP BOOT ' + new Date().toISOString());
-// Force a real reload if the page is restored from back/forward cache
-// (this happens after returning from an external redirect like Google
-// Sign-In, and a bfcache restore does NOT re-run this script, which is
-// why the app would otherwise appear stuck on stale state).
-window.addEventListener('pageshow', function(event) {
-  if (event.persisted) {
-    console.log('bfcache restore detected, forcing reload');
-    window.location.reload();
-  }
-});
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, signInWithCredential, getRedirectResult, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1701,72 +1658,54 @@ window.handleSignIn = async function() {
     showSignedIn(email);
     await loadFromCloud();
   } catch(e) {
-    if (e.code === 'auth/invalid-credential') alert("Incorrect email or password. If you originally signed up with 'Continue with Google,' use that button instead, or tap 'Forgot password?' to set one.");
+    if (e.code === 'auth/invalid-credential') alert('Incorrect email or password.');
     else alert('Sign in failed: ' + e.message);
   }
 };
 
-window.handleForgotPassword = async function() {
-  const emailField = document.getElementById('signinEmail');
-  let email = emailField ? emailField.value.trim() : '';
-  if (!email) {
-    email = (prompt('Enter the email address for your account:') || '').trim();
-  }
-  if (!email) return;
-  try {
-    await sendPasswordResetEmail(auth, email);
-    alert('Password reset email sent to ' + email + '. Check your inbox (and spam folder).');
-  } catch(e) {
-    if (e.code === 'auth/invalid-email') alert('That email address looks invalid.');
-    else alert('Could not send reset email: ' + e.message);
-  }
-};
-
-// Handle redirect result on app load (iOS WebView compatible)
-console.log('Calling getRedirectResult, auth.currentUser=', auth.currentUser);
+// Handle redirect result on app load (plain-browser fallback only — the
+// native iOS app never goes through this path, see below)
 getRedirectResult(auth).then(async (cred) => {
-  console.log('getRedirectResult resolved. cred=', cred, 'auth.currentUser=', auth.currentUser);
   if (cred && cred.user) {
     currentUser = cred.user;
     showSignedIn(cred.user.email);
     await loadFromCloud();
-  } else {
-    console.log('getRedirectResult returned no credential (cred is null/undefined).');
   }
 }).catch((err) => {
   console.warn('Redirect result error:', err);
-  alert('Google sign-in redirect error: ' + (err && err.code ? err.code : '') + ' ' + (err && err.message ? err.message : err));
 });
 
-// The native iOS app handles Google Sign-In itself (via a system auth session)
-// and reports the result here, because Firebase's own redirect-based flow does
-// not reliably survive the round trip inside this app's WKWebView.
-window.addEventListener('google-signin-result', async (e) => {
-  const detail = e.detail || {};
-  if (detail.success && detail.idToken) {
-    try {
-      const credential = GoogleAuthProvider.credential(detail.idToken);
-      const result = await signInWithCredential(auth, credential);
-      currentUser = result.user;
-      showSignedIn(result.user.email);
-      await loadFromCloud();
-    } catch(err) {
-      alert('Google sign-in failed: ' + err.message);
-    }
-  } else if (detail.error && detail.error !== 'cancelled') {
-    alert('Google sign-in failed: ' + detail.error);
+// Native bridge: GoogleSignInManager.swift runs the OAuth exchange outside
+// this WKWebView (via ASWebAuthenticationSession) and hands back a Google ID
+// token as a CustomEvent, which we exchange for a Firebase credential here.
+window.addEventListener('google-signin-result', async (evt) => {
+  const { success, idToken, error } = evt.detail || {};
+  if (!success) {
+    if (error && error !== 'cancelled') alert('Google sign in failed: ' + error);
+    return;
+  }
+  try {
+    const credential = GoogleAuthProvider.credential(idToken);
+    const cred = await signInWithCredential(auth, credential);
+    currentUser = cred.user;
+    showSignedIn(cred.user.email);
+    await loadFromCloud();
+  } catch(e) {
+    alert('Google sign in failed: ' + e.message);
   }
 });
 
 window.handleGoogleSignIn = async function() {
+  // Inside the iOS app: hand off to native code (ASWebAuthenticationSession),
+  // which reports back via the 'google-signin-result' event above.
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['google-signin']) {
+    window.webkit.messageHandlers['google-signin'].postMessage({});
+    return;
+  }
+  // Plain browser (e.g. the web version at gingerquest.github.io): normal
+  // Firebase redirect flow, since there's no native bridge to use there.
   try {
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['google-signin']) {
-      // Native iOS app: hand off to the system sign-in session.
-      window.webkit.messageHandlers['google-signin'].postMessage('');
-    } else {
-      // Plain web browser (e.g. testing on desktop): fall back to Firebase's own flow.
-      await signInWithRedirect(auth, provider);
-    }
+    await signInWithRedirect(auth, provider);
   } catch(e) {
     alert('Google sign in failed: ' + e.message);
   }
@@ -2222,7 +2161,6 @@ function showSignedIn(email) {
   document.getElementById('signedInEmail').textContent  = email;
   const name = email.split('@')[0];
   document.getElementById('signedInName').textContent   = name.charAt(0).toUpperCase() + name.slice(1);
-  _updateForgeProSettingsRow();
 }
 
 // ── DATA EXPORT ───────────────────────────────────────────────
@@ -2490,7 +2428,7 @@ function questCard(c) {
   return `<div class="quest-card" onclick="openCostumePage('${c.id}')">
     <div class="quest-card-inner">
       <div class="qc-top">
-        <div class="qc-avatar" onclick="triggerQuestCardPhotoUpload('${c.id}',event)">${img}</div>
+        <div class="qc-avatar">${img}</div>
         <div class="qc-meta">
           <div class="qc-name">${c.name}</div>
           <div class="qc-series">${c.series||'—'}</div>
@@ -2533,9 +2471,6 @@ function openEdit(id) {
   selectedEmoji=c.emoji||'🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e===selectedEmoji));
   _setCommissionSwitch(!!c.isCommission);
-  _pendingQuestPhotoFile = null;
-  if (c.imgurl) _setPhotoAvatarPreview('f-photo-avatar-content', c.imgurl);
-  else _resetPhotoAvatarContent('f-photo-avatar-content');
   openModal('cosplayModal');
 }
 function clearForm() {
@@ -2543,32 +2478,6 @@ function clearForm() {
   selectedEmoji='🧙';
   document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
   if (_commissionOn) toggleCommissionSwitch(); // reset to off
-  _pendingQuestPhotoFile = null;
-  _resetPhotoAvatarContent('f-photo-avatar-content');
-}
-
-function _resetPhotoAvatarContent(id) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = '<span style="font-size:18px;">📷</span><span style="font-size:9px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;">Add Photo</span>';
-}
-function _setPhotoAvatarPreview(id, url) {
-  const el = document.getElementById(id);
-  if (el) el.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
-}
-
-let _pendingQuestPhotoFile = null;
-function triggerNewQuestPhotoUpload() {
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
-  const input = document.getElementById('profilePhotoInput');
-  input.onchange = handleNewQuestPhotoSelected;
-  input.value = '';
-  input.click();
-}
-function handleNewQuestPhotoSelected(e) {
-  const file = e.target.files[0]; if (!file) return;
-  _pendingQuestPhotoFile = file;
-  _setPhotoAvatarPreview('f-photo-avatar-content', URL.createObjectURL(file));
-  e.target.value = '';
 }
 function _setCommissionSwitch(val) {
   if (!!val !== _commissionOn) toggleCommissionSwitch();
@@ -2617,23 +2526,6 @@ function saveCosplay() {
   // Prompt to move to Closet if newly marked done
   const savedId = editingId || cosplays[0]?.id;
   if(newStatus==='done' && prevStatus!=='done') showClosetPrompt(savedId);
-  // Upload a photo picked in the form, if any, now that the quest has an id
-  if (_pendingQuestPhotoFile && currentUser && savedId) {
-    const fileToUpload = _pendingQuestPhotoFile;
-    _pendingQuestPhotoFile = null;
-    (async () => {
-      try {
-        const path = `users/${currentUser.uid}/cosplays/${savedId}/profile`;
-        const url = await _uploadToStorage(fileToUpload, path);
-        const c = getCostume(savedId);
-        if (c) { c.imgurl = url; c._profileStoragePath = path; save(); }
-        if (viewingId===savedId) renderCostumePage();
-        const ap2=document.querySelector('.page.active')?.id;
-        if (ap2==='page-quests') renderAllQuests();
-        _showUploadToast('Photo saved ✿');
-      } catch(err) { console.error('New quest photo upload error', err); _showUploadToast('Photo upload failed — try again'); }
-    })();
-  }
 }
 function deleteCurrent() {
   if(!confirm('Delete this cosplay?')) return;
@@ -2913,143 +2805,16 @@ function showForgeProGate(title, msg, icon) {
   document.getElementById('proGateIcon').textContent  = icon  || '⚔️';
   openModal('forgeProGateModal');
 }
-// ── FORGE PRO / IN-APP PURCHASE BRIDGE ─────────────────────────
-// Talks to the native iOS layer (IAPManager.swift) over the same
-// WKScriptMessageHandler pattern used for push notifications.
-const IAP_PRODUCTS = {
-  monthly: 'com.gingerquest.cosplayforge.pro.monthl',
-  annual:  'com.gingerquest.cosplayforge.pro.annual'
-};
-let iapProductInfo = {};          // productId -> {id, displayName, displayPrice}
-let _selectedForgeProduct = IAP_PRODUCTS.annual;
-const iapAvailable = !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['billing-status']);
-
-function _postIAP(handler, payload) {
-  if (!window.webkit || !window.webkit.messageHandlers || !window.webkit.messageHandlers[handler]) return false;
-  window.webkit.messageHandlers[handler].postMessage(payload === undefined ? '' : JSON.stringify(payload));
-  return true;
-}
-
-function _showForgeToast(msg) {
-  const t = document.createElement('div');
-  t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1c2a20;border:1px solid var(--sage);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:var(--cream);z-index:9999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:88vw;';
-  t.textContent = msg;
-  document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
-}
-
-function _setPaywallBusy(busy) {
-  const btn = document.getElementById('proPurchaseBtn');
-  if (!btn) return;
-  btn.disabled = busy;
-  btn.style.opacity = busy ? '.6' : '1';
-  btn.textContent = busy ? 'Processing…' : 'Upgrade to Forge Pro ⚔️';
-}
-
-function selectForgePlan(el) {
-  _selectedForgeProduct = el.dataset.product;
-  document.querySelectorAll('.pro-plan-pill').forEach(p => {
-    const selected = p === el;
-    p.classList.toggle('selected', selected);
-    p.style.border = selected ? '2px solid #d4a855' : '1px solid rgba(212,168,85,.3)';
-    p.style.padding = selected ? '6px 15px' : '7px 16px';
-  });
-}
-
-function _renderPaywallPricing() {
-  const monthly = iapProductInfo[IAP_PRODUCTS.monthly];
-  const annual  = iapProductInfo[IAP_PRODUCTS.annual];
-  const mEl = document.getElementById('proPillMonthly');
-  const aEl = document.getElementById('proPillAnnual');
-  if (mEl && monthly) mEl.textContent = `${monthly.displayPrice} / mo`;
-  if (aEl && annual)  aEl.innerHTML   = `${annual.displayPrice} / yr <span style="font-weight:600;opacity:.75;">· save 30%</span>`;
-}
-
-function _updateForgeProSettingsRow() {
-  const sub = document.getElementById('forgeProStatusSub');
-  const btn = document.getElementById('forgeProStatusBtn');
-  if (!sub || !btn) return;
-  if (isPro) {
-    let renewText = 'Active';
-    if (window._forgeProExpiresAt) {
-      const d = new Date(window._forgeProExpiresAt);
-      renewText = 'Renews ' + d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    }
-    sub.textContent = renewText;
-    btn.textContent = 'Manage';
-    btn.onclick = () => { if (iapAvailable) window.open('https://apps.apple.com/account/subscriptions', '_blank'); else showForgeProGate(); };
-  } else {
-    sub.textContent = 'Free plan';
-    btn.textContent = 'Upgrade';
-    btn.onclick = () => showForgeProGate();
-  }
-}
-
-function purchaseForgePro() {
-  if (!iapAvailable) {
-    _showForgeToast('Forge Pro subscriptions are available in the Cosplay Forge iOS app.');
-    return;
-  }
-  _setPaywallBusy(true);
-  _postIAP('billing-purchase', { productId: _selectedForgeProduct || IAP_PRODUCTS.annual });
-}
-
-function restoreForgePro() {
-  if (!iapAvailable) {
-    _showForgeToast('Restore is available in the Cosplay Forge iOS app.');
-    return;
-  }
-  _showForgeToast('Restoring your purchases…');
-  _postIAP('billing-restore');
-}
-
-// Native → JS: current entitlement (fires on launch, after purchase/restore, on renewal)
-window.addEventListener('iap-status', async (e) => {
-  const detail = e.detail || {};
-  const proFromNative = !!detail.isPro;
-  if (proFromNative !== isPro) {
-    isPro = proFromNative;
-    renderHome();
-  }
-  window._forgeProExpiresAt = detail.expiresAt || null;
-  window._forgeProProductId = detail.productId || null;
-  _updateForgeProSettingsRow();
-  if (currentUser) { try { await saveToCloud(); } catch(_) {} }
-});
-
-// Native → JS: live App Store product list (prices, localized)
-window.addEventListener('iap-products', (e) => {
-  iapProductInfo = {};
-  (e.detail || []).forEach(p => { iapProductInfo[p.id] = p; });
-  _renderPaywallPricing();
-});
-
-// Native → JS: purchase attempt finished
-window.addEventListener('iap-purchase-result', (e) => {
-  _setPaywallBusy(false);
-  const detail = e.detail || {};
-  if (detail.success) {
-    closeAllModals();
-    _showForgeToast('✨ Welcome to Forge Pro!');
-  } else if (detail.error && detail.error !== 'cancelled') {
-    _showForgeToast('Purchase failed: ' + detail.error);
-  }
-});
-
-// Native → JS: restore attempt finished
-window.addEventListener('iap-restore-result', (e) => {
-  const detail = e.detail || {};
-  if (detail.success) {
-    _showForgeToast(isPro ? '✨ Forge Pro restored!' : 'No active subscription found on this Apple ID.');
-  } else {
-    _showForgeToast('Restore failed: ' + (detail.error || 'Unknown error'));
-  }
-});
-
-// Kick off an initial product + status fetch as soon as the bridge is ready.
-if (iapAvailable) {
-  _postIAP('billing-get-products');
-  _postIAP('billing-status');
+function upgradeForgePro() {
+  // TODO: Wire to Google Play Billing / Apple IAP in v2.0 billing sprint
+  closeAllModals();
+  setTimeout(() => {
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1c2a20;border:1px solid var(--sage);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:var(--cream);z-index:9999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);';
+    t.textContent = '✨ Forge Pro subscriptions launching very soon!';
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+  }, 100);
 }
 
 // ── CRAFT DAYS ────────────────────────────────────────────────
@@ -3472,39 +3237,6 @@ async function handleCosPlanPhotoUpload(e) {
   } catch(err) { console.error('CosPlan photo upload failed:', err); }
 }
 
-let _questCardPhotoTargetId = null;
-function triggerQuestCardPhotoUpload(id, event) {
-  if (event) event.stopPropagation();
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
-  _questCardPhotoTargetId = id;
-  const input = document.getElementById('profilePhotoInput');
-  input.onchange = handleQuestCardPhotoUpload;
-  input.value = '';
-  input.click();
-}
-
-async function handleQuestCardPhotoUpload(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const id = _questCardPhotoTargetId; if (!id) return;
-  const c = getCostume(id); if (!c) return;
-  _showUploadToast('Uploading…');
-  try {
-    const path = `users/${currentUser.uid}/cosplays/${c.id}/profile`;
-    if (c._profileStoragePath) {
-      try { await deleteObject(storageRef(storage, c._profileStoragePath)); } catch(_) {}
-    }
-    const url = await _uploadToStorage(file, path);
-    c.imgurl = url;
-    c._profileStoragePath = path;
-    save(); renderAllQuests();
-    _showUploadToast('Photo saved ✿');
-  } catch(err) {
-    console.error('Quest card photo upload error', err);
-    _showUploadToast('Upload failed — try again');
-  }
-  e.target.value = '';
-}
-
 async function promoteCosPlanToQuest(id) {
   const cp = (cosPlans||[]).find(p => p.id === id); if (!cp) return;
   if (!confirm(`Move "${cp.name}" to your active quests?`)) return;
@@ -3865,31 +3597,13 @@ function openAddCosPlanModal(prefillName) {
   document.getElementById('cp-series').value = '';
   document.getElementById('cp-imgurl').value = '';
   document.getElementById('cp-notes').value = '';
-  _pendingCosPlanPhotoFile = null;
-  _resetPhotoAvatarContent('cp-photo-avatar-content');
   openModal('cosPlanModal');
-}
-
-let _pendingCosPlanPhotoFile = null;
-function triggerNewCosPlanPhotoUpload() {
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
-  const input = document.getElementById('profilePhotoInput');
-  input.onchange = handleNewCosPlanPhotoSelected;
-  input.value = '';
-  input.click();
-}
-function handleNewCosPlanPhotoSelected(e) {
-  const file = e.target.files[0]; if (!file) return;
-  _pendingCosPlanPhotoFile = file;
-  _setPhotoAvatarPreview('cp-photo-avatar-content', URL.createObjectURL(file));
-  e.target.value = '';
 }
 
 function saveCosPlan() {
   const name = document.getElementById('cp-name').value.trim();
   if (!name) { alert('Please enter a character name!'); return; }
-  const savedId = _editingCosPlanId || uid();
-  const item = { id: savedId, name,
+  const item = { id: _editingCosPlanId || uid(), name,
     series: document.getElementById('cp-series').value.trim(),
     imgurl: document.getElementById('cp-imgurl').value.trim(),
     notes:  document.getElementById('cp-notes').value.trim() };
@@ -3899,21 +3613,6 @@ function saveCosPlan() {
   } else { cosPlans.unshift(item); }
   _editingCosPlanId = null;
   save(); closeAllModals(); renderHome();
-  // Upload a photo picked in the form, if any, now that the Cos-Plan has an id
-  if (_pendingCosPlanPhotoFile && currentUser) {
-    const fileToUpload = _pendingCosPlanPhotoFile;
-    _pendingCosPlanPhotoFile = null;
-    (async () => {
-      try {
-        const path = `users/${currentUser.uid}/cosplans/${savedId}/profile`;
-        const url = await _uploadToStorage(fileToUpload, path);
-        const cp = (cosPlans||[]).find(p => p.id === savedId);
-        if (cp) { cp.imgurl = url; save(); }
-        renderQuestCosPlanList();
-        _showUploadToast('Photo saved ✿');
-      } catch(err) { console.error('New Cos-Plan photo upload error', err); _showUploadToast('Photo upload failed — try again'); }
-    })();
-  }
 }
 
 function deleteCosPlan(id) {
@@ -5457,8 +5156,7 @@ Object.assign(window, {
   renderHome, renderAllQuests, setFilter,
   openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent, toggleCommissionSwitch, _setCommissionSwitch,
   renderCostumePage, toggleBlock, toggleBudget, saveBudget,
-  openModal, closeAllModals, showForgeProGate,
-  purchaseForgePro, restoreForgePro, selectForgePlan,
+  openModal, closeAllModals, showForgeProGate, upgradeForgePro,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
   saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
   moveTask, toggleCatGroup, openCatTaskModal, saveCatTask,
@@ -5470,9 +5168,6 @@ Object.assign(window, {
   triggerClosetProfilePhotoUpload, handleClosetProfilePhotoUpload,
   triggerClosetProgressPhotoUpload, handleClosetProgressPhotoUpload, deleteClosetProgressPhoto,
   triggerCosPlanPhotoUpload, handleCosPlanPhotoUpload, promoteCosPlanToQuest,
-  triggerQuestCardPhotoUpload, handleQuestCardPhotoUpload,
-  triggerNewQuestPhotoUpload, handleNewQuestPhotoSelected,
-  triggerNewCosPlanPhotoUpload, handleNewCosPlanPhotoSelected,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
