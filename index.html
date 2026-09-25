@@ -1055,6 +1055,10 @@ select option{background:#1a2f1c;}
               <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
               Continue with Google
             </button>
+            <button class="btn" style="width:100%;font-size:13px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:8px;" onclick="handleAppleSignIn()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M16.365 1.43c0 1.14-.417 2.21-1.14 3.02-.86.98-2.27 1.74-3.44 1.65-.14-1.1.42-2.25 1.13-3.02.85-.95 2.35-1.66 3.45-1.65zm3.61 6.38c-.09.06-1.94 1.13-1.92 3.37.02 2.68 2.35 3.57 2.38 3.58-.02.06-.37 1.28-1.22 2.53-.74 1.08-1.51 2.16-2.72 2.18-1.19.02-1.57-.7-2.93-.7-1.36 0-1.79.68-2.92.72-1.17.04-2.06-1.17-2.81-2.24-1.53-2.19-2.7-6.2-1.13-8.9.78-1.34 2.17-2.19 3.68-2.21 1.15-.02 2.23.77 2.93.77.7 0 2-.95 3.38-.81.58.02 2.2.23 3.24 1.76-.08.05-1.94 1.13-1.96 3.35.02 2.66 2.32 3.55 2.35 3.56.02-.06.35-1.2 1.15-2.45.68-1.06 1.39-2.12 2.5-2.14-.93-.11-1.72-.55-2.02-.94v-.03z"/></svg>
+              Continue with Apple
+            </button>
             <div class="signin-divider">
               <div class="signin-divider-line"></div>
               <div class="signin-divider-text">or continue without account</div>
@@ -1467,7 +1471,7 @@ select option{background:#1a2f1c;}
 <script type="module">
 // ── FIREBASE SETUP ────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, signInWithCredential, GoogleAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, signInWithCredential, GoogleAuthProvider, OAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1486,6 +1490,9 @@ const auth     = getAuth(app);
 const db       = getFirestore(app);
 const storage  = getStorage(app);
 const provider = new GoogleAuthProvider();
+const appleProvider = new OAuthProvider('apple.com');
+appleProvider.addScope('email');
+appleProvider.addScope('name');
 
 let currentUser = null;
 
@@ -1708,6 +1715,43 @@ window.handleGoogleSignIn = async function() {
     await signInWithRedirect(auth, provider);
   } catch(e) {
     alert('Google sign in failed: ' + e.message);
+  }
+};
+
+// Native bridge: AppleSignInManager.swift runs Apple's own system sign-in UI
+// (ASAuthorizationController) outside this WKWebView and hands back an
+// identity token + raw nonce as a CustomEvent, which we exchange for a
+// Firebase credential here — same pattern as the Google flow above.
+window.addEventListener('apple-signin-result', async (evt) => {
+  const { success, idToken, rawNonce, error } = evt.detail || {};
+  if (!success) {
+    if (error && error !== 'cancelled') alert('Apple sign in failed: ' + error);
+    return;
+  }
+  try {
+    const credential = appleProvider.credential({ idToken, rawNonce });
+    const cred = await signInWithCredential(auth, credential);
+    currentUser = cred.user;
+    showSignedIn(cred.user.email);
+    await loadFromCloud();
+  } catch(e) {
+    alert('Apple sign in failed: ' + e.message);
+  }
+});
+
+window.handleAppleSignIn = async function() {
+  // Inside the iOS app: hand off to native code (ASAuthorizationController),
+  // which reports back via the 'apple-signin-result' event above.
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['apple-signin']) {
+    window.webkit.messageHandlers['apple-signin'].postMessage({});
+    return;
+  }
+  // Plain browser (e.g. the web version at gingerquest.github.io): normal
+  // Firebase redirect flow, since there's no native bridge to use there.
+  try {
+    await signInWithRedirect(auth, appleProvider);
+  } catch(e) {
+    alert('Apple sign in failed: ' + e.message);
   }
 };
 
