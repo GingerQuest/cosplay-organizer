@@ -3414,6 +3414,7 @@ function renderEventList(){
     const dot=item.type==='con'?'#7eb8c9':item.type==='craft'?'#d4a855':item.type==='photo'?'var(--lavender)':'#c47a8a';
     const chipCls=item.type==='craft'?'craft-chip':item.type==='photo'?'photo-chip':isSoon?'soon':'ok';
     const dl=item.start?new Date(item.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
+    const isPastEv=item.days<0&&(item.type==='con'||item.type==='craft'||item.type==='photo');
     return pastHeader+`<div class="event-item">
       <div class="ev-dot" style="background:${dot}"></div>
       <div class="ev-info">
@@ -3423,13 +3424,13 @@ function renderEventList(){
         ${item.type==='craft'&&item.hours?`<div class="ev-sub">⏱ ${item.hours}h planned</div>`:''}
       </div>
       <div class="ev-chip ${chipCls}">${lbl}</div>
-      ${item.type==='con'?`<button onclick="openPackingPage('${item.id}','con','calendar')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
-      ${item.type==='con'?`<button onclick="openConBudgetPage('${item.id}','calendar')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">💰 Budget</button>`:''}
-      ${item.type==='photo'?`<button onclick="openPackingPage('${item.id}','photo','calendar')" style="background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.35);color:var(--lavender);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
-      ${item.days<0&&(item.type==='con'||item.type==='craft'||item.type==='photo')?`<button onclick="viewEventCostumes('${item.type}','${item.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text-dim);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">👀 View</button><button onclick="archiveEventFromCalendar('${item.type}','${item.id}')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">📁 Archive</button>`:''}
-      ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
-      ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
-      ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;cursor:pointer;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
+      ${!isPastEv&&item.type==='con'?`<button onclick="openPackingPage('${item.id}','con','calendar')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
+      ${!isPastEv&&item.type==='con'?`<button onclick="openConBudgetPage('${item.id}','calendar')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">💰 Budget</button>`:''}
+      ${!isPastEv&&item.type==='photo'?`<button onclick="openPackingPage('${item.id}','photo','calendar')" style="background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.35);color:var(--lavender);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
+      ${isPastEv?`<button onclick="viewEventCostumes('${item.type}','${item.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text-dim);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">👀 View</button><button onclick="archiveEventFromCalendar('${item.type}','${item.id}')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">📁 Archive</button>`:''}
+      ${!isPastEv&&item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
+      ${!isPastEv&&item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
+      ${!isPastEv&&item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;cursor:pointer;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
 }
@@ -3472,6 +3473,16 @@ function archiveEventFromCalendar(type, id) {
   item.archived = true;
   save();
   renderCalendar();
+}
+// Permanently removes a past event from the Past Events page (Profile → Archive).
+function deletePastEvent(type, id) {
+  if (!confirm('Permanently delete this event? This can\'t be undone.')) return;
+  if (type === 'con') conventions = conventions.filter(c => c.id !== id);
+  else if (type === 'craft') craftDays = craftDays.filter(c => c.id !== id);
+  else if (type === 'photo') photoshoots = photoshoots.filter(p => p.id !== id);
+  else return;
+  save();
+  renderPastEventsPage();
 }
 
 // ── CON ───────────────────────────────────────────────────────
@@ -5121,9 +5132,9 @@ function renderPastEventsPage() {
         <div style="font-size:11px;font-weight:800;color:var(--sky);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">🎪 Convention</div>
         <div style="font-size:15px;font-weight:800;color:var(--cream);margin-bottom:2px;">${con.name}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">📅 ${dateStr}${con.location?' · 📍'+con.location:''}</div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button onclick="openPackingPage('${con.id}','con','home')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🎒 Packing Plan</button>
-          <button onclick="openConBudgetPage('${con.id}','home')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">💰 Budget</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <button onclick="viewEventCostumes('con','${con.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text-dim);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">👀 View</button>
+          <span class="ev-del" onclick="deletePastEvent('con','${con.id}')">×</span>
         </div>
       </div>`;
     } else if (type === 'photo') {
@@ -5133,8 +5144,9 @@ function renderPastEventsPage() {
         <div style="font-size:11px;font-weight:800;color:var(--lavender);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">📸 Photoshoot</div>
         <div style="font-size:15px;font-weight:800;color:var(--cream);margin-bottom:2px;">${p.name}</div>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">📅 ${dateFmt}${p.location?' · 📍'+p.location:''}</div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="openPackingPage('${p.id}','photo','home')" style="background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.35);color:var(--lavender);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">🎒 Packing Plan</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="viewEventCostumes('photo','${p.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text-dim);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">👀 View</button>
+          <span class="ev-del" onclick="deletePastEvent('photo','${p.id}')">×</span>
         </div>
       </div>`;
     } else {
@@ -5143,7 +5155,11 @@ function renderPastEventsPage() {
       return `<div style="margin-bottom:12px;padding:14px;background:rgba(10,24,12,0.55);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:14px;">
         <div style="font-size:11px;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.4px;margin-bottom:2px;">🪡 Craft Day</div>
         <div style="font-size:15px;font-weight:800;color:var(--cream);margin-bottom:2px;">${c.costumeName}</div>
-        <div style="font-size:12px;color:var(--text-dim);">📅 ${dateFmt}${c.notes?' · '+c.notes:''}</div>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">📅 ${dateFmt}${c.notes?' · '+c.notes:''}</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button onclick="viewEventCostumes('craft','${c.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text-dim);border-radius:20px;padding:5px 12px;font-size:11px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;">👀 View</button>
+          <span class="ev-del" onclick="deletePastEvent('craft','${c.id}')">×</span>
+        </div>
       </div>`;
     }
   }).join('');
@@ -5302,7 +5318,7 @@ Object.assign(window, {
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
-  viewEventCostumes, archiveEventFromCalendar,
+  viewEventCostumes, archiveEventFromCalendar, deletePastEvent,
   openAddCosPlanModal, editCosPlan, saveCosPlan, deleteCosPlan,
   switchQuestTab, renderQuestCosPlanList, toggleHomeSection, openFabChoice,
   renderStats, switchInnerTab, toggleDayNight,
