@@ -3345,7 +3345,7 @@ function renderCalendar(){
 
   const evMap={};
   const addEv=(date,type)=>{if(!evMap[date])evMap[date]={};evMap[date][type]=true;};
-  conventions.forEach(c=>{
+  conventions.filter(c=>!c.archived).forEach(c=>{
     if(!c.start) return;
     const start=new Date(c.start+'T00:00:00');
     const end=c.end?new Date(c.end+'T00:00:00'):start;
@@ -3357,8 +3357,8 @@ function renderCalendar(){
       else evMap[ds].conMid=true;
     }
   });
-  craftDays.forEach(cr=>{if(cr.date)addEv(cr.date,'craft');});
-  photoshoots.forEach(p=>{if(p.date)addEv(p.date,'photo');});
+  craftDays.filter(cr=>!cr.archived).forEach(cr=>{if(cr.date)addEv(cr.date,'craft');});
+  photoshoots.filter(p=>!p.archived).forEach(p=>{if(p.date)addEv(p.date,'photo');});
   cosplays.forEach(c=>{if(c.deadline)addEv(c.deadline,'dl');});
 
   let html='';
