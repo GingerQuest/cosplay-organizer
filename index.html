@@ -1756,12 +1756,20 @@ window.handleAppleSignIn = async function() {
     window.webkit.messageHandlers['apple-signin'].postMessage({});
     return;
   }
-  // Plain browser (e.g. the web version at gingerquest.github.io): normal
-  // Firebase redirect flow, since there's no native bridge to use there.
+  // Plain browser (e.g. the web version at gingerquest.github.io): use a
+  // popup rather than a full-page redirect, for the same reason as Google
+  // sign-in above — Safari blocks the storage a redirect needs to persist
+  // across the trip to our Firebase authDomain, so it comes back silently
+  // signed out.
   try {
-    await signInWithRedirect(auth, appleProvider);
+    const cred = await signInWithPopup(auth, appleProvider);
+    currentUser = cred.user;
+    showSignedIn(cred.user.email);
+    await loadFromCloud();
   } catch(e) {
-    alert('Apple sign in failed: ' + e.message);
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      alert('Apple sign in failed: ' + e.message);
+    }
   }
 };
 
