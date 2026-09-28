@@ -3398,9 +3398,9 @@ function renderCalendar(){
 
 function renderEventList(){
   const now=new Date(),all=[];
-  conventions.forEach(c=>{const d=Math.ceil((new Date(c.start+'T00:00:00')-now)/86400000);all.push({...c,days:d,type:'con'});});
-  craftDays.forEach(cr=>{const d=Math.ceil((new Date(cr.date+'T00:00:00')-now)/86400000);all.push({...cr,days:d,type:'craft',start:cr.date,name:'🪡 '+cr.costumeName+' craft day'});});
-  photoshoots.forEach(p=>{const d=Math.ceil((new Date(p.date+'T00:00:00')-now)/86400000);all.push({...p,days:d,type:'photo',start:p.date,name:'📸 '+(p.name||'Photoshoot')});});
+  conventions.filter(c=>!c.archived).forEach(c=>{const d=Math.ceil((new Date(c.start+'T00:00:00')-now)/86400000);all.push({...c,days:d,type:'con'});});
+  craftDays.filter(cr=>!cr.archived).forEach(cr=>{const d=Math.ceil((new Date(cr.date+'T00:00:00')-now)/86400000);all.push({...cr,days:d,type:'craft',start:cr.date,name:'🪡 '+cr.costumeName+' craft day'});});
+  photoshoots.filter(p=>!p.archived).forEach(p=>{const d=Math.ceil((new Date(p.date+'T00:00:00')-now)/86400000);all.push({...p,days:d,type:'photo',start:p.date,name:'📸 '+(p.name||'Photoshoot')});});
   cosplays.filter(c=>c.deadline).forEach(c=>{const d=Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000);all.push({id:c.id,name:c.name+' deadline',start:c.deadline,days:d,type:'dl'});});
   all.sort((a,b)=>{const ap=a.days<0,bp=b.days<0;if(ap!==bp)return ap?1:-1;return ap?b.days-a.days:a.days-b.days;});
   const upcoming=all.filter(x=>x.days>=-180);
@@ -3426,11 +3426,52 @@ function renderEventList(){
       ${item.type==='con'?`<button onclick="openPackingPage('${item.id}','con','calendar')" style="background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.35);color:var(--sky);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
       ${item.type==='con'?`<button onclick="openConBudgetPage('${item.id}','calendar')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">💰 Budget</button>`:''}
       ${item.type==='photo'?`<button onclick="openPackingPage('${item.id}','photo','calendar')" style="background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.35);color:var(--lavender);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">🎒 Pack</button>`:''}
+      ${item.days<0&&(item.type==='con'||item.type==='craft'||item.type==='photo')?`<button onclick="viewEventCostumes('${item.type}','${item.id}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:var(--text-dim);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">👀 View</button><button onclick="archiveEventFromCalendar('${item.type}','${item.id}')" style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.35);color:var(--gold);border-radius:20px;padding:3px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">📁 Archive</button>`:''}
       ${item.type==='con'?`<span class="mat-edit" onclick="openConModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCon('${item.id}')">×</span>`:''}
       ${item.type==='craft'?`<span class="mat-edit" onclick="openCraftEditModal('${item.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span><span class="ev-del" onclick="deleteCraftDay('${item.id}');renderCalendar()">×</span>`:''}
       ${item.type==='photo'?`<span class="mat-edit" onclick="openPhotoModal('${item.id}')" style="font-size:15px;cursor:pointer;">✎</span><span class="ev-del" onclick="deletePhoto('${item.id}')">×</span>`:''}
     </div>`;
   }).join('');
+}
+
+// Past-event View/Archive helpers — resolve costume names worn for a con/photoshoot
+// (via its packing plan) or craft day (direct costumeName field), and move an event
+// out of the main Calendar list into the existing Past Events page (Profile) without
+// deleting it.
+function _resolveCostumeName(costumeId) {
+  if (!costumeId) return null;
+  if (costumeId.startsWith('quest_')) {
+    const q = (cosplays || []).find(c => c.id === costumeId.slice(6));
+    return q ? q.name : null;
+  }
+  const c = (closet || []).find(x => x.id === costumeId);
+  return c ? c.name : null;
+}
+function _costumeNamesForEvent(type, item) {
+  if (type === 'craft') return item.costumeName ? [item.costumeName] : [];
+  const planKey = type === 'photo' ? 'photo_' + item.id : item.id;
+  const plan = _getPackPlan(planKey);
+  const names = [];
+  Object.values(plan.slots || {}).forEach(costumeId => {
+    const name = _resolveCostumeName(costumeId);
+    if (name && !names.includes(name)) names.push(name);
+  });
+  return names;
+}
+function viewEventCostumes(type, id) {
+  const arr = type === 'con' ? conventions : type === 'craft' ? craftDays : type === 'photo' ? photoshoots : null;
+  const item = arr && arr.find(x => x.id === id);
+  if (!item) return;
+  const names = _costumeNamesForEvent(type, item);
+  alert(names.length ? names.join('\n') : 'No costumes logged for this event.');
+}
+function archiveEventFromCalendar(type, id) {
+  const arr = type === 'con' ? conventions : type === 'craft' ? craftDays : type === 'photo' ? photoshoots : null;
+  const item = arr && arr.find(x => x.id === id);
+  if (!item) return;
+  item.archived = true;
+  save();
+  renderCalendar();
 }
 
 // ── CON ───────────────────────────────────────────────────────
@@ -5261,6 +5302,7 @@ Object.assign(window, {
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
+  viewEventCostumes, archiveEventFromCalendar,
   openAddCosPlanModal, editCosPlan, saveCosPlan, deleteCosPlan,
   switchQuestTab, renderQuestCosPlanList, toggleHomeSection, openFabChoice,
   renderStats, switchInnerTab, toggleDayNight,
