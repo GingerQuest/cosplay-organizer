@@ -3474,10 +3474,67 @@ function renderCalendar(){
         }
       }
     }
-    html+=`<div class="cal-day ${dayClass}" style="position:relative;">${d}${secondaryDots}</div>`;
+    html+=`<div class="cal-day ${dayClass}" style="position:relative;cursor:pointer;" onclick="openDayModal('${ds}')">${d}${secondaryDots}</div>`;
   }
   document.getElementById('calDays').innerHTML=html;
   renderEventList();
+}
+
+// ── TAP A CALENDAR DAY: add / edit / remove events on that date ──
+function openDayModal(dateStr) {
+  const dayEvents = [];
+  conventions.filter(c=>!c.archived).forEach(c=>{
+    if (!c.start) return;
+    const end = c.end || c.start;
+    if (dateStr >= c.start && dateStr <= end) dayEvents.push({type:'con', id:c.id, label:'🎪 '+c.name});
+  });
+  craftDays.filter(cr=>!cr.archived).forEach(cr=>{
+    if (cr.date===dateStr) dayEvents.push({type:'craft', id:cr.id, label:'🪡 '+cr.costumeName+' craft day'});
+  });
+  photoshoots.filter(p=>!p.archived).forEach(p=>{
+    if (p.date===dateStr) dayEvents.push({type:'photo', id:p.id, label:'📸 '+(p.name||'Photoshoot')});
+  });
+
+  const dateLabel = new Date(dateStr+'T00:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+  const overlay = document.createElement('div');
+  overlay.id = 'dayModalOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.5);display:flex;align-items:flex-end;justify-content:center;';
+  overlay.innerHTML = `<div style="width:100%;max-width:430px;max-height:80vh;overflow-y:auto;background:var(--panel-solid,#1c2a20);border-radius:20px 20px 0 0;padding:20px 20px 32px;">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px;"></div>
+    <div style="font-size:15px;font-weight:800;color:var(--cream);margin-bottom:14px;text-align:center;">${dateLabel}</div>
+    ${dayEvents.length ? `<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">${dayEvents.map(ev=>`
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.15);border:1px solid var(--border);border-radius:12px;padding:10px 12px;">
+        <div style="flex:1;min-width:0;font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${ev.label}</div>
+        <span class="mat-edit" onclick="_dayModalEdit('${ev.type}','${ev.id}')" style="font-size:15px;cursor:pointer;color:var(--text-dim);">✎</span>
+        <span class="ev-del" onclick="_dayModalDelete('${ev.type}','${ev.id}')">×</span>
+      </div>`).join('')}</div>` : `<div style="text-align:center;font-size:13px;color:var(--text-dim);margin-bottom:18px;">Nothing on the calendar yet for this day.</div>`}
+    <div style="font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px;">Add to this day</div>
+    <button onclick="_dayModalAdd('con','${dateStr}')" style="width:100%;padding:12px;border-radius:12px;background:rgba(126,184,201,.15);border:1px solid rgba(126,184,201,.4);color:var(--sky);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">🎪 Con/Event</button>
+    <button onclick="_dayModalAdd('craft','${dateStr}')" style="width:100%;padding:12px;border-radius:12px;background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.4);color:var(--gold);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">🪡 Craft Day</button>
+    <button onclick="_dayModalAdd('photo','${dateStr}')" style="width:100%;padding:12px;border-radius:12px;background:rgba(160,154,200,.15);border:1px solid rgba(160,154,200,.4);color:var(--lavender);font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">📸 Photoshoot</button>
+    <button onclick="document.getElementById('dayModalOverlay').remove();" style="width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-top:4px;">Cancel</button>
+  </div>`;
+  overlay.addEventListener('click', e => { if (e.target===overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
+function _dayModalEdit(type, id) {
+  document.getElementById('dayModalOverlay')?.remove();
+  if (type==='con') openConModal(id);
+  else if (type==='craft') openCraftEditModal(id);
+  else if (type==='photo') openPhotoModal(id);
+}
+function _dayModalDelete(type, id) {
+  if (!confirm('Remove this from your calendar?')) return;
+  document.getElementById('dayModalOverlay')?.remove();
+  if (type==='con') deleteCon(id);
+  else if (type==='craft') deleteCraftDay(id);
+  else if (type==='photo') deletePhoto(id);
+}
+function _dayModalAdd(type, dateStr) {
+  document.getElementById('dayModalOverlay')?.remove();
+  if (type==='con') { openConModal(); document.getElementById('c-start').value = dateStr; document.getElementById('c-end').value = dateStr; }
+  else if (type==='craft') { openCraftModal(); document.getElementById('cr-date').value = dateStr; }
+  else if (type==='photo') { openPhotoModal(); document.getElementById('ph-date').value = dateStr; }
 }
 
 function renderEventList(){
@@ -4512,7 +4569,7 @@ function savePiece() {
   };
   if (pieceId) {
     const idx = c.pieces.findIndex(x => x.id === pieceId);
-    if (idx !== -1) c.pieces[idx] = pieceData;
+    if (idx !== -1) c.pieces[idx] = {...c.pieces[idx], ...pieceData};
     // editing: close modal
     document.getElementById('piece-modal-overlay').classList.remove('open');
     _editingPieceInfo = null;
@@ -5493,6 +5550,7 @@ Object.assign(window, {
   triggerCosPlanModalPhotoUpload, handleCosPlanModalPhotoUpload,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
+  openDayModal, _dayModalEdit, _dayModalDelete, _dayModalAdd,
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
   viewEventCostumes, archiveEventFromCalendar, deletePastEvent,
