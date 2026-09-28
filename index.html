@@ -661,6 +661,9 @@ select option{background:#1a2f1c;}
 
       <!-- Closet pane -->
       <div id="qpane-closet" style="display:none;">
+        <div style="padding:0 16px 12px;display:flex;justify-content:flex-end;">
+          <button class="btn sm" style="border-color:rgba(143,188,143,0.4);color:var(--sage);background:rgba(143,188,143,0.08);" onclick="openAddCostume()">+ Add to Closet</button>
+        </div>
         <!-- Filter / sort bar -->
         <div style="display:flex;gap:8px;align-items:center;padding:8px 16px 4px;flex-wrap:wrap;">
           <select id="closet-filter-status" onchange="renderClosetList()" style="flex:1;min-width:110px;padding:6px 8px;border-radius:10px;border:1px solid var(--lavender);background:var(--card);color:var(--text);font-size:13px;">
@@ -731,10 +734,8 @@ select option{background:#1a2f1c;}
         <div id="closet-empty" class="empty-state hidden" style="padding:44px 24px;">
           <span class="e-emoji">👗</span>
           <div class="e-title">Your closet is empty!</div>
-          <div class="e-sub">Tap + to add your first costume.</div>
+          <div class="e-sub">Tap + Add to Closet above to add your first costume!</div>
         </div>
-        <!-- Add button -->
-        <button onclick="openAddCostume()" style="position:fixed;bottom:76px;right:20px;z-index:90;background:var(--sage);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,.35);cursor:pointer;display:flex;align-items:center;justify-content:center;" id="closet-fab">＋</button>
       </div>
     </div>
 
@@ -1417,9 +1418,14 @@ select option{background:#1a2f1c;}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="cosPlanModalTitle">✨ Add a Cos-Plan</div>
+    <div class="form-group" style="display:flex;justify-content:center;margin-bottom:2px;">
+      <div class="photo-avatar-wrap" onclick="triggerCosPlanModalPhotoUpload()" title="Tap to add a photo" style="width:96px;height:96px;border-radius:50%;">
+        <div class="costume-hero-avatar" id="cosPlanModalAvatar" style="width:96px;height:96px;border-radius:50%;"></div>
+        <div class="photo-cam-overlay" style="border-radius:50%;">📷</div>
+      </div>
+    </div>
     <div class="form-group"><label>Character Name</label><input type="text" id="cp-name" placeholder="Who do you want to cosplay?"></div>
     <div class="form-group"><label>Series / Fandom</label><input type="text" id="cp-series" placeholder="Game, anime, movie…"></div>
-    <div class="form-group"><label>Reference Image URL <span style="color:var(--text-dim);font-size:10px;">(optional)</span></label><input type="url" id="cp-imgurl" placeholder="https://…"></div>
     <div class="form-group"><label>Notes / Inspiration</label><textarea id="cp-notes" placeholder="What draws you to this character?" style="min-height:80px;"></textarea></div>
     <button class="btn primary" style="width:100%;margin-top:4px;" onclick="saveCosPlan()">Save Cos-Plan ✨</button>
   </div>
@@ -3304,6 +3310,8 @@ async function deleteClosetProgressPhoto(idx) {
 
 // ── COS-PLAN PHOTOS & PROMOTE ─────────────────────────────────
 let _cosPlanPhotoTargetId = null;
+// Add/Edit Cos-Plan modal photo staging — mirrors the New Quest modal's avatar upload
+let _cosPlanModalId = null, _cosPlanModalImgUrl = '', _cosPlanModalStoragePath = null;
 
 function triggerCosPlanPhotoUpload(id, event) {
   if (event) event.stopPropagation();
@@ -3325,6 +3333,41 @@ async function handleCosPlanPhotoUpload(e) {
     save();
     renderQuestCosPlanList();
   } catch(err) { console.error('CosPlan photo upload failed:', err); }
+}
+
+// Renders the Add/Edit Cos-Plan modal's circular photo avatar from _cosPlanModalImgUrl
+function _renderCosPlanModalAvatar() {
+  const el = document.getElementById('cosPlanModalAvatar');
+  if (!el) return;
+  el.innerHTML = _cosPlanModalImgUrl
+    ? `<img src="${_cosPlanModalImgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+    : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:2px;"><span style="font-size:22px;">📷</span><span style="font-size:8px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;">Add Photo</span></div>`;
+}
+function triggerCosPlanModalPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleCosPlanModalPhotoUpload;
+  input.click();
+}
+async function handleCosPlanModalPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  if (!_cosPlanModalId) _cosPlanModalId = uid();
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/cosplans/${_cosPlanModalId}/profile`;
+    if (_cosPlanModalStoragePath) {
+      try { await deleteObject(storageRef(storage, _cosPlanModalStoragePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    _cosPlanModalImgUrl = url;
+    _cosPlanModalStoragePath = path;
+    _renderCosPlanModalAvatar();
+    _showUploadToast('Photo saved ✿');
+  } catch(err) {
+    console.error('CosPlan modal photo upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
 }
 
 async function promoteCosPlanToQuest(id) {
@@ -3740,33 +3783,40 @@ let _editingCosPlanId = null;
 
 function openAddCosPlanModal(prefillName) {
   _editingCosPlanId = null;
+  _cosPlanModalId = uid();
+  _cosPlanModalImgUrl = '';
+  _cosPlanModalStoragePath = null;
   document.getElementById('cosPlanModalTitle').textContent = '✨ Add a Cos-Plan';
   document.getElementById('cp-name').value = prefillName || '';
   document.getElementById('cp-series').value = '';
-  document.getElementById('cp-imgurl').value = '';
   document.getElementById('cp-notes').value = '';
   openModal('cosPlanModal');
+  _renderCosPlanModalAvatar();
 }
 
 function editCosPlan(id) {
   const cp = (cosPlans||[]).find(p => p.id === id);
   if (!cp) return;
   _editingCosPlanId = id;
+  _cosPlanModalId = cp.id;
+  _cosPlanModalImgUrl = cp.imgurl || '';
+  _cosPlanModalStoragePath = cp._profileStoragePath || null;
   document.getElementById('cosPlanModalTitle').textContent = '✎ Edit Cos-Plan';
   document.getElementById('cp-name').value = cp.name || '';
   document.getElementById('cp-series').value = cp.series || '';
-  document.getElementById('cp-imgurl').value = cp.imgurl || '';
   document.getElementById('cp-notes').value = cp.notes || '';
   openModal('cosPlanModal');
+  _renderCosPlanModalAvatar();
 }
 
 function saveCosPlan() {
   const name = document.getElementById('cp-name').value.trim();
   if (!name) { alert('Please enter a character name!'); return; }
   const isNew = !_editingCosPlanId;
-  const item = { id: _editingCosPlanId || uid(), name,
+  const item = { id: _editingCosPlanId || _cosPlanModalId || uid(), name,
     series: document.getElementById('cp-series').value.trim(),
-    imgurl: document.getElementById('cp-imgurl').value.trim(),
+    imgurl: _cosPlanModalImgUrl,
+    _profileStoragePath: _cosPlanModalStoragePath,
     notes:  document.getElementById('cp-notes').value.trim() };
   if (_editingCosPlanId) {
     const idx = cosPlans.findIndex(p => p.id === _editingCosPlanId);
@@ -5337,6 +5387,7 @@ Object.assign(window, {
   triggerClosetProfilePhotoUpload, handleClosetProfilePhotoUpload,
   triggerClosetProgressPhotoUpload, handleClosetProgressPhotoUpload, deleteClosetProgressPhoto,
   triggerCosPlanPhotoUpload, handleCosPlanPhotoUpload, promoteCosPlanToQuest,
+  triggerCosPlanModalPhotoUpload, handleCosPlanModalPhotoUpload,
   saveLink, deleteLink, saveNotes,
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
