@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cosplay-forge-v7';
+const CACHE_NAME = 'cosplay-forge-v8';
 const ASSETS = [
   '/cosplay-organizer/',
   '/cosplay-organizer/index.html',

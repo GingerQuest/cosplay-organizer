@@ -2847,6 +2847,13 @@ function renderCostumePage() {
     </div>
   </div>`;
 
+  // Explicit "mark finished" action — a quest with no checklist items can otherwise
+  // never reach 100%/done, since status only auto-flips to 'done' when every task
+  // is checked off.
+  const finishSection = c.status==='done' ? '' : `<div style="padding:10px 4px 0;">
+    <button class="btn sage-btn" style="width:100%;padding:14px;font-size:15px;" onclick="markQuestFinished('${c.id}')">🎉 Mark Quest Finished</button>
+  </div>`;
+
   document.getElementById('costumePageContent').innerHTML=`
     <div style="padding:20px 0 0;">
       <div class="p-header" style="padding-bottom:8px;">
@@ -2871,7 +2878,7 @@ function renderCostumePage() {
           <div class="prog-track"><div class="prog-fill ${p===100?'full':''}" style="width:${p}%"></div></div>
         </div>
       </div>
-      ${craftSection}${budgetSection}${tasksSection}${suppliesSection}${hoursSection}${photosSection}${linksSection}${notesSection}
+      ${craftSection}${budgetSection}${tasksSection}${suppliesSection}${hoursSection}${photosSection}${linksSection}${notesSection}${finishSection}
       <div style="height:8px;"></div>
     </div>`;
 }
@@ -3066,6 +3073,20 @@ function toggleTask(i){
 }
 
 function deleteTask(i){const c=getCostume(viewingId);if(!c)return;c.checklist.splice(i,1);save();renderCostumePage();}
+
+// Explicit "Mark Quest Finished" button — covers quests with no checklist items,
+// which otherwise have no way to ever reach 'done' status.
+function markQuestFinished(id) {
+  const c = getCostume(id); if (!c) return;
+  if (!confirm(`Mark "${c.name}" as finished?`)) return;
+  const wasAlreadyDone = c.status === 'done';
+  c.status = 'done';
+  save();
+  renderCostumePage(); renderHome();
+  const ap = document.querySelector('.page.active')?.id;
+  if (ap === 'page-quests') renderAllQuests();
+  if (!wasAlreadyDone) showClosetPrompt(c.id);
+}
 
 function moveTask(i,dir){
   const c=getCostume(viewingId);if(!c)return;
@@ -3895,31 +3916,35 @@ function dismissClosetPrompt() {
 }
 
 function confirmMoveToCloset() {
-  const c = cosplays.find(x=>x.id===_promptCosplayId);
-  if (!c) { dismissClosetPrompt(); return; }
-  // Create a closet entry pre-filled from the quest
-  const item = {
-    id: 'cl_' + Date.now(),
-    sourceQuestId: c.id,
-    name: c.name || c.series || 'My Costume',
-    character: c.name || '',
-    fandom: c.series || '',
-    status: 'complete',
-    tags: [],
-    notes: c.notes || '',
-    makeupRef: '',
-    contactsRef: '',
-    repairNotes: '',
-    favorite: false,
-    createdAt: Date.now(),
-  };
-  closet.unshift(item);
-  save();
+  const id = _promptCosplayId;
   dismissClosetPrompt();
-  // Switch to closet tab so they see it
-  showPage('quests');
-  switchQuestTab('closet');
-  renderClosetList();
+  openClosetTransitionModal(id);
+}
+
+// Opens the existing Add/Edit Costume form pre-filled from the quest, so tags,
+// makeup/contacts refs, and other closet-only info can be filled in during the
+// quest → closet transition instead of creating a blank closet entry.
+function openClosetTransitionModal(questId) {
+  const c = cosplays.find(x => x.id === questId);
+  if (!c) return;
+  _editingClosetId = null;
+  _pendingClosetSourceQuestId = questId;
+  _selectedTags = [];
+  document.getElementById('cm-name').value = c.name || c.series || 'My Costume';
+  document.getElementById('cm-character').value = c.name || '';
+  document.getElementById('cm-fandom').value = c.series || '';
+  document.getElementById('cm-status').value = 'complete';
+  document.getElementById('cm-notes').value = c.notes || '';
+  document.getElementById('cm-makeup').value = '';
+  document.getElementById('cm-contacts').value = '';
+  document.getElementById('cm-repair-notes').value = '';
+  document.getElementById('cm-repair-section').style.display = 'none';
+  document.getElementById('costume-modal-title').textContent = '👗 Add to Closet';
+  renderTagPicker();
+  const overlay = document.getElementById('costume-modal-overlay');
+  overlay.classList.remove('hidden');
+  overlay.classList.add('open');
+  document.getElementById('cm-status').onchange = toggleRepairSection;
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -3977,6 +4002,10 @@ const STATUS_LABELS = {
 
 let _editingClosetId = null;
 let _selectedTags = [];
+// Set while the Add Costume modal is being used to promote a finished quest to the
+// Closet (openClosetTransitionModal) — tells saveCostume() to carry over the quest's
+// id/photo and to navigate back to the Closet tab afterward.
+let _pendingClosetSourceQuestId = null;
 
 // ── render closet list ─────────────────────────────────────────
 function renderClosetList() {
@@ -4136,6 +4165,7 @@ function toggleClosetFavorite(id) {
 function openAddCostume() {
   _editingClosetId = null;
   _selectedTags = [];
+  _pendingClosetSourceQuestId = null;
   document.getElementById('cm-name').value = '';
   document.getElementById('cm-character').value = '';
   document.getElementById('cm-fandom').value = '';
@@ -4158,6 +4188,7 @@ function openEditCostume(id) {
   if (!c) return;
   _editingClosetId = id;
   _selectedTags = [...(c.tags||[])];
+  _pendingClosetSourceQuestId = null;
   document.getElementById('cm-name').value = c.name||'';
   document.getElementById('cm-character').value = c.character||'';
   document.getElementById('cm-fandom').value = c.fandom||'';
@@ -4214,12 +4245,14 @@ function closeCostumeModal(e) {
   overlay.classList.add('hidden');
   _editingClosetId = null;
   _selectedTags = [];
+  _pendingClosetSourceQuestId = null;
 }
 
 function saveCostume() {
   const name = document.getElementById('cm-name').value.trim();
   if (!name) { alert('Please enter a costume name.'); return; }
   const status = document.getElementById('cm-status').value;
+  const sourceQuest = _pendingClosetSourceQuestId ? cosplays.find(x=>x.id===_pendingClosetSourceQuestId) : null;
   const item = {
     id: _editingClosetId || ('cl_' + Date.now()),
     name,
@@ -4234,17 +4267,26 @@ function saveCostume() {
     favorite:  _editingClosetId ? ((closet||[]).find(x=>x.id===_editingClosetId)?.favorite||false) : false,
     createdAt: _editingClosetId ? ((closet||[]).find(x=>x.id===_editingClosetId)?.createdAt||Date.now()) : Date.now(),
   };
+  if (sourceQuest) {
+    // Carry the quest's identity and photo over — but not its Storage path, so
+    // re-uploading a new Closet photo later can't delete the quest's own file.
+    item.sourceQuestId = sourceQuest.id;
+    item.imgurl = sourceQuest.imgurl || '';
+  }
   if (_editingClosetId) {
     const idx = (closet||[]).findIndex(x=>x.id===_editingClosetId);
     if (idx !== -1) closet[idx] = item;
   } else {
     closet.unshift(item);
   }
+  const wasClosetTransition = !!_pendingClosetSourceQuestId;
   _editingClosetId = null;
   _selectedTags = [];
+  _pendingClosetSourceQuestId = null;
   save();
   closeCostumeModal();
   renderClosetList();
+  if (wasClosetTransition) { showPage('quests'); switchQuestTab('closet'); }
 }
 
 // ── archive / delete ───────────────────────────────────────────
@@ -5402,7 +5444,8 @@ Object.assign(window, {
   openAddCostume, openEditCostume, closeCostumeModal, saveCostume,
   toggleCostumeTag, toggleRepairSection, toggleClosetFavorite,
   archiveCostume, deleteCostume,
-  showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset,
+  showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset, openClosetTransitionModal,
+  markQuestFinished,
   renderPiecesList, openAddPiece, openEditPiece, closePieceModal, savePiece, deletePiece,
   renderArchiveList, restoreCostume, openArchivePage, closeArchivePage, _updateArchiveBadge,
   dismissUnpackNudge,
