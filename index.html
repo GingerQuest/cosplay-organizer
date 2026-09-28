@@ -3406,13 +3406,15 @@ function renderEventList(){
   const upcoming=all.filter(x=>x.days>=-180);
   const el=document.getElementById('eventList');
   if(!upcoming.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:13px;font-weight:600;">No upcoming events 🌿</div>';return;}
-  el.innerHTML=upcoming.map(item=>{
+  const firstPastIdx=upcoming.findIndex(x=>x.days<0);
+  el.innerHTML=upcoming.map((item,i)=>{
+    const pastHeader=i===firstPastIdx?`<div style="margin:14px 4px 6px;font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);">Past Events</div>`:'';
     const lbl=item.days<0?'Past':item.days===0?'Today!':item.days===1?'Tomorrow!':'In '+item.days+'d';
     const isSoon=item.days<=14&&item.days>=0;
     const dot=item.type==='con'?'#7eb8c9':item.type==='craft'?'#d4a855':item.type==='photo'?'var(--lavender)':'#c47a8a';
     const chipCls=item.type==='craft'?'craft-chip':item.type==='photo'?'photo-chip':isSoon?'soon':'ok';
     const dl=item.start?new Date(item.start+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'';
-    return `<div class="event-item">
+    return pastHeader+`<div class="event-item">
       <div class="ev-dot" style="background:${dot}"></div>
       <div class="ev-info">
         <div class="ev-name">${item.name}</div>
@@ -3621,7 +3623,10 @@ function renderQuestCosPlanList() {
         ${cp.notes?`<div style="font-size:12px;color:var(--text-dim);margin-top:4px;font-weight:600;">${cp.notes}</div>`:''}
         <button onclick="promoteCosPlanToQuest('${cp.id}')" style="margin-top:8px;background:linear-gradient(135deg,rgba(42,90,50,.7),rgba(60,120,70,.7));border:1px solid rgba(100,180,110,.35);color:var(--sage);border-radius:20px;padding:4px 12px;font-size:11px;font-weight:800;cursor:pointer;letter-spacing:.3px;">⚔️ Start Quest</button>
       </div>
-      <span style="color:var(--text-dim);cursor:pointer;font-size:18px;padding:4px;align-self:flex-start;" onclick="deleteCosPlan('${cp.id}')">×</span>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;align-self:flex-start;">
+        <span class="mat-edit" style="font-size:15px;cursor:pointer;color:var(--text-dim);" onclick="editCosPlan('${cp.id}')">✎</span>
+        <span style="color:var(--text-dim);cursor:pointer;font-size:18px;" onclick="deleteCosPlan('${cp.id}')">×</span>
+      </div>
     </div>`).join('');
 }
 
@@ -3666,6 +3671,18 @@ function openAddCosPlanModal(prefillName) {
   document.getElementById('cp-series').value = '';
   document.getElementById('cp-imgurl').value = '';
   document.getElementById('cp-notes').value = '';
+  openModal('cosPlanModal');
+}
+
+function editCosPlan(id) {
+  const cp = (cosPlans||[]).find(p => p.id === id);
+  if (!cp) return;
+  _editingCosPlanId = id;
+  document.getElementById('cosPlanModalTitle').textContent = '✎ Edit Cos-Plan';
+  document.getElementById('cp-name').value = cp.name || '';
+  document.getElementById('cp-series').value = cp.series || '';
+  document.getElementById('cp-imgurl').value = cp.imgurl || '';
+  document.getElementById('cp-notes').value = cp.notes || '';
   openModal('cosPlanModal');
 }
 
@@ -5244,7 +5261,7 @@ Object.assign(window, {
   changeMonth, renderCalendar, openConModal, saveCon, deleteCon,
   openPhotoModal, savePhoto, deletePhoto,
   openCraftEditModal,
-  openAddCosPlanModal, saveCosPlan, deleteCosPlan,
+  openAddCosPlanModal, editCosPlan, saveCosPlan, deleteCosPlan,
   switchQuestTab, renderQuestCosPlanList, toggleHomeSection, openFabChoice,
   renderStats, switchInnerTab, toggleDayNight,
   showOnboarding, skipOnboarding, obNext, obStartQuest,
