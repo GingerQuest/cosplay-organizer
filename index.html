@@ -569,9 +569,9 @@ select option{background:#1a2f1c;}
       <!-- Active Quests -->
       <div class="home-sec-header section-header-row collapsed" id="hheader-quests" onclick="toggleHomeSection('quests')">
         <div class="section-label sage" id="hlabel-quests" style="margin-bottom:0;transition:font-size .2s;">Active Quests</div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:20px;">
           <div style="font-size:12px;font-weight:700;color:var(--sage);" onclick="event.stopPropagation();showPage('quests')">See all →</div>
-          <span class="home-sec-chev" id="hchev-quests" style="color:var(--sage);transition:transform .2s;transform:rotate(-90deg);">▾</span>
+          <span class="home-sec-chev" id="hchev-quests" style="color:var(--sage);transition:transform .2s;transform:rotate(-90deg);padding:10px;margin:-10px;font-size:16px;">▾</span>
         </div>
       </div>
       <div id="hsec-quests" style="display:none;">
@@ -587,7 +587,7 @@ select option{background:#1a2f1c;}
       <div id="homeRepairsSection" class="hidden">
         <div class="home-sec-header section-header-row collapsed" id="hheader-repairs" style="margin-top:8px;" onclick="toggleHomeSection('repairs')">
           <div class="section-label" id="hlabel-repairs" style="margin-bottom:0;color:#e88;transition:font-size .2s;">🔧 Repairs & Care</div>
-          <span class="home-sec-chev" id="hchev-repairs" style="color:#e88;transition:transform .2s;transform:rotate(-90deg);">▾</span>
+          <span class="home-sec-chev" id="hchev-repairs" style="color:#e88;transition:transform .2s;transform:rotate(-90deg);padding:10px;margin:-10px;font-size:16px;">▾</span>
         </div>
         <div id="hsec-repairs" style="display:none;">
           <div id="homeRepairsList" style="padding:0 16px 8px;"></div>
@@ -597,9 +597,9 @@ select option{background:#1a2f1c;}
       <!-- Upcoming Events -->
       <div class="home-sec-header section-header-row collapsed" id="hheader-events" style="margin-top:8px;" onclick="toggleHomeSection('events')">
         <div class="section-label sky" id="hlabel-events" style="margin-bottom:0;color:var(--sky);transition:font-size .2s;">📅 Coming Up</div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:20px;">
           <div style="font-size:12px;font-weight:700;color:var(--sky);" onclick="event.stopPropagation();showPage('calendar')">See all →</div>
-          <span class="home-sec-chev" id="hchev-events" style="color:var(--sky);transition:transform .2s;transform:rotate(-90deg);">▾</span>
+          <span class="home-sec-chev" id="hchev-events" style="color:var(--sky);transition:transform .2s;transform:rotate(-90deg);padding:10px;margin:-10px;font-size:16px;">▾</span>
         </div>
       </div>
       <div id="hsec-events" style="display:none;">
@@ -610,9 +610,9 @@ select option{background:#1a2f1c;}
       <div id="homeCosPlanSection">
         <div class="home-sec-header section-header-row collapsed" id="hheader-cosplans" style="margin-top:8px;" onclick="toggleHomeSection('cosplans')">
           <div class="section-label lavender" id="hlabel-cosplans" style="margin-bottom:0;color:var(--lavender);transition:font-size .2s;">✨ Cos-Plans</div>
-          <div style="display:flex;align-items:center;gap:8px;">
+          <div style="display:flex;align-items:center;gap:20px;">
             <div style="font-size:12px;font-weight:700;color:var(--lavender);" onclick="event.stopPropagation();openAddCosPlanModal()">+ Add</div>
-            <span class="home-sec-chev" id="hchev-cosplans" style="color:var(--lavender);transition:transform .2s;transform:rotate(-90deg);">▾</span>
+            <span class="home-sec-chev" id="hchev-cosplans" style="color:var(--lavender);transition:transform .2s;transform:rotate(-90deg);padding:10px;margin:-10px;font-size:16px;">▾</span>
           </div>
         </div>
         <div id="hsec-cosplans" style="display:none;">
@@ -1165,7 +1165,7 @@ select option{background:#1a2f1c;}
           </div>
         </div>
 
-        <div class="app-version">Cosplay Forge v1.0 · Built with ✿ and canvas magic</div>
+        <div class="app-version" id="appVersionText">Cosplay Forge · Built with ✿ and canvas magic</div>
       </div>
 
     </div>
@@ -1787,6 +1787,7 @@ window.handleDeleteAccount = async function() {
 // ── DATA ──────────────────────────────────────────────────────
 const DAYS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
 const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const APP_VERSION = '2.4'; // bump this alongside each App Store / Play Store release
 let cosplays    = [];
 let conventions = [];
 let craftDays   = [];
@@ -2230,6 +2231,8 @@ function confirmClearData() {
 
 // Restore saved theme & session on load
 (function() {
+  const verEl = document.getElementById('appVersionText');
+  if (verEl) verEl.textContent = `Cosplay Forge v${APP_VERSION} · Built with ✿ and canvas magic`;
   const savedTheme = localStorage.getItem('cf_theme');
   if (savedTheme === 'day') {
     const sw    = document.getElementById('themeSwitch');
@@ -2449,7 +2452,10 @@ function setFilter(f,el) {
 
 function calcProgress(c) {
   if (!c.checklist||!c.checklist.length) return c.status==='done'?100:0;
-  return Math.round(c.checklist.filter(i=>i.done).length/c.checklist.length*100);
+  const totalItems=c.checklist.reduce((acc,t)=>t.type==='category'?acc+(t.steps||[]).length:acc+1,0);
+  const doneItems=c.checklist.reduce((acc,t)=>t.type==='category'?acc+(t.steps||[]).filter(s=>s.done).length:acc+(t.done?1:0),0);
+  if (!totalItems) return c.status==='done'?100:0;
+  return Math.round(doneItems/totalItems*100);
 }
 
 function questCard(c) {
@@ -3120,7 +3126,7 @@ async function _uploadToStorage(file, path) {
 }
 
 function triggerProfilePhotoUpload() {
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
   const input = document.getElementById('profilePhotoInput');
   input.onchange = handleProfilePhotoUpload;
   input.click();
@@ -3148,7 +3154,7 @@ async function handleProfilePhotoUpload(e) {
 }
 
 function triggerProgressPhotoUpload() {
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
   const c = getCostume(viewingId); if (!c) return;
   if ((c.photos||[]).length >= FREE_PROGRESS_PHOTO_LIMIT) {
     _showUploadToast('3 photo limit on free builds — Forge Pro coming soon ✨');
@@ -3189,7 +3195,7 @@ async function deleteProgressPhoto(idx) {
 
 // ── CLOSET PHOTO UPLOADS ──────────────────────────────────────
 function triggerClosetProfilePhotoUpload() {
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
   const input = document.getElementById('profilePhotoInput');
   input.onchange = handleClosetProfilePhotoUpload;
   input.click();
@@ -3217,7 +3223,7 @@ async function handleClosetProfilePhotoUpload(e) {
 }
 
 function triggerClosetProgressPhotoUpload() {
-  if (!currentUser) { _showUploadToast('Sign in to upload photos'); return; }
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
   const c = getClosetItem(viewingClosetId); if (!c) return;
   if ((c.photos||[]).length >= FREE_PROGRESS_PHOTO_LIMIT) {
     _showUploadToast('3 photo limit on free builds — Forge Pro coming soon ✨');
@@ -3378,8 +3384,8 @@ function renderEventList(){
   craftDays.forEach(cr=>{const d=Math.ceil((new Date(cr.date+'T00:00:00')-now)/86400000);all.push({...cr,days:d,type:'craft',start:cr.date,name:'🪡 '+cr.costumeName+' craft day'});});
   photoshoots.forEach(p=>{const d=Math.ceil((new Date(p.date+'T00:00:00')-now)/86400000);all.push({...p,days:d,type:'photo',start:p.date,name:'📸 '+(p.name||'Photoshoot')});});
   cosplays.filter(c=>c.deadline).forEach(c=>{const d=Math.ceil((new Date(c.deadline+'T00:00:00')-now)/86400000);all.push({id:c.id,name:c.name+' deadline',start:c.deadline,days:d,type:'dl'});});
-  all.sort((a,b)=>a.days-b.days);
-  const upcoming=all.filter(x=>x.days>=-1);
+  all.sort((a,b)=>{const ap=a.days<0,bp=b.days<0;if(ap!==bp)return ap?1:-1;return ap?b.days-a.days:a.days-b.days;});
+  const upcoming=all.filter(x=>x.days>=-180);
   const el=document.getElementById('eventList');
   if(!upcoming.length){el.innerHTML='<div style="text-align:center;padding:20px;color:var(--text-dim);font-size:13px;font-weight:600;">No upcoming events 🌿</div>';return;}
   el.innerHTML=upcoming.map(item=>{
@@ -3458,7 +3464,8 @@ function renderStats(){
   const totalCostumes = (closet||[]).length + cosplays.length;
   document.getElementById('s-hero-num').textContent = totalCostumes;
   const subParts = [];
-  if ((closet||[]).length) subParts.push(`${(closet||[]).length} archived`);
+  const archivedCount = (closet||[]).filter(c=>c.archivedAt).length;
+  if (archivedCount) subParts.push(`${archivedCount} archived`);
   if (done) subParts.push(`${done} completed`);
   if (wip)  subParts.push(`${wip} in progress`);
   document.getElementById('s-hero-sub').textContent = subParts.length ? subParts.join(' · ') : 'Start your first quest ✦';
@@ -3647,6 +3654,7 @@ function openAddCosPlanModal(prefillName) {
 function saveCosPlan() {
   const name = document.getElementById('cp-name').value.trim();
   if (!name) { alert('Please enter a character name!'); return; }
+  const isNew = !_editingCosPlanId;
   const item = { id: _editingCosPlanId || uid(), name,
     series: document.getElementById('cp-series').value.trim(),
     imgurl: document.getElementById('cp-imgurl').value.trim(),
@@ -3656,13 +3664,15 @@ function saveCosPlan() {
     if (idx !== -1) cosPlans[idx] = item;
   } else { cosPlans.unshift(item); }
   _editingCosPlanId = null;
-  save(); closeAllModals(); renderHome();
+  save(); closeAllModals(); renderHome(); renderQuestCosPlanList();
+  // Make sure a newly added Cos-Plan is actually visible, not hidden in a collapsed section
+  if (isNew && !_homeSectionState.cosplans) toggleHomeSection('cosplans');
 }
 
 function deleteCosPlan(id) {
   if (!confirm('Remove this Cos-Plan?')) return;
   cosPlans = cosPlans.filter(p => p.id !== id);
-  save(); renderHome();
+  save(); renderHome(); renderQuestCosPlanList();
 }
 
 // ── PHOTOSHOOTS ───────────────────────────────────────────────
@@ -4937,7 +4947,7 @@ function _renderConBudgetPage() {
 
 // ── CONFIRMATION SCREENSHOTS ───────────────────────────────────────────────
 function triggerConfirmationUpload(conId, type) {
-  if (!currentUser) { _showUploadToast('Sign in to upload confirmations'); return; }
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload confirmations'); return; }
   const input = document.getElementById('confirmPhotoInput');
   if (!input) return;
   input.onchange = e => handleConfirmationUpload(e, conId, type);
