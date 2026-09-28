@@ -482,11 +482,6 @@ input[type=text],input[type=number],input[type=date],input[type=url],select,text
 input:focus,select:focus,textarea:focus{border-color:var(--sage);}
 textarea{resize:vertical;min-height:70px;}
 select option{background:#1a2f1c;}
-.emoji-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:8px;}
-.emoji-opt{aspect-ratio:1;background:rgba(0,0,0,.2);border-radius:10px;border:2px solid transparent;
-  display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;transition:all .15s;}
-.emoji-opt:hover{border-color:var(--sage);}
-.emoji-opt.sel{border-color:var(--sage);background:rgba(143,188,143,.1);}
 .flex-row{display:flex;gap:10px;}
 .flex-row>*{flex:1;}
 .section-header-row{display:flex;align-items:center;justify-content:space-between;margin:0 16px 10px;cursor:pointer;}
@@ -1299,20 +1294,14 @@ select option{background:#1a2f1c;}
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modalTitle">🌿 New Quest</div>
+    <div class="form-group" style="display:flex;justify-content:center;margin-bottom:2px;">
+      <div class="photo-avatar-wrap" onclick="triggerCosplayModalPhotoUpload()" title="Tap to add a photo" style="width:96px;height:96px;border-radius:50%;">
+        <div class="costume-hero-avatar" id="cosplayModalAvatar" style="width:96px;height:96px;border-radius:50%;"></div>
+        <div class="photo-cam-overlay" style="border-radius:50%;">📷</div>
+      </div>
+    </div>
     <div class="form-group"><label>Character Name</label><input type="text" id="f-name" placeholder="Nausicaä, Sailor Moon…"></div>
     <div class="form-group"><label>Series / Fandom</label><input type="text" id="f-series" placeholder="Studio Ghibli, Sailor Moon…"></div>
-    <div class="form-group">
-      <label>Icon</label>
-      <div class="emoji-grid" id="emojiGrid">
-        <div class="emoji-opt sel" data-e="🧙">🧙</div><div class="emoji-opt" data-e="🦸">🦸</div>
-        <div class="emoji-opt" data-e="🧝">🧝</div><div class="emoji-opt" data-e="🧜">🧜</div>
-        <div class="emoji-opt" data-e="🥷">🥷</div><div class="emoji-opt" data-e="🐉">🐉</div>
-        <div class="emoji-opt" data-e="⚔️">⚔️</div><div class="emoji-opt" data-e="🧚">🧚</div>
-        <div class="emoji-opt" data-e="🦊">🦊</div><div class="emoji-opt" data-e="🌸">🌸</div>
-      </div>
-      <label style="margin-top:6px;">Or Image URL</label>
-      <input type="url" id="f-imgurl" placeholder="https://…">
-    </div>
     <div class="form-group"><label>Con Deadline</label><input type="date" id="f-deadline"></div>
     <div class="form-group"><label>Notes</label><textarea id="f-notes" placeholder="General notes, ideas…"></textarea></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0 6px;">
@@ -1813,7 +1802,10 @@ let cosPlans    = [];
 let photoshoots = [];
 let closet        = []; // { id, name, character, fandom, status, tags[], notes, pieces[], makeupRef, contactsRef, favorite, archivedAt? }
 let packingPlans  = []; // { conId, slots:{ 'YYYY-MM-DD_am|pm|full': closetId }, checked:{ key: bool } }
-let editingId = null, viewingId = null, selectedEmoji = '🧙';
+let editingId = null, viewingId = null;
+// New Quest modal photo staging — id/url/storage path for the avatar upload, since a
+// new quest has no saved id yet until saveCosplay() runs.
+let _cosplayModalId = null, _cosplayModalImgUrl = '', _cosplayModalStoragePath = null;
 let isPro = false; // Forge Pro subscriber flag — loaded from Firebase
 let viewingClosetId = null;
 function getClosetItem(id) { return (closet||[]).find(c => c.id === id); }
@@ -2521,42 +2513,72 @@ function openAddModal() {
   // Free tier: max 3 active quests
   if (!isPro && cosplays.length >= 3) { showForgeProGate(); return; }
   editingId=null;
+  _cosplayModalId = uid();
+  _cosplayModalImgUrl = '';
+  _cosplayModalStoragePath = null;
   document.getElementById('modalTitle').textContent='🌿 New Quest';
   document.getElementById('deleteBtn').classList.add('hidden');
   clearForm(); openModal('cosplayModal');
+  _renderCosplayModalAvatar();
 }
 function openEdit(id) {
   const c=getCostume(id); if(!c) return;
   editingId=id;
+  _cosplayModalId = c.id;
+  _cosplayModalImgUrl = c.imgurl || '';
+  _cosplayModalStoragePath = c._profileStoragePath || null;
   document.getElementById('modalTitle').textContent='✏️ Edit Quest';
   document.getElementById('deleteBtn').classList.remove('hidden');
   document.getElementById('f-name').value=c.name||'';
   document.getElementById('f-series').value=c.series||'';
-  document.getElementById('f-imgurl').value=c.imgurl||'';
   // status preserved from existing data — no UI field
   document.getElementById('f-deadline').value=c.deadline||'';
   document.getElementById('f-notes').value=c.notes||'';
-  selectedEmoji=c.emoji||'🧙';
-  document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e===selectedEmoji));
   _setCommissionSwitch(!!c.isCommission);
   openModal('cosplayModal');
+  _renderCosplayModalAvatar();
 }
 function clearForm() {
-  ['f-name','f-series','f-imgurl','f-deadline','f-notes','f-target-con'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';})
-  selectedEmoji='🧙';
-  document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.toggle('sel',e.dataset.e==='🧙'));
+  ['f-name','f-series','f-deadline','f-notes','f-target-con'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';})
   if (_commissionOn) toggleCommissionSwitch(); // reset to off
 }
 function _setCommissionSwitch(val) {
   if (!!val !== _commissionOn) toggleCommissionSwitch();
 }
-document.querySelectorAll('.emoji-opt').forEach(opt=>{
-  opt.addEventListener('click',()=>{
-    selectedEmoji=opt.dataset.e;
-    document.querySelectorAll('.emoji-opt').forEach(e=>e.classList.remove('sel'));
-    opt.classList.add('sel');
-  });
-});
+// Renders the New Quest / Edit Quest modal's circular photo avatar from _cosplayModalImgUrl
+function _renderCosplayModalAvatar() {
+  const el = document.getElementById('cosplayModalAvatar');
+  if (!el) return;
+  el.innerHTML = _cosplayModalImgUrl
+    ? `<img src="${_cosplayModalImgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+    : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:2px;"><span style="font-size:22px;">📷</span><span style="font-size:8px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;">Add Photo</span></div>`;
+}
+function triggerCosplayModalPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleCosplayModalPhotoUpload;
+  input.click();
+}
+async function handleCosplayModalPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  if (!_cosplayModalId) _cosplayModalId = uid();
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/cosplays/${_cosplayModalId}/profile`;
+    if (_cosplayModalStoragePath) {
+      try { await deleteObject(storageRef(storage, _cosplayModalStoragePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    _cosplayModalImgUrl = url;
+    _cosplayModalStoragePath = path;
+    _renderCosplayModalAvatar();
+    _showUploadToast('Photo saved ✿');
+  } catch(err) {
+    console.error('Quest photo upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
 let _commissionOn = false;
 function toggleCommissionSwitch() {
   _commissionOn = !_commissionOn;
@@ -2580,12 +2602,12 @@ function saveCosplay() {
   if(!name){alert('Please enter a character name!');return;}
   const prevStatus=editingId?(cosplays.find(c=>c.id===editingId)?.status||'wip'):'wip';
   const newStatus=editingId?prevStatus:'wip';
-  const data={name,series:document.getElementById('f-series').value.trim(),imgurl:document.getElementById('f-imgurl').value.trim(),
-    emoji:selectedEmoji,status:newStatus,deadline:document.getElementById('f-deadline').value,
+  const data={name,series:document.getElementById('f-series').value.trim(),imgurl:_cosplayModalImgUrl,
+    _profileStoragePath:_cosplayModalStoragePath,status:newStatus,deadline:document.getElementById('f-deadline').value,
     notes:document.getElementById('f-notes').value.trim(),isCommission:_commissionOn,
     targetConId:document.getElementById('f-target-con')?.value||''};
   if(editingId){const i=cosplays.findIndex(c=>c.id===editingId);cosplays[i]={...cosplays[i],...data};}
-  else cosplays.unshift({id:uid(),checklist:[],expenses:[],materials:[],supplies:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
+  else cosplays.unshift({id:_cosplayModalId||uid(),emoji:'🧙',checklist:[],expenses:[],materials:[],supplies:[],hours:[],links:[],budget:0,budgetEnabled:false,...data});
   save(); closeAllModals(); renderHome();
   if(viewingId===editingId) renderCostumePage();
   const ap=document.querySelector('.page.active')?.id;
@@ -5301,6 +5323,7 @@ Object.assign(window, {
   showPage, openCostumePage, backFromCostume,
   renderHome, renderAllQuests, setFilter,
   openAddModal, openEdit, clearForm, saveCosplay, deleteCurrent, toggleCommissionSwitch, _setCommissionSwitch,
+  triggerCosplayModalPhotoUpload, handleCosplayModalPhotoUpload,
   renderCostumePage, toggleBlock, toggleBudget, saveBudget,
   openModal, closeAllModals, showForgeProGate, upgradeForgePro,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
