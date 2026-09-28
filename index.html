@@ -669,7 +669,6 @@ select option{background:#1a2f1c;}
           <select id="closet-filter-status" onchange="renderClosetList()" style="flex:1;min-width:110px;padding:6px 8px;border-radius:10px;border:1px solid var(--lavender);background:var(--card);color:var(--text);font-size:13px;">
             <option value="all">All costumes</option>
             <option value="complete">✅ Complete</option>
-            <option value="wip">🪡 WIP</option>
             <option value="on_hold">⏸ On Hold</option>
             <option value="needs_repair">🔧 Needs Repair</option>
             <option value="retired">📦 Retired</option>
@@ -851,10 +850,10 @@ select option{background:#1a2f1c;}
 
         <!-- Costume Photo -->
         <div style="display:flex;justify-content:center;margin-bottom:16px;">
-          <button onclick="alert('Photo uploads coming soon! 📷')" type="button" style="width:90px;height:90px;border-radius:50%;background:rgba(143,188,143,.1);border:2px dashed var(--sage);color:var(--sage);font-size:13px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
-            <span style="font-size:26px;">📷</span>
-            <span style="font-size:10px;">Add Photo</span>
-          </button>
+          <div class="photo-avatar-wrap" onclick="triggerCostumeModalPhotoUpload()" title="Tap to add a photo" style="width:96px;height:96px;border-radius:50%;">
+            <div class="costume-hero-avatar" id="costumeModalAvatar" style="width:96px;height:96px;border-radius:50%;"></div>
+            <div class="photo-cam-overlay" style="border-radius:50%;">📷</div>
+          </div>
         </div>
 
         <!-- Name -->
@@ -877,7 +876,6 @@ select option{background:#1a2f1c;}
         <label class="field-label">Status</label>
         <select id="cm-status" class="field-input">
           <option value="complete">✅ Complete</option>
-          <option value="wip">🪡 Work in Progress</option>
           <option value="on_hold">⏸ On Hold</option>
           <option value="needs_repair">🔧 Needs Repair</option>
           <option value="retired">📦 Retired</option>
@@ -2964,7 +2962,7 @@ function saveCraftDay() {
     notes,hours:parseFloat(document.getElementById('cr-hours').value)||0};
   if(_editingCraftId){
     const idx=craftDays.findIndex(c=>c.id===_editingCraftId);
-    if(idx!==-1) craftDays[idx]=item;
+    if(idx!==-1) craftDays[idx]={...craftDays[idx],...item};
     _editingCraftId=null;
     save(); closeAllModals();
     const ap=document.querySelector('.page.active')?.id;
@@ -3841,7 +3839,7 @@ function saveCosPlan() {
     notes:  document.getElementById('cp-notes').value.trim() };
   if (_editingCosPlanId) {
     const idx = cosPlans.findIndex(p => p.id === _editingCosPlanId);
-    if (idx !== -1) cosPlans[idx] = item;
+    if (idx !== -1) cosPlans[idx] = {...cosPlans[idx], ...item};
   } else { cosPlans.unshift(item); }
   _editingCosPlanId = null;
   save(); closeAllModals(); renderHome(); renderQuestCosPlanList();
@@ -3883,7 +3881,7 @@ function savePhoto() {
     notes: document.getElementById('ph-notes').value.trim() };
   if (_editingPhotoId) {
     const idx = photoshoots.findIndex(p => p.id === _editingPhotoId);
-    if (idx !== -1) photoshoots[idx] = item;
+    if (idx !== -1) photoshoots[idx] = {...photoshoots[idx], ...item};
   } else { photoshoots.push(item); }
   _editingPhotoId = null;
   save(); closeAllModals(); renderCalendar();
@@ -3930,6 +3928,9 @@ function openClosetTransitionModal(questId) {
   _editingClosetId = null;
   _pendingClosetSourceQuestId = questId;
   _selectedTags = [];
+  _costumeModalId = 'cl_' + Date.now();
+  _costumeModalImgUrl = c.imgurl || '';
+  _costumeModalStoragePath = null; // quest's own Storage path is never reused — see saveCostume()
   document.getElementById('cm-name').value = c.name || c.series || 'My Costume';
   document.getElementById('cm-character').value = c.name || '';
   document.getElementById('cm-fandom').value = c.series || '';
@@ -3945,6 +3946,7 @@ function openClosetTransitionModal(questId) {
   overlay.classList.remove('hidden');
   overlay.classList.add('open');
   document.getElementById('cm-status').onchange = toggleRepairSection;
+  _renderCostumeModalAvatar();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -4006,6 +4008,43 @@ let _selectedTags = [];
 // Closet (openClosetTransitionModal) — tells saveCostume() to carry over the quest's
 // id/photo and to navigate back to the Closet tab afterward.
 let _pendingClosetSourceQuestId = null;
+// Add/Edit Costume modal photo staging — id/url/storage path for the avatar upload,
+// since a new closet item has no saved id until saveCostume() runs (same pattern as
+// the New Quest and Add Cos-Plan modals).
+let _costumeModalId = null, _costumeModalImgUrl = '', _costumeModalStoragePath = null;
+function _renderCostumeModalAvatar() {
+  const el = document.getElementById('costumeModalAvatar');
+  if (!el) return;
+  el.innerHTML = _costumeModalImgUrl
+    ? `<img src="${_costumeModalImgUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`
+    : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%;gap:2px;"><span style="font-size:22px;">📷</span><span style="font-size:8px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;">Add Photo</span></div>`;
+}
+function triggerCostumeModalPhotoUpload() {
+  if (!currentUser) { _showUploadToast('Sign in from Profile → Settings to upload photos'); return; }
+  const input = document.getElementById('profilePhotoInput');
+  input.onchange = handleCostumeModalPhotoUpload;
+  input.click();
+}
+async function handleCostumeModalPhotoUpload(e) {
+  const file = e.target.files[0]; if (!file) return;
+  if (!_costumeModalId) _costumeModalId = 'cl_' + Date.now();
+  _showUploadToast('Uploading…');
+  try {
+    const path = `users/${currentUser.uid}/closet/${_costumeModalId}/profile`;
+    if (_costumeModalStoragePath) {
+      try { await deleteObject(storageRef(storage, _costumeModalStoragePath)); } catch(_) {}
+    }
+    const url = await _uploadToStorage(file, path);
+    _costumeModalImgUrl = url;
+    _costumeModalStoragePath = path;
+    _renderCostumeModalAvatar();
+    _showUploadToast('Photo saved ✿');
+  } catch(err) {
+    console.error('Costume modal photo upload error', err);
+    _showUploadToast('Upload failed — try again');
+  }
+  e.target.value = '';
+}
 
 // ── render closet list ─────────────────────────────────────────
 function renderClosetList() {
@@ -4166,6 +4205,9 @@ function openAddCostume() {
   _editingClosetId = null;
   _selectedTags = [];
   _pendingClosetSourceQuestId = null;
+  _costumeModalId = 'cl_' + Date.now();
+  _costumeModalImgUrl = '';
+  _costumeModalStoragePath = null;
   document.getElementById('cm-name').value = '';
   document.getElementById('cm-character').value = '';
   document.getElementById('cm-fandom').value = '';
@@ -4181,6 +4223,7 @@ function openAddCostume() {
   overlay.classList.remove('hidden');
   overlay.classList.add('open');
   document.getElementById('cm-status').onchange = toggleRepairSection;
+  _renderCostumeModalAvatar();
 }
 
 function openEditCostume(id) {
@@ -4189,6 +4232,9 @@ function openEditCostume(id) {
   _editingClosetId = id;
   _selectedTags = [...(c.tags||[])];
   _pendingClosetSourceQuestId = null;
+  _costumeModalId = c.id;
+  _costumeModalImgUrl = c.imgurl || '';
+  _costumeModalStoragePath = c._profileStoragePath || null;
   document.getElementById('cm-name').value = c.name||'';
   document.getElementById('cm-character').value = c.character||'';
   document.getElementById('cm-fandom').value = c.fandom||'';
@@ -4203,6 +4249,7 @@ function openEditCostume(id) {
   const overlay = document.getElementById('costume-modal-overlay');
   overlay.classList.remove('hidden');
   overlay.classList.add('open');
+  _renderCostumeModalAvatar();
   document.getElementById('cm-status').onchange = toggleRepairSection;
 }
 
@@ -4246,20 +4293,25 @@ function closeCostumeModal(e) {
   _editingClosetId = null;
   _selectedTags = [];
   _pendingClosetSourceQuestId = null;
+  _costumeModalId = null;
+  _costumeModalImgUrl = '';
+  _costumeModalStoragePath = null;
 }
 
 function saveCostume() {
   const name = document.getElementById('cm-name').value.trim();
   if (!name) { alert('Please enter a costume name.'); return; }
   const status = document.getElementById('cm-status').value;
-  const sourceQuest = _pendingClosetSourceQuestId ? cosplays.find(x=>x.id===_pendingClosetSourceQuestId) : null;
+  const sourceQuestId = _pendingClosetSourceQuestId;
   const item = {
-    id: _editingClosetId || ('cl_' + Date.now()),
+    id: _editingClosetId || _costumeModalId || ('cl_' + Date.now()),
     name,
     character: document.getElementById('cm-character').value.trim(),
     fandom:    document.getElementById('cm-fandom').value.trim(),
     status,
     tags:      [..._selectedTags],
+    imgurl:    _costumeModalImgUrl,
+    _profileStoragePath: _costumeModalStoragePath,
     notes:     document.getElementById('cm-notes').value.trim(),
     makeupRef: document.getElementById('cm-makeup').value.trim(),
     contactsRef: document.getElementById('cm-contacts').value.trim(),
@@ -4267,26 +4319,35 @@ function saveCostume() {
     favorite:  _editingClosetId ? ((closet||[]).find(x=>x.id===_editingClosetId)?.favorite||false) : false,
     createdAt: _editingClosetId ? ((closet||[]).find(x=>x.id===_editingClosetId)?.createdAt||Date.now()) : Date.now(),
   };
-  if (sourceQuest) {
-    // Carry the quest's identity and photo over — but not its Storage path, so
-    // re-uploading a new Closet photo later can't delete the quest's own file.
-    item.sourceQuestId = sourceQuest.id;
-    item.imgurl = sourceQuest.imgurl || '';
-  }
+  if (sourceQuestId) item.sourceQuestId = sourceQuestId;
   if (_editingClosetId) {
     const idx = (closet||[]).findIndex(x=>x.id===_editingClosetId);
-    if (idx !== -1) closet[idx] = item;
+    // Merge onto the existing item rather than replacing it outright — a plain
+    // replace here was silently wiping fields this form never touches (pieces,
+    // progress photos, archivedAt, etc.) on every edit.
+    if (idx !== -1) closet[idx] = { ...closet[idx], ...item };
   } else {
     closet.unshift(item);
   }
-  const wasClosetTransition = !!_pendingClosetSourceQuestId;
+  // Finishing the quest → closet handoff removes the quest from Active Quests —
+  // it now lives in the Closet instead, same as a promoted Cos-Plan leaves the
+  // Cos-Plans list once it becomes a quest.
+  if (sourceQuestId) {
+    cosplays = cosplays.filter(c => c.id !== sourceQuestId);
+    craftDays = craftDays.filter(cr => cr.costumeId !== sourceQuestId);
+  }
+  const wasClosetTransition = !!sourceQuestId;
   _editingClosetId = null;
   _selectedTags = [];
   _pendingClosetSourceQuestId = null;
+  _costumeModalId = null;
+  _costumeModalImgUrl = '';
+  _costumeModalStoragePath = null;
   save();
   closeCostumeModal();
   renderClosetList();
-  if (wasClosetTransition) { showPage('quests'); switchQuestTab('closet'); }
+  renderHome();
+  if (wasClosetTransition) { showPage('quests'); switchQuestTab('closet'); renderAllQuests(); }
 }
 
 // ── archive / delete ───────────────────────────────────────────
@@ -5442,6 +5503,7 @@ Object.assign(window, {
   exportData, confirmClearData, showSignedIn,
   renderClosetList, openClosetDetail, closeClosetDetail,
   openAddCostume, openEditCostume, closeCostumeModal, saveCostume,
+  triggerCostumeModalPhotoUpload, handleCostumeModalPhotoUpload,
   toggleCostumeTag, toggleRepairSection, toggleClosetFavorite,
   archiveCostume, deleteCostume,
   showClosetPrompt, dismissClosetPrompt, confirmMoveToCloset, openClosetTransitionModal,
