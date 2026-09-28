@@ -1471,7 +1471,7 @@ select option{background:#1a2f1c;}
 <script type="module">
 // ── FIREBASE SETUP ────────────────────────────────────────────
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, getRedirectResult, signInWithCredential, GoogleAuthProvider, OAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithRedirect, signInWithPopup, getRedirectResult, signInWithCredential, GoogleAuthProvider, OAuthProvider, signOut, onAuthStateChanged, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getStorage, ref as storageRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
@@ -1709,12 +1709,22 @@ window.handleGoogleSignIn = async function() {
     window.webkit.messageHandlers['google-signin'].postMessage({});
     return;
   }
-  // Plain browser (e.g. the web version at gingerquest.github.io): normal
-  // Firebase redirect flow, since there's no native bridge to use there.
+  // Plain browser (e.g. the web version at gingerquest.github.io): use a
+  // popup rather than a full-page redirect. Our Firebase authDomain
+  // (cosplay-forge.firebaseapp.com) is a different origin than the app's
+  // real domain, and Safari's cross-site tracking prevention blocks the
+  // storage signInWithRedirect needs to persist across that round trip —
+  // it silently comes back signed out with no error. A popup avoids the
+  // full-page navigation entirely, so it isn't affected by that.
   try {
-    await signInWithRedirect(auth, provider);
+    const cred = await signInWithPopup(auth, provider);
+    currentUser = cred.user;
+    showSignedIn(cred.user.email);
+    await loadFromCloud();
   } catch(e) {
-    alert('Google sign in failed: ' + e.message);
+    if (e.code !== 'auth/popup-closed-by-user' && e.code !== 'auth/cancelled-popup-request') {
+      alert('Google sign in failed: ' + e.message);
+    }
   }
 };
 
