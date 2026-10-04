@@ -1280,11 +1280,12 @@ select option{background:#1a2f1c;}
       </div>
     </div>
     <div style="display:flex;gap:8px;justify-content:center;margin-bottom:18px;">
-      <div style="background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$2.99 / mo</div>
-      <div style="background:rgba(212,168,85,.18);border:1px solid rgba(212,168,85,.4);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;">$24.99 / yr <span style="font-weight:600;opacity:.75;">· save 30%</span></div>
+      <div id="proPlanPill-monthly" onclick="selectForgeProPlan('monthly')" style="cursor:pointer;background:rgba(212,168,85,.12);border:1px solid rgba(212,168,85,.3);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;"><span class="proPlanPrice">$2.99 / mo</span></div>
+      <div id="proPlanPill-annual" onclick="selectForgeProPlan('annual')" style="cursor:pointer;background:rgba(212,168,85,.28);border:1.5px solid var(--gold);border-radius:99px;padding:7px 16px;font-size:12px;font-weight:800;color:#d4a855;"><span class="proPlanPrice">$24.99 / yr</span> <span style="font-weight:600;opacity:.75;">· save 30%</span></div>
     </div>
     <button onclick="upgradeForgePro()" style="width:100%;padding:15px;border-radius:13px;background:linear-gradient(135deg,var(--moss),var(--sage));color:#0f1e0f;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px;letter-spacing:-.2px;">Upgrade to Forge Pro ⚔️</button>
     <button onclick="closeAllModals()" style="width:100%;padding:11px;border-radius:10px;border:1px solid var(--border);background:transparent;color:var(--text-dim);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;cursor:pointer;">Maybe Later</button>
+    <div style="text-align:center;margin-top:12px;"><a href="javascript:void(0)" onclick="restoreForgeProPurchases()" style="font-size:11px;color:var(--text-dim);text-decoration:underline;">Restore Purchases</a></div>
   </div>
 </div>
 
@@ -1493,7 +1494,7 @@ let currentUser = null;
 async function saveToCloud() {
   if (!currentUser) { saveLocal(); return; }
   try {
-    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, cosPlans, closet, packingPlans, isPro, updatedAt: Date.now() });
+    await setDoc(doc(db, 'users', currentUser.uid), { cosplays, conventions, craftDays, photoshoots, cosPlans, closet, packingPlans, isPro, compedPro, updatedAt: Date.now() });
   } catch(e) { console.error('Cloud save failed, saving locally', e); saveLocal(); }
 }
 async function loadFromCloud() {
@@ -1510,6 +1511,7 @@ async function loadFromCloud() {
       closet        = d.closet        || [];
       packingPlans  = d.packingPlans  || [];
       isPro         = d.isPro         || false;
+      compedPro     = d.compedPro     || false;
     } else {
       // No cloud data yet — upload whatever is saved locally so nothing is lost
       loadLocal();
@@ -1629,6 +1631,7 @@ onAuthStateChanged(auth, async (user) => {
     renderHome(); renderCalendar();
   }
   checkOnboarding();
+  initForgeProBilling();
 });
 
 // ── AUTH FUNCTIONS ────────────────────────────────────────────
@@ -1810,7 +1813,20 @@ let editingId = null, viewingId = null;
 // New Quest modal photo staging — id/url/storage path for the avatar upload, since a
 // new quest has no saved id yet until saveCosplay() runs.
 let _cosplayModalId = null, _cosplayModalImgUrl = '', _cosplayModalStoragePath = null;
-let isPro = false; // Forge Pro subscriber flag — loaded from Firebase
+let isPro = false; // Forge Pro subscriber flag — verified against the real store (StoreKit/Play Billing); do not set this by hand in Firestore, it gets overwritten on the next app launch
+let compedPro = false; // Manually-granted Pro access (set isPro -> compedPro: true in the user's Firestore doc) — never touched by the store-sync code, so a hand-granted comp actually sticks
+function forgeProActive() { return isPro || compedPro; } // what every Pro feature gate should check
+
+// ── FORGE PRO BILLING — product IDs per store ───────────────────
+// iOS ids must exactly match the subscriptions created in App Store Connect.
+// Android ids are "<subscription product id>:<base plan id>" per the Play
+// Billing Digital Goods API — must match what's created in Play Console.
+const FORGE_PRO_PRODUCTS = {
+  ios:     { monthly: 'com.gingerquest.cosplayforge.pro.monthly', annual: 'com.gingerquest.cosplayforge.pro.annual' },
+  android: { monthly: 'forge_pro:monthly',                        annual: 'forge_pro:annual' }
+};
+let selectedForgeProPlan = 'annual'; // which pill is highlighted in the paywall
+let forgeProProductInfo  = {};       // live price/title from the store, keyed by 'monthly'/'annual'
 let viewingClosetId = null;
 function getClosetItem(id) { return (closet||[]).find(c => c.id === id); }
 let calDate = new Date(), currentFilter = 'all', prevPage = 'home';
@@ -2224,7 +2240,7 @@ function showSignedIn(email) {
 
 // ── DATA EXPORT ───────────────────────────────────────────────
 function exportData() {
-  if (!isPro) { showForgeProGate('Export & Backup', 'Back up your Forge data anytime — a Forge Pro feature.', '☁️'); return; }
+  if (!forgeProActive()) { showForgeProGate('Export & Backup', 'Back up your Forge data anytime — a Forge Pro feature.', '☁️'); return; }
   const data = { cosplays, conventions, craftDays };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -2515,7 +2531,7 @@ function questCard(c) {
 // ── ADD/EDIT COSPLAY ──────────────────────────────────────────
 function openAddModal() {
   // Free tier: max 3 active quests
-  if (!isPro && cosplays.length >= 3) { showForgeProGate(); return; }
+  if (!forgeProActive() && cosplays.length >= 3) { showForgeProGate(); return; }
   editingId=null;
   _cosplayModalId = uid();
   _cosplayModalImgUrl = '';
@@ -2904,18 +2920,168 @@ function showForgeProGate(title, msg, icon) {
   document.getElementById('proGateTitle').textContent = title || 'This is a Forge Pro feature';
   document.getElementById('proGateMsg').textContent   = msg   || 'Upgrade to unlock this and all Pro features.';
   document.getElementById('proGateIcon').textContent  = icon  || '⚔️';
+  updateForgeProPillUI();
   openModal('forgeProGateModal');
 }
-function upgradeForgePro() {
-  // TODO: Wire to Google Play Billing / Apple IAP in v2.0 billing sprint
+function forgeProToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1c2a20;border:1px solid var(--sage);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:var(--cream);z-index:9999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);max-width:86vw;';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// Which store we're running in. iOS: native bridge in WebView.swift/ViewController.swift
+// (see FORGE PRO BILLING — PLATFORM BRIDGES below). Android: a Trusted Web Activity
+// exposes the Digital Goods API when it was packaged with Play Billing turned on.
+function forgeProPlatform() {
+  if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers['billing-purchase']) return 'ios';
+  if (typeof window.getDigitalGoodsService === 'function') return 'android';
+  return 'web';
+}
+
+function selectForgeProPlan(plan) {
+  selectedForgeProPlan = plan;
+  updateForgeProPillUI();
+}
+function updateForgeProPillUI() {
+  ['monthly','annual'].forEach(plan => {
+    const el = document.getElementById('proPlanPill-' + plan);
+    if (!el) return;
+    const on = plan === selectedForgeProPlan;
+    el.style.background = on ? 'rgba(212,168,85,.28)' : 'rgba(212,168,85,.12)';
+    el.style.border      = on ? '1.5px solid var(--gold)' : '1px solid rgba(212,168,85,.3)';
+    const info = forgeProProductInfo[plan];
+    if (info && info.displayPrice) {
+      el.querySelector('.proPlanPrice').textContent = info.displayPrice + (plan === 'monthly' ? ' / mo' : ' / yr');
+    }
+  });
+}
+
+let _forgeProBillingInited = false;
+function initForgeProBilling() {
+  if (_forgeProBillingInited) return;
+  _forgeProBillingInited = true;
+  const platform = forgeProPlatform();
+  if (platform === 'ios') {
+    window.webkit.messageHandlers['billing-get-products'].postMessage({});
+    window.webkit.messageHandlers['billing-status'].postMessage({});
+  } else if (platform === 'android') {
+    forgeProLoadAndroidProducts();
+    forgeProSyncAndroidStatus(/*silent=*/true);
+  }
+}
+
+// MARK: iOS — native bridge (IAPManager.swift). Purchase/restore/status replies
+// come back as window CustomEvents dispatched from Swift, same pattern as the
+// google-signin-result / apple-signin-result bridges above.
+window.addEventListener('iap-products', (evt) => {
+  (evt.detail || []).forEach(p => {
+    const plan = p.id === FORGE_PRO_PRODUCTS.ios.annual ? 'annual' : (p.id === FORGE_PRO_PRODUCTS.ios.monthly ? 'monthly' : null);
+    if (plan) forgeProProductInfo[plan] = { displayPrice: p.displayPrice, title: p.displayName };
+  });
+  updateForgeProPillUI();
+});
+window.addEventListener('iap-purchase-result', async (evt) => {
+  const { success, productId, error } = evt.detail || {};
+  if (success) {
+    await completeForgeProPurchase();
+  } else if (error && error !== 'cancelled' && error !== 'pending') {
+    forgeProToast('Purchase failed: ' + error);
+  }
+});
+window.addEventListener('iap-restore-result', (evt) => {
+  const { success, error } = evt.detail || {};
+  if (!success) { forgeProToast('Restore failed: ' + (error || 'unknown error')); return; }
+  forgeProToast(isPro ? '⚔️ Forge Pro restored!' : 'No active Forge Pro subscription found for this Apple ID.');
+});
+window.addEventListener('iap-status', async (evt) => {
+  const { isPro: storeIsPro } = evt.detail || {};
+  if (typeof storeIsPro === 'boolean' && storeIsPro !== isPro) {
+    isPro = storeIsPro;
+    if (currentUser) await save();
+    renderStats();
+  }
+});
+
+// MARK: Android — Digital Goods API over a PaymentRequest (Play Billing in a TWA).
+// https://developer.chrome.com/docs/android/trusted-web-activity/receive-payments-play-billing/
+async function forgeProAndroidService() {
+  if (typeof window.getDigitalGoodsService !== 'function') return null;
+  try { return await window.getDigitalGoodsService('https://play.google.com/billing'); }
+  catch(_) { return null; }
+}
+async function forgeProLoadAndroidProducts() {
+  const service = await forgeProAndroidService();
+  if (!service) return;
+  try {
+    const details = await service.getDetails([FORGE_PRO_PRODUCTS.android.monthly, FORGE_PRO_PRODUCTS.android.annual]);
+    details.forEach(d => {
+      const plan = d.itemId === FORGE_PRO_PRODUCTS.android.annual ? 'annual' : (d.itemId === FORGE_PRO_PRODUCTS.android.monthly ? 'monthly' : null);
+      if (plan && d.price) forgeProProductInfo[plan] = { displayPrice: new Intl.NumberFormat(undefined, { style: 'currency', currency: d.price.currency }).format(d.price.value), title: d.title };
+    });
+    updateForgeProPillUI();
+  } catch(e) { console.warn('Digital Goods getDetails failed:', e); }
+}
+async function forgeProSyncAndroidStatus(silent) {
+  const service = await forgeProAndroidService();
+  if (!service) return;
+  try {
+    const purchases = await service.listPurchases();
+    const ids = [FORGE_PRO_PRODUCTS.android.monthly, FORGE_PRO_PRODUCTS.android.annual];
+    const owned = (purchases || []).some(p => ids.includes(p.itemId));
+    if (owned !== isPro) {
+      isPro = owned;
+      if (currentUser) await save();
+      renderStats();
+    }
+    if (!silent) forgeProToast(owned ? '⚔️ Forge Pro restored!' : 'No active Forge Pro subscription found for this Google account.');
+  } catch(e) { console.warn('Digital Goods listPurchases failed:', e); }
+}
+async function forgeProAndroidPurchase(itemId) {
+  try {
+    const request = new PaymentRequest(
+      [{ supportedMethods: 'https://play.google.com/billing', data: { sku: itemId } }],
+      { total: { label: 'Forge Pro', amount: { currency: 'USD', value: '0' } } }
+    );
+    const response = await request.show();
+    await response.complete('success');
+    await completeForgeProPurchase();
+  } catch(e) {
+    if (e.name !== 'AbortError') forgeProToast('Purchase failed: ' + e.message);
+  }
+}
+
+// Shared — fires once isPro is confirmed true, on either platform.
+async function completeForgeProPurchase() {
+  isPro = true;
+  if (currentUser) await save();
   closeAllModals();
-  setTimeout(() => {
-    const t = document.createElement('div');
-    t.style.cssText = 'position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1c2a20;border:1px solid var(--sage);border-radius:12px;padding:12px 20px;font-size:13px;font-weight:700;color:var(--cream);z-index:9999;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);';
-    t.textContent = '✨ Forge Pro subscriptions launching very soon!';
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 3500);
-  }, 100);
+  renderStats();
+  forgeProToast('⚔️ Welcome to Forge Pro!');
+}
+
+function restoreForgeProPurchases() {
+  const platform = forgeProPlatform();
+  if (platform === 'ios') { window.webkit.messageHandlers['billing-restore'].postMessage({}); return; }
+  if (platform === 'android') { forgeProSyncAndroidStatus(false); return; }
+  forgeProToast('Restore is available in the Cosplay Forge iOS & Android app.');
+}
+
+function upgradeForgePro() {
+  const platform = forgeProPlatform();
+  const productId = FORGE_PRO_PRODUCTS[platform] ? FORGE_PRO_PRODUCTS[platform][selectedForgeProPlan] : null;
+  if (platform === 'ios' && productId) {
+    window.webkit.messageHandlers['billing-purchase'].postMessage(JSON.stringify({ productId }));
+    return;
+  }
+  if (platform === 'android' && productId) {
+    forgeProAndroidPurchase(productId);
+    return;
+  }
+  // Plain website — Apple/Google billing isn't available outside their apps.
+  closeAllModals();
+  setTimeout(() => forgeProToast('✨ Forge Pro is available in the Cosplay Forge iOS & Android app!'), 100);
 }
 
 // ── CRAFT DAYS ────────────────────────────────────────────────
@@ -4523,7 +4689,7 @@ function renderPiecesList(c) {
 }
 
 function openAddPiece(costumeId) {
-  if (!isPro) { showForgeProGate('Piece Tracking', 'Track condition, repairs, and care for every costume piece — a Forge Pro feature.', '👗'); return; }
+  if (!forgeProActive()) { showForgeProGate('Piece Tracking', 'Track condition, repairs, and care for every costume piece — a Forge Pro feature.', '👗'); return; }
   _editingPieceInfo = { costumeId, pieceId: null };
   document.getElementById('piece-modal-title').textContent = 'Add Piece';
   document.getElementById('pm-name').value = '';
@@ -4654,7 +4820,7 @@ function _costumeSelect(activeCloset, selectedId, conId, dateStr, slot) {
 }
 
 function openPackingPage(eventId, type, source) {
-  if (!isPro) { showForgeProGate('Packing Planner', 'Plan costumes per day, build packing lists, and more — a Forge Pro feature.', '🎒'); return; }
+  if (!forgeProActive()) { showForgeProGate('Packing Planner', 'Plan costumes per day, build packing lists, and more — a Forge Pro feature.', '🎒'); return; }
   _packingConId  = eventId;
   _packingType   = type   || 'con';
   _packingSource = source || 'home';
@@ -4934,7 +5100,7 @@ let _addExpenseOpen = false;
 let _addExpenseCat  = null;
 
 function openConBudgetPage(conId, source) {
-  if (!isPro) { showForgeProGate('Con Budget Tracker', 'Track every con expense in one place — a Forge Pro feature.', '💰'); return; }
+  if (!forgeProActive()) { showForgeProGate('Con Budget Tracker', 'Track every con expense in one place — a Forge Pro feature.', '💰'); return; }
   _budgetConId  = conId;
   _budgetSource = source || 'home';
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -5274,7 +5440,7 @@ function triggerConfirmationUpload(conId, type) {
 }
 
 async function handleConfirmationUpload(e, conId, type) {
-  if (!isPro) { showForgeProGate('Ticket & Hotel Screenshots', 'Save your con confirmations in one place — a Forge Pro feature.', '🎟️'); return; }
+  if (!forgeProActive()) { showForgeProGate('Ticket & Hotel Screenshots', 'Save your con confirmations in one place — a Forge Pro feature.', '🎟️'); return; }
   const file = e.target.files[0]; if (!file) return;
   const idx = conventions.findIndex(c => c.id === conId); if (idx < 0) return;
   _showUploadToast('Uploading…');
@@ -5401,7 +5567,7 @@ function renderPastEventsPage() {
 let _unpackConId = null;
 
 function openUnpackPage(conId) {
-  if (!isPro) { showForgeProGate('Unpack Flow', 'Check pieces after a con and log repairs or washes — a Forge Pro feature.', '🏠'); return; }
+  if (!forgeProActive()) { showForgeProGate('Unpack Flow', 'Check pieces after a con and log repairs or washes — a Forge Pro feature.', '🏠'); return; }
   _unpackConId = conId;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn[data-page]').forEach(b => b.classList.remove('active'));
@@ -5536,6 +5702,7 @@ Object.assign(window, {
   triggerCosplayModalPhotoUpload, handleCosplayModalPhotoUpload,
   renderCostumePage, toggleBlock, toggleBudget, saveBudget,
   openModal, closeAllModals, showForgeProGate, upgradeForgePro,
+  selectForgeProPlan, restoreForgeProPurchases,
   openCraftModal, openCraftModalForCostume, saveCraftDay, deleteCraftDay,
   saveExpense, deleteExpense, saveTask, toggleTask, deleteTask,
   moveTask, toggleCatGroup, openCatTaskModal, saveCatTask,
